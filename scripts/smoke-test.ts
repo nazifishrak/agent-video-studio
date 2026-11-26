@@ -395,13 +395,43 @@ async function testStarterVaultAndHarness() {
     const capsCheck = await probeMediaPaths([]);
     assert.equal(typeof capsCheck.ffmpegCapabilities.hasDeshake, 'boolean');
 
-    // Render a real 2s synthetic MP4 via exportProjectVideo + inspectTimelineContactSheet
+    // Render a real synthetic MP4 with B-roll overlay via exportProjectVideo + inspectTimelineContactSheet
     const exportProj = await createProjectFromIdea(tmpVault, {
       title: 'Export Smoke',
       slug: 'export-smoke',
       aspectRatio: '16:9',
     });
     assert.equal(exportProj.manifest.slug, 'export-smoke');
+    const brollMediaDir = path.join(resolveVaultPaths(tmpVault).projectsDir, 'export-smoke', 'media');
+    await fs.mkdir(brollMediaDir, { recursive: true });
+    // 1x1 solid lime PNG
+    const tinyPngB64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    await fs.writeFile(path.join(brollMediaDir, 'broll-test.png'), Buffer.from(tinyPngB64, 'base64'));
+    const brollTx = await beginProjectEdit(tmpVault, 'export-smoke', {
+      actor: 'human',
+      reason: 'Add smoke B-roll beat',
+    });
+    await applyTimelineOps(
+      tmpVault,
+      brollTx.txId,
+      [
+        {
+          op: 'add_broll',
+          broll: {
+            id: 'br_smoke_1',
+            label: 'broll-test.png',
+            source: 'media/broll-test.png',
+            kind: 'image',
+            start: 1,
+            end: 3,
+          },
+        },
+      ],
+      'export-smoke'
+    );
+    await commitProjectEdit(tmpVault, brollTx.txId, 'Committed smoke B-roll', 'export-smoke');
+
     const exportRes = await exportProjectVideo({
       vaultRoot: tmpVault,
       projectSlug: 'export-smoke',

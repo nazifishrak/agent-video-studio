@@ -22,6 +22,9 @@ export const PreviewCanvas: React.FC<{
     getActiveBrandTokens,
     trackVisibility,
     mediaRevision,
+    auditionMotionScene,
+    setAuditionMotionScene,
+    setSelectedItem,
   } = useStudioStore();
 
   const [safeZones, setSafeZones] = useState(false);
@@ -29,7 +32,9 @@ export const PreviewCanvas: React.FC<{
   const [noteText, setNoteText] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const brollVideoRef = useRef<HTMLVideoElement>(null);
+  const musicAudioRef = useRef<HTMLAudioElement>(null);
   const plateIframeRef = useRef<HTMLIFrameElement>(null);
+  const auditionIframeRef = useRef<HTMLIFrameElement>(null);
   const lastPropsKeyRef = useRef<string>('');
   const lastTokensKeyRef = useRef<string>('');
 
@@ -268,16 +273,28 @@ export const PreviewCanvas: React.FC<{
     win.postMessage({ type: 'SEEK', t: Math.max(0, currentTimeSec - activePlate.start) }, '*');
   };
 
+  const pushAuditionTokensAndProps = () => {
+    const win = auditionIframeRef.current?.contentWindow;
+    if (!win || !auditionMotionScene) return;
+    win.postMessage({ type: 'SET_TOKENS', tokens }, '*');
+    win.postMessage({ type: 'SET_PROPS', props: auditionMotionScene.props ?? {} }, '*');
+  };
+
   // Listen for SCENE_READY handshake from motion-engine.js
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       if (e.data?.type === 'SCENE_READY') {
         pushTokensAndProps(true);
+        pushAuditionTokensAndProps();
       }
     };
     window.addEventListener('message', onMsg);
     return () => window.removeEventListener('message', onMsg);
   });
+
+  useEffect(() => {
+    pushAuditionTokensAndProps();
+  }, [auditionMotionScene?.scene.id, auditionMotionScene?.props, tokens]);
 
   // Update tokens/props only when they change; seek on time ticks without remounting DOM
   useEffect(() => {
@@ -311,6 +328,68 @@ export const PreviewCanvas: React.FC<{
   const primarySource = activeShot ? activeShot.assetId || activeShot.source : plan.sourceVideo;
   const videoUrl = buildMediaUrl(primarySource);
   const brollUrl = activeBroll ? buildMediaUrl(activeBroll.source) : '';
+  const musicUrl = plan.audio?.musicTrack ? buildMediaUrl(plan.audio.musicTrack) : '';
+
+  // Sync music bed <audio> playback with timeline playhead & volume
+  useEffect(() => {
+    const audio = musicAudioRef.current;
+    if (!audio || !musicUrl) return;
+    const db = plan.audio?.musicDb ?? -18;
+    const gain = Math.min(1, Math.max(0, Math.pow(10, db / 20)));
+    audio.volume = trackVisibility.audio ? gain : 0;
+    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+      const target = currentTimeSec % audio.duration;
+      if (Math.abs(audio.currentTime - target) > 0.35) {
+        audio.currentTime = target;
+      }
+    }
+    if (isPlaying && trackVisibility.audio && !auditionMotionScene) {
+      if (audio.paused) void audio.play().catch(() => undefined);
+    } else if (!audio.paused) {
+      audio.pause();
+    }
+  }, [
+    musicUrl,
+    plan.audio?.musicDb,
+    trackVisibility.audio,
+    currentTimeSec,
+    isPlaying,
+    auditionMotionScene,
+  ]);
+
+  const auditionSrc =
+    auditionMotionScene && assetServerUrl
+      ? `${assetServerUrl}/scenes/${auditionMotionScene.scene.file}?w=${stageW}&h=${stageH}${
+          auditionMotionScene.scene.transparent_ready ? '&transparent=1' : ''
+        }${tokenParam ? `&${tokenParam}` : ''}`
+      : '';
+
+  const handleInsertAuditionedMotion = async () => {
+    if (!auditionMotionScene) return;
+    const s = auditionMotionScene.scene;
+    const id = `mp_${Date.now()}`;
+    const start = Number(currentTimeSec.toFixed(2));
+    const end = Number((start + (s.duration || 5)).toFixed(2));
+    await applyOps(
+      [
+        {
+          op: 'add_motion_plate',
+          plate: {
+            id,
+            sceneId: s.id,
+            label: s.name,
+            start,
+            end,
+            transparent: s.transparent_ready,
+            props: structuredClone(auditionMotionScene.props ?? s.default_props ?? {}),
+          },
+        },
+      ],
+      `Inserted ${s.name} at ${start}s`
+    );
+    setSelectedItem({ kind: 'motionPlate', id });
+    setAuditionMotionScene(null);
+  };
   const plateSrc =
     activePlate && activePlateMeta && assetServerUrl
       ? `${assetServerUrl}/scenes/${activePlateMeta.file}?manual=1&w=${stageW}&h=${stageH}${
@@ -391,7 +470,47 @@ export const PreviewCanvas: React.FC<{
           backgroundColor: tokens.stage_bg || '#090B0A',
         }}
       >
-        {trackVisibility.video && videoUrl ? (
+        {auditionMotionScene && auditionSrc ? (
+          <>
+            <iframe
+              ref={auditionIframeRef}
+              key={auditionMotionScene.scene.id}
+              src={auditionSrc}
+              onLoad={pushAuditionTokensAndProps}
+              className="w-full h-full border-0"
+              title={`Audition ${auditionMotionScene.scene.name}`}
+            />
+            <div
+              className="absolute top-3 inset-x-3 flex items-center justify-between gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md z-30"
+              style={{
+                backgroundColor: 'rgba(9, 11, 10, 0.72)',
+                borderColor: 'rgba(255, 255, 255, 0.16)',
+                color: '#F8FAFC',
+              }}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[10px] font-bold tracking-wider uppercase" style={{ color: '#C4FF2E' }}>
+                  AUDITIONING
+                </span>
+                <span className="text-xs font-semibold truncate">{auditionMotionScene.scene.name}</span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => void handleInsertAuditionedMotion()}
+                  className="btn-primary px-2.5 py-1 text-[11px]"
+                >
+                  + Insert @ {currentTimeSec.toFixed(1)}s
+                </button>
+                <button
+                  onClick={() => setAuditionMotionScene(null)}
+                  className="btn-secondary px-2.5 py-1 text-[11px]"
+                >
+                  Back to Timeline
+                </button>
+              </div>
+            </div>
+          </>
+        ) : trackVisibility.video && videoUrl ? (
           <video
             ref={videoRef}
             src={videoUrl}
@@ -563,6 +682,9 @@ export const PreviewCanvas: React.FC<{
         </form>
       )}
 
+      {/* Live Music Bed Audio */}
+      {musicUrl && <audio ref={musicAudioRef} src={musicUrl} loop preload="auto" />}
+
       {/* Transport Bar */}
       <div
         className="w-full max-w-2xl px-3.5 py-2 rounded-full border flex flex-wrap items-center justify-between gap-2"
@@ -580,7 +702,10 @@ export const PreviewCanvas: React.FC<{
             <SkipBack size={13} />
           </button>
           <button
-            onClick={() => setIsPlaying(!isPlaying)}
+            onClick={() => {
+              setAuditionMotionScene(null);
+              setIsPlaying(!isPlaying);
+            }}
             className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition hover:opacity-90"
             style={{ backgroundColor: 'var(--accent-primary)', color: 'var(--accent-primary-ink)' }}
             title="Play / Pause (Space)"

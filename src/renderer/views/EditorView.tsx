@@ -57,6 +57,7 @@ export const EditorView: React.FC = () => {
     assetServerToken,
     setPreviewTokensOverride,
     agentDrawerOpen,
+    setAuditionMotionScene,
   } = useStudioStore();
 
   const [mediaDurationSec, setMediaDurationSec] = useState(0);
@@ -410,8 +411,11 @@ export const EditorView: React.FC = () => {
                     onClick={handleImportMedia}
                     className="btn-secondary w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs"
                   >
-                    <Upload size={12} /> Import Video / Audio
+                    <Upload size={12} /> Import Video / Audio / Image
                   </button>
+                  <div className="text-[11px] px-1" style={{ color: 'var(--text-secondary)' }}>
+                    Drag files onto Timeline tracks or drop from Finder
+                  </div>
                   {projectState.mediaFiles.length === 0 && plan.assets.length === 0 ? (
                     <div style={{ color: 'var(--text-secondary)' }}>
                       No video or audio files found in this project yet.
@@ -420,66 +424,325 @@ export const EditorView: React.FC = () => {
                     <div className="space-y-2">
                       {projectState.mediaFiles.map((file) => {
                         const isActive = plan.sourceVideo === file;
+                        const isAudio = /\.(mp3|wav|m4a|aac|flac|ogg)$/i.test(file);
+                        const isImage = /\.(png|jpe?g|webp)$/i.test(file);
+                        const mediaKind = isAudio ? 'audio' : isImage ? 'image' : 'video';
                         return (
                           <div
                             key={file}
-                            className="p-2.5 rounded-xl border flex items-center justify-between gap-2"
+                            draggable
+                            onDragStart={(e) =>
+                              e.dataTransfer.setData(
+                                'application/x-studio-item',
+                                JSON.stringify({
+                                  kind: 'studio-media',
+                                  source: file,
+                                  label: file,
+                                  mediaKind,
+                                })
+                              )
+                            }
+                            className="p-2.5 rounded-xl border space-y-2 cursor-grab active:cursor-grabbing"
                             style={{
                               backgroundColor: isActive ? 'var(--bg-surface-alt)' : 'var(--bg-canvas)',
                               borderColor: isActive ? 'var(--accent-primary)' : 'var(--border-subtle)',
                             }}
                           >
-                            <span className="truncate font-medium" title={file}>
-                              {file}
-                            </span>
-                            <button
-                              onClick={() =>
-                                void applyOps(
-                                  [{ op: 'set_source_video', sourceVideo: file }],
-                                  `Loaded ${file} on stage`
-                                )
-                              }
-                              className={
-                                isActive
-                                  ? 'btn-primary px-2.5 py-1 text-[11px] shrink-0'
-                                  : 'btn-secondary px-2.5 py-1 text-[11px] shrink-0'
-                              }
-                            >
-                              {isActive ? 'On Stage' : 'Load'}
-                            </button>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate font-medium" title={file}>
+                                {file}
+                              </span>
+                              <span className="caption-label uppercase shrink-0">{mediaKind}</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {isAudio ? (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      void applyOps(
+                                        [
+                                          {
+                                            op: 'update_audio',
+                                            audio: {
+                                              ...(plan.audio ?? {}),
+                                              musicTrack: file,
+                                              musicDb: plan.audio?.musicDb ?? -18,
+                                              sidechainDuck: plan.audio?.sidechainDuck ?? true,
+                                            },
+                                          },
+                                        ],
+                                        `Set ${file} as music bed`
+                                      )
+                                    }
+                                    className="btn-secondary px-2 py-1 text-[10px]"
+                                  >
+                                    Music Bed
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      void applyOps(
+                                        [
+                                          {
+                                            op: 'update_audio',
+                                            audio: {
+                                              ...(plan.audio ?? {}),
+                                              sfx: [
+                                                ...(plan.audio?.sfx ?? []),
+                                                {
+                                                  id: `sfx_${Date.now()}`,
+                                                  at: Number(currentTimeSec.toFixed(2)),
+                                                  sound: file,
+                                                },
+                                              ],
+                                            },
+                                          },
+                                        ],
+                                        `Added SFX ${file} at ${currentTimeSec.toFixed(1)}s`
+                                      )
+                                    }
+                                    className="btn-secondary px-2 py-1 text-[10px]"
+                                  >
+                                    + SFX @ {currentTimeSec.toFixed(1)}s
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  {!isImage && (
+                                    <button
+                                      onClick={() =>
+                                        void applyOps(
+                                          [{ op: 'set_source_video', sourceVideo: file }],
+                                          `Loaded ${file} on stage`
+                                        )
+                                      }
+                                      className={
+                                        isActive
+                                          ? 'btn-primary px-2 py-1 text-[10px]'
+                                          : 'btn-secondary px-2 py-1 text-[10px]'
+                                      }
+                                    >
+                                      {isActive ? 'On A-Roll' : 'A-Roll'}
+                                    </button>
+                                  )}
+                                  {!isImage && (
+                                    <button
+                                      onClick={() => {
+                                        const start = Number(currentTimeSec.toFixed(2));
+                                        void applyOps(
+                                          [
+                                            {
+                                              op: 'add_shot',
+                                              shot: {
+                                                id: `shot_${Date.now()}`,
+                                                source: file,
+                                                label: file,
+                                                start,
+                                                end: Number((start + 5).toFixed(2)),
+                                                srcIn: 0,
+                                                speed: 1,
+                                                volume: 1,
+                                                transitionIn: 'cut',
+                                                stabilize: false,
+                                              },
+                                            },
+                                          ],
+                                          `Added shot ${file} at ${start}s`
+                                        );
+                                      }}
+                                      className="btn-secondary px-2 py-1 text-[10px]"
+                                    >
+                                      + Shot
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => {
+                                      const start = Number(currentTimeSec.toFixed(2));
+                                      void applyOps(
+                                        [
+                                          {
+                                            op: 'add_broll',
+                                            broll: {
+                                              id: `br_${Date.now()}`,
+                                              label: file,
+                                              source: file,
+                                              kind: isImage ? 'image' : 'video',
+                                              start,
+                                              end: Number((start + 4).toFixed(2)),
+                                            },
+                                          },
+                                        ],
+                                        `Added B-roll ${file} at ${start}s`
+                                      );
+                                    }}
+                                    className="btn-secondary px-2 py-1 text-[10px]"
+                                  >
+                                    + B-Roll
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
                       {plan.assets.map((asset) => {
                         const isActive = plan.sourceVideo === asset.id || plan.sourceVideo === asset.uri;
+                        const label = asset.label || asset.id;
                         return (
                           <div
                             key={asset.id}
-                            className="p-2.5 rounded-xl border flex items-center justify-between gap-2"
+                            draggable
+                            onDragStart={(e) =>
+                              e.dataTransfer.setData(
+                                'application/x-studio-item',
+                                JSON.stringify({
+                                  kind: 'studio-media',
+                                  source: asset.id,
+                                  label,
+                                  mediaKind: asset.kind,
+                                })
+                              )
+                            }
+                            className="p-2.5 rounded-xl border space-y-2 cursor-grab active:cursor-grabbing"
                             style={{
                               backgroundColor: isActive ? 'var(--bg-surface-alt)' : 'var(--bg-canvas)',
                               borderColor: isActive ? 'var(--accent-primary)' : 'var(--border-subtle)',
                             }}
                           >
-                            <div className="min-w-0">
-                              <div className="truncate font-medium">{asset.label || asset.id}</div>
-                              <div className="caption-label truncate">{asset.kind}</div>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="truncate font-medium">{label}</div>
+                                <div className="caption-label truncate">{asset.kind}</div>
+                              </div>
                             </div>
-                            <button
-                              onClick={() =>
-                                void applyOps(
-                                  [{ op: 'set_source_video', sourceVideo: asset.id }],
-                                  `Loaded ${asset.label || asset.id} on stage`
-                                )
-                              }
-                              className={
-                                isActive
-                                  ? 'btn-primary px-2.5 py-1 text-[11px] shrink-0'
-                                  : 'btn-secondary px-2.5 py-1 text-[11px] shrink-0'
-                              }
-                            >
-                              {isActive ? 'On Stage' : 'Load'}
-                            </button>
+                            <div className="flex flex-wrap gap-1.5">
+                              {asset.kind === 'audio' ? (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      void applyOps(
+                                        [
+                                          {
+                                            op: 'update_audio',
+                                            audio: {
+                                              ...(plan.audio ?? {}),
+                                              musicTrack: asset.id,
+                                              musicDb: plan.audio?.musicDb ?? -18,
+                                              sidechainDuck: plan.audio?.sidechainDuck ?? true,
+                                            },
+                                          },
+                                        ],
+                                        `Set ${label} as music bed`
+                                      )
+                                    }
+                                    className="btn-secondary px-2 py-1 text-[10px]"
+                                  >
+                                    Music Bed
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      void applyOps(
+                                        [
+                                          {
+                                            op: 'update_audio',
+                                            audio: {
+                                              ...(plan.audio ?? {}),
+                                              sfx: [
+                                                ...(plan.audio?.sfx ?? []),
+                                                {
+                                                  id: `sfx_${Date.now()}`,
+                                                  at: Number(currentTimeSec.toFixed(2)),
+                                                  sound: asset.id,
+                                                },
+                                              ],
+                                            },
+                                          },
+                                        ],
+                                        `Added SFX ${label} at ${currentTimeSec.toFixed(1)}s`
+                                      )
+                                    }
+                                    className="btn-secondary px-2 py-1 text-[10px]"
+                                  >
+                                    + SFX @ {currentTimeSec.toFixed(1)}s
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  {asset.kind === 'video' && (
+                                    <button
+                                      onClick={() =>
+                                        void applyOps(
+                                          [{ op: 'set_source_video', sourceVideo: asset.id }],
+                                          `Loaded ${label} on stage`
+                                        )
+                                      }
+                                      className={
+                                        isActive
+                                          ? 'btn-primary px-2 py-1 text-[10px]'
+                                          : 'btn-secondary px-2 py-1 text-[10px]'
+                                      }
+                                    >
+                                      {isActive ? 'On A-Roll' : 'A-Roll'}
+                                    </button>
+                                  )}
+                                  {asset.kind === 'video' && (
+                                    <button
+                                      onClick={() => {
+                                        const start = Number(currentTimeSec.toFixed(2));
+                                        const dur = asset.durationSec ? Math.min(5, asset.durationSec) : 5;
+                                        void applyOps(
+                                          [
+                                            {
+                                              op: 'add_shot',
+                                              shot: {
+                                                id: `shot_${Date.now()}`,
+                                                assetId: asset.id,
+                                                source: asset.uri,
+                                                label,
+                                                start,
+                                                end: Number((start + dur).toFixed(2)),
+                                                srcIn: 0,
+                                                speed: 1,
+                                                volume: 1,
+                                                transitionIn: 'cut',
+                                                stabilize: false,
+                                              },
+                                            },
+                                          ],
+                                          `Added shot ${label} at ${start}s`
+                                        );
+                                      }}
+                                      className="btn-secondary px-2 py-1 text-[10px]"
+                                    >
+                                      + Shot
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => {
+                                      const start = Number(currentTimeSec.toFixed(2));
+                                      void applyOps(
+                                        [
+                                          {
+                                            op: 'add_broll',
+                                            broll: {
+                                              id: `br_${Date.now()}`,
+                                              label,
+                                              source: asset.id,
+                                              kind: asset.kind === 'image' ? 'image' : 'video',
+                                              start,
+                                              end: Number((start + 4).toFixed(2)),
+                                            },
+                                          },
+                                        ],
+                                        `Added B-roll ${label} at ${start}s`
+                                      );
+                                    }}
+                                    className="btn-secondary px-2 py-1 text-[10px]"
+                                  >
+                                    + B-Roll
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
@@ -557,7 +820,27 @@ export const EditorView: React.FC = () => {
                       return (
                         <button
                           key={s.id}
-                          onClick={() => setPreviewScene(s)}
+                          draggable
+                          onDragStart={(e) =>
+                            e.dataTransfer.setData(
+                              'application/x-studio-item',
+                              JSON.stringify({
+                                kind: 'motion-scene',
+                                sceneId: s.id,
+                                name: s.name,
+                                duration: s.duration,
+                                transparent: s.transparent_ready,
+                                defaultProps: s.default_props ?? {},
+                              })
+                            )
+                          }
+                          onClick={() => {
+                            setPreviewScene(s);
+                            setAuditionMotionScene({
+                              scene: s,
+                              props: structuredClone(s.default_props ?? {}),
+                            });
+                          }}
                           className="w-full text-left px-3 py-2 rounded-xl border cursor-pointer transition"
                           style={{
                             backgroundColor: active ? 'var(--bg-surface-alt)' : 'transparent',
@@ -1209,6 +1492,92 @@ export const EditorView: React.FC = () => {
                     }
                   />
                   <span>Stabilize (deshake)</span>
+                </label>
+              </div>
+            ) : selectedItem?.kind === 'audioTrack' && plan.audio?.musicTrack ? (
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="caption-label">AUDIO / MUSIC BED</div>
+                  <button
+                    onClick={() => {
+                      void applyOps(
+                        [
+                          {
+                            op: 'update_audio',
+                            audio: {
+                              ...(plan.audio ?? {}),
+                              musicTrack: undefined,
+                            },
+                          },
+                        ],
+                        'Removed music bed'
+                      );
+                      setSelectedItem(null);
+                    }}
+                    className="btn-icon w-7 h-7"
+                    title="Remove Music Bed"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+                <div
+                  className="p-2.5 rounded-lg border truncate font-medium"
+                  style={{
+                    backgroundColor: 'var(--bg-surface-alt)',
+                    borderColor: 'var(--border-subtle)',
+                  }}
+                  title={plan.audio.musicTrack}
+                >
+                  {plan.audio.musicTrack}
+                </div>
+                <label className="block space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="caption-label">VOLUME (DB)</span>
+                    <span className="t-num font-semibold">{plan.audio.musicDb ?? -18} dB</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={-30}
+                    max={0}
+                    step={1}
+                    value={plan.audio.musicDb ?? -18}
+                    onChange={(e) =>
+                      void applyOps(
+                        [
+                          {
+                            op: 'update_audio',
+                            audio: {
+                              ...(plan.audio ?? {}),
+                              musicDb: Number(e.target.value),
+                            },
+                          },
+                        ],
+                        `Adjusted music volume to ${e.target.value} dB`
+                      )
+                    }
+                    className="w-full accent-[#C4FF2E] cursor-pointer"
+                  />
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(plan.audio.sidechainDuck)}
+                    onChange={(e) =>
+                      void applyOps(
+                        [
+                          {
+                            op: 'update_audio',
+                            audio: {
+                              ...(plan.audio ?? {}),
+                              sidechainDuck: e.target.checked,
+                            },
+                          },
+                        ],
+                        e.target.checked ? 'Enabled sidechain ducking' : 'Disabled sidechain ducking'
+                      )
+                    }
+                  />
+                  <span>Sidechain Ducking</span>
                 </label>
               </div>
             ) : selectedNote ? (

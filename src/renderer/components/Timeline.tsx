@@ -15,6 +15,7 @@ import type { TimelineOp } from '../../shared/schemas';
 
 type DragItemKind = 'shot' | 'cameraMove' | 'broll' | 'motionPlate' | 'caption';
 type DragMode = 'move' | 'trim-start' | 'trim-end';
+type DropTrackKind = 'video' | 'broll' | 'motion' | 'audio';
 
 interface DragState {
   kind: DragItemKind;
@@ -54,6 +55,9 @@ export const Timeline: React.FC<{ totalDuration: number }> = ({ totalDuration })
     setEditorLeftTab,
     trackVisibility,
     toggleTrackVisibility,
+    setAuditionMotionScene,
+    activeProjectSlug,
+    refreshVaultData,
   } = useStudioStore();
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -63,6 +67,7 @@ export const Timeline: React.FC<{ totalDuration: number }> = ({ totalDuration })
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [dragPreview, setDragPreview] = useState<{ start: number; end: number } | null>(null);
+  const [dropHover, setDropHover] = useState<{ track: DropTrackKind; timeSec: number } | null>(null);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -241,9 +246,217 @@ export const Timeline: React.FC<{ totalDuration: number }> = ({ totalDuration })
   const spanPx = (start: number, end: number) => Math.max(18, (end - start) * pxPerSec);
 
   const seekFromClientX = (el: HTMLDivElement, clientX: number) => {
+    setAuditionMotionScene(null);
     const rect = el.getBoundingClientRect();
     const x = Math.max(0, clientX - rect.left);
     setCurrentTimeSec(Number(Math.min(dur, x / pxPerSec).toFixed(2)));
+  };
+
+  const getDropTime = (el: HTMLDivElement, clientX: number) => {
+    const rect = el.getBoundingClientRect();
+    const x = Math.max(0, clientX - rect.left);
+    const raw = Math.min(dur, x / pxPerSec);
+    return Number((snapEnabled ? Math.round(raw * 10) / 10 : raw).toFixed(2));
+  };
+
+  const handleTrackDragOver = (e: React.DragEvent<HTMLDivElement>, track: DropTrackKind) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setDropHover({ track, timeSec: getDropTime(e.currentTarget, e.clientX) });
+  };
+
+  const handleTrackDrop = async (e: React.DragEvent<HTMLDivElement>, track: DropTrackKind) => {
+    e.preventDefault();
+    const dropTimeSec = getDropTime(e.currentTarget, e.clientX);
+    setDropHover(null);
+    setAuditionMotionScene(null);
+
+    const rawInternal = e.dataTransfer.getData('application/x-studio-item');
+    if (rawInternal) {
+      try {
+        const item = JSON.parse(rawInternal) as {
+          kind: string;
+          sceneId?: string;
+          name?: string;
+          duration?: number;
+          transparent?: boolean;
+          defaultProps?: Record<string, unknown>;
+          source?: string;
+          label?: string;
+          mediaKind?: string;
+        };
+        if (item.kind === 'motion-scene' && item.sceneId) {
+          const id = `mp_${Date.now()}`;
+          const end = Number((dropTimeSec + (item.duration || 5)).toFixed(2));
+          await applyOps(
+            [
+              {
+                op: 'add_motion_plate',
+                plate: {
+                  id,
+                  sceneId: item.sceneId,
+                  label: item.name || item.sceneId,
+                  start: dropTimeSec,
+                  end,
+                  transparent: Boolean(item.transparent),
+                  props: item.defaultProps ?? {},
+                },
+              },
+            ],
+            `Dropped ${item.name || item.sceneId} at ${dropTimeSec}s`
+          );
+          setSelectedItem({ kind: 'motionPlate', id });
+          setCurrentTimeSec(dropTimeSec);
+          return;
+        }
+        if (item.kind === 'studio-media' && item.source) {
+          const label = item.label || item.source;
+          if (track === 'audio' || item.mediaKind === 'audio') {
+            await applyOps(
+              [
+                {
+                  op: 'update_audio',
+                  audio: {
+                    ...(plan.audio ?? {}),
+                    musicTrack: item.source,
+                    musicDb: plan.audio?.musicDb ?? -18,
+                    sidechainDuck: plan.audio?.sidechainDuck ?? true,
+                  },
+                },
+              ],
+              `Set ${label} as music bed`
+            );
+            setSelectedItem({ kind: 'audioTrack' });
+          } else if (track === 'broll' || item.mediaKind === 'image') {
+            const id = `br_${Date.now()}`;
+            await applyOps(
+              [
+                {
+                  op: 'add_broll',
+                  broll: {
+                    id,
+                    label,
+                    source: item.source,
+                    kind: item.mediaKind === 'image' ? 'image' : 'video',
+                    start: dropTimeSec,
+                    end: Number((dropTimeSec + 4).toFixed(2)),
+                  },
+                },
+              ],
+              `Dropped B-roll ${label} at ${dropTimeSec}s`
+            );
+            setCurrentTimeSec(dropTimeSec);
+          } else {
+            const id = `shot_${Date.now()}`;
+            await applyOps(
+              [
+                {
+                  op: 'add_shot',
+                  shot: {
+                    id,
+                    source: item.source,
+                    label,
+                    start: dropTimeSec,
+                    end: Number((dropTimeSec + 5).toFixed(2)),
+                    srcIn: 0,
+                    speed: 1,
+                    volume: 1,
+                    transitionIn: 'cut',
+                    stabilize: false,
+                  },
+                },
+              ],
+              `Dropped shot ${label} at ${dropTimeSec}s`
+            );
+            setSelectedItem({ kind: 'shot', id });
+            setCurrentTimeSec(dropTimeSec);
+          }
+          return;
+        }
+      } catch {
+        // Ignore malformed drag payload
+      }
+    }
+
+    const files = Array.from(e.dataTransfer.files ?? []);
+    if (files.length > 0 && activeProjectSlug) {
+      const paths = files.map((f) => window.studio.getPathForFile(f)).filter(Boolean);
+      if (paths.length === 0) return;
+      const res = (await window.studio.registerMedia(activeProjectSlug, paths, 'link')) as {
+        registered?: Array<{ id: string; kind: string; uri: string; label?: string; durationSec?: number }>;
+      };
+      await refreshVaultData();
+      const ops: TimelineOp[] = [];
+      let cursor = dropTimeSec;
+      for (const asset of res?.registered ?? []) {
+        const label = asset.label || asset.id;
+        if (track === 'audio' || asset.kind === 'audio') {
+          ops.push({
+            op: 'update_audio',
+            audio: {
+              ...(plan.audio ?? {}),
+              musicTrack: asset.id,
+              musicDb: plan.audio?.musicDb ?? -18,
+              sidechainDuck: plan.audio?.sidechainDuck ?? true,
+            },
+          });
+        } else if (track === 'broll' || asset.kind === 'image') {
+          const durSec = asset.durationSec ? Math.min(5, asset.durationSec) : 4;
+          ops.push({
+            op: 'add_broll',
+            broll: {
+              id: `br_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
+              label,
+              source: asset.id,
+              kind: asset.kind === 'image' ? 'image' : 'video',
+              start: Number(cursor.toFixed(2)),
+              end: Number((cursor + durSec).toFixed(2)),
+            },
+          });
+          cursor += durSec;
+        } else {
+          const durSec = asset.durationSec ? Math.min(6, asset.durationSec) : 5;
+          ops.push({
+            op: 'add_shot',
+            shot: {
+              id: `shot_${Date.now()}_${Math.random().toString(36).slice(2, 5)}`,
+              assetId: asset.id,
+              source: asset.uri,
+              label,
+              start: Number(cursor.toFixed(2)),
+              end: Number((cursor + durSec).toFixed(2)),
+              srcIn: 0,
+              speed: 1,
+              volume: 1,
+              transitionIn: 'cut',
+              stabilize: false,
+            },
+          });
+          cursor += durSec;
+        }
+      }
+      if (ops.length > 0) {
+        await applyOps(ops, `Dropped ${ops.length} media file(s) onto ${track} track`);
+        setCurrentTimeSec(dropTimeSec);
+      }
+    }
+  };
+
+  const renderDropIndicator = (track: DropTrackKind) => {
+    if (!dropHover || dropHover.track !== track) return null;
+    return (
+      <div
+        className="absolute top-0 bottom-0 w-0.5 z-30 pointer-events-none"
+        style={{ left: toPx(dropHover.timeSec), backgroundColor: '#C4FF2E' }}
+      >
+        <span
+          className="absolute top-0.5 left-1 px-1 py-0.2 rounded text-[9px] font-semibold t-num whitespace-nowrap"
+          style={{ backgroundColor: '#C4FF2E', color: '#090B0A' }}
+        >
+          Drop @ {formatRulerTick(dropHover.timeSec)}
+        </span>
+      </div>
+    );
   };
 
   const handleFitZoom = () => {
@@ -636,13 +849,18 @@ export const Timeline: React.FC<{ totalDuration: number }> = ({ totalDuration })
             {renderTrackLabel('video', 'VIDEO / SHOTS', plan.shots.length || (plan.sourceVideo ? 1 : 0))}
             <div
               onClick={(e) => seekFromClientX(e.currentTarget, e.clientX)}
+              onDragOver={(e) => handleTrackDragOver(e, 'video')}
+              onDragLeave={() => setDropHover(null)}
+              onDrop={(e) => void handleTrackDrop(e, 'video')}
               className="relative border-b cursor-pointer"
               style={{
                 width: contentWidth,
-                borderColor: 'var(--border-subtle)',
+                borderColor: dropHover?.track === 'video' ? '#C4FF2E' : 'var(--border-subtle)',
+                backgroundColor: dropHover?.track === 'video' ? 'rgba(196, 255, 46, 0.06)' : undefined,
                 opacity: trackVisibility.video ? 1 : 0.35,
               }}
             >
+              {renderDropIndicator('video')}
               {plan.shots.length > 0 ? (
                 plan.shots.map((shot) => {
                   const range = getEffectiveRange('shot', shot);
@@ -652,6 +870,7 @@ export const Timeline: React.FC<{ totalDuration: number }> = ({ totalDuration })
                       key={shot.id}
                       onPointerDown={(e) => {
                         e.stopPropagation();
+                        setAuditionMotionScene(null);
                         setSelectedItem({ kind: 'shot', id: shot.id });
                         setCurrentTimeSec(shot.start);
                         setDragState({
@@ -820,13 +1039,18 @@ export const Timeline: React.FC<{ totalDuration: number }> = ({ totalDuration })
             {renderTrackLabel('broll', 'B-ROLL', plan.broll.length)}
             <div
               onClick={(e) => seekFromClientX(e.currentTarget, e.clientX)}
+              onDragOver={(e) => handleTrackDragOver(e, 'broll')}
+              onDragLeave={() => setDropHover(null)}
+              onDrop={(e) => void handleTrackDrop(e, 'broll')}
               className="relative border-b cursor-pointer"
               style={{
                 width: contentWidth,
-                borderColor: 'var(--border-subtle)',
+                borderColor: dropHover?.track === 'broll' ? '#5EEAD4' : 'var(--border-subtle)',
+                backgroundColor: dropHover?.track === 'broll' ? 'rgba(20, 184, 166, 0.08)' : undefined,
                 opacity: trackVisibility.broll ? 1 : 0.35,
               }}
             >
+              {renderDropIndicator('broll')}
               {plan.broll.map((b, idx) => {
                 const range = getEffectiveRange('broll', { id: b.id, index: idx, start: b.start, end: b.end });
                 const selected = selectedItem?.kind === 'broll' && selectedItem.index === idx;
@@ -835,6 +1059,7 @@ export const Timeline: React.FC<{ totalDuration: number }> = ({ totalDuration })
                     key={b.id ?? idx}
                     onPointerDown={(e) => {
                       e.stopPropagation();
+                      setAuditionMotionScene(null);
                       setSelectedItem({ kind: 'broll', index: idx });
                       setCurrentTimeSec(b.start);
                       setDragState({
@@ -905,13 +1130,18 @@ export const Timeline: React.FC<{ totalDuration: number }> = ({ totalDuration })
             {renderTrackLabel('motion', 'MOTION PLATES', plan.motionPlates.length)}
             <div
               onClick={(e) => seekFromClientX(e.currentTarget, e.clientX)}
+              onDragOver={(e) => handleTrackDragOver(e, 'motion')}
+              onDragLeave={() => setDropHover(null)}
+              onDrop={(e) => void handleTrackDrop(e, 'motion')}
               className="relative border-b cursor-pointer"
               style={{
                 width: contentWidth,
-                borderColor: 'var(--border-subtle)',
+                borderColor: dropHover?.track === 'motion' ? '#C4B5FD' : 'var(--border-subtle)',
+                backgroundColor: dropHover?.track === 'motion' ? 'rgba(139, 92, 246, 0.08)' : undefined,
                 opacity: trackVisibility.motion ? 1 : 0.35,
               }}
             >
+              {renderDropIndicator('motion')}
               {plan.motionPlates.map((p) => {
                 const range = getEffectiveRange('motionPlate', p);
                 const selected = selectedItem?.kind === 'motionPlate' && selectedItem.id === p.id;
@@ -920,6 +1150,7 @@ export const Timeline: React.FC<{ totalDuration: number }> = ({ totalDuration })
                     key={p.id}
                     onPointerDown={(e) => {
                       e.stopPropagation();
+                      setAuditionMotionScene(null);
                       setSelectedItem({ kind: 'motionPlate', id: p.id });
                       setCurrentTimeSec(p.start);
                       setDragState({
@@ -1066,23 +1297,36 @@ export const Timeline: React.FC<{ totalDuration: number }> = ({ totalDuration })
             {renderTrackLabel('audio', 'AUDIO & SFX', (plan.audio?.musicTrack ? 1 : 0) + sfxList.length, false)}
             <div
               onClick={(e) => seekFromClientX(e.currentTarget, e.clientX)}
+              onDragOver={(e) => handleTrackDragOver(e, 'audio')}
+              onDragLeave={() => setDropHover(null)}
+              onDrop={(e) => void handleTrackDrop(e, 'audio')}
               className="relative cursor-pointer"
               style={{
                 width: contentWidth,
+                backgroundColor: dropHover?.track === 'audio' ? 'rgba(0, 212, 170, 0.08)' : undefined,
                 opacity: trackVisibility.audio ? 1 : 0.35,
               }}
             >
+              {renderDropIndicator('audio')}
               {plan.audio?.musicTrack && (
-                <div
-                  className="absolute inset-y-1.5 left-0 rounded-md px-2.5 flex items-center text-[11px] font-semibold"
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAuditionMotionScene(null);
+                    setSelectedItem({ kind: 'audioTrack' });
+                  }}
+                  className="absolute inset-y-1.5 left-0 rounded-md px-2.5 flex items-center text-[11px] font-semibold cursor-pointer border"
                   style={{
                     width: toPx(dur),
                     backgroundColor: 'var(--accent-mint)',
                     color: 'var(--accent-mint-ink)',
+                    borderColor: selectedItem?.kind === 'audioTrack' ? '#FFFFFF' : 'transparent',
                   }}
+                  title="Click to adjust music bed volume & ducking"
                 >
-                  Music Bed ({plan.audio.sidechainDuck ? 'Sidechain Ducking On' : 'Flat'})
-                </div>
+                  Music Bed: {plan.audio.musicTrack} ({plan.audio.musicDb ?? -18} dB ·{' '}
+                  {plan.audio.sidechainDuck ? 'Ducking On' : 'Flat'})
+                </button>
               )}
               {sfxList.map((s, idx) => (
                 <div

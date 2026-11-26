@@ -305,9 +305,9 @@ function registerIpcHandlers(): void {
   );
   ipcMain.handle('projects:importMediaDialog', async (_, slug: string) => {
     const res = await dialog.showOpenDialog({
-      title: 'Import Video or Audio Footage',
+      title: 'Import Video, Audio, or Image Footage',
       properties: ['openFile'],
-      filters: [{ name: 'Media', extensions: ['mp4', 'mov', 'webm', 'mkv', 'mp3', 'wav', 'm4a'] }],
+      filters: [{ name: 'Media', extensions: ['mp4', 'mov', 'webm', 'mkv', 'mp3', 'wav', 'm4a', 'png', 'jpg', 'jpeg', 'webp'] }],
     });
     if (res.canceled || res.filePaths.length === 0) return null;
     return importMediaToProject(requireVault(), slug, res.filePaths[0], true);

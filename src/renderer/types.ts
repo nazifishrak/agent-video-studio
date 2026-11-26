@@ -133,6 +133,7 @@ export interface StudioApi {
   syncStudioContext: (ctx: Record<string, unknown>) => Promise<{ synced: boolean }>;
   openExternalUrl: (url: string) => Promise<boolean>;
   openInExternalTerminal: () => Promise<{ opened: boolean; app: string; cwd: string }>;
+  getPathForFile: (file: File) => string;
   terminalStart: (opts: {
     sessionId: number;
     cols: number;

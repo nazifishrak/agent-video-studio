@@ -263,6 +263,7 @@ export async function exportProjectVideo(opts: ExportProjectOptions): Promise<Ex
   const maxTimelineEnd = Math.max(
     10,
     ...plan.shots.map((s) => s.end),
+    ...plan.broll.map((b) => b.end),
     ...plan.captions.map((c) => c.end),
     ...plan.motionPlates.map((p) => p.end)
   );
@@ -300,6 +301,33 @@ export async function exportProjectVideo(opts: ExportProjectOptions): Promise<Ex
     if (c !== 1 || s !== 1 || b !== 0) {
       filterParts.push(`${videoLabel}eq=contrast=${c}:saturation=${s}:brightness=${b}[vgrade]`);
       videoLabel = '[vgrade]';
+    }
+  }
+
+  // Composite B-Roll cutaway beats
+  if (plan.broll.length > 0) {
+    onProgress?.(25, `Compositing ${plan.broll.length} B-roll beat(s)...`);
+    for (let i = 0; i < plan.broll.length; i++) {
+      const b = plan.broll[i];
+      const brollPath = resolveProjectFileUri(projectDir, b.source, plan);
+      if (!brollPath) continue;
+      const isImage = b.kind === 'image' || /\.(png|jpe?g|webp)$/i.test(brollPath);
+      const dur = Math.max(0.1, b.end - b.start);
+      const bIdx = inputIdx++;
+      if (isImage) {
+        args.push('-loop', '1', '-t', String(dur), '-i', brollPath);
+      } else {
+        args.push('-ss', String(b.srcIn || 0), '-t', String(dur), '-i', brollPath);
+      }
+      const brTag = `[br${i}]`;
+      const outTag = `[vbr${i}]`;
+      filterParts.push(
+        `[${bIdx}:v]scale=${outW}:${outH}:force_original_aspect_ratio=increase:flags=lanczos,crop=${outW}:${outH},setsar=1,fps=${fps},setpts=PTS-STARTPTS+${b.start.toFixed(3)}/TB${brTag}`
+      );
+      filterParts.push(
+        `${videoLabel}${brTag}overlay=0:0:enable='between(t,${b.start.toFixed(3)},${b.end.toFixed(3)})':eof_action=pass${outTag}`
+      );
+      videoLabel = outTag;
     }
   }
 

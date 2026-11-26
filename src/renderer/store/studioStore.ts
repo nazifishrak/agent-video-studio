@@ -26,8 +26,14 @@ export type SelectedTimelineItem =
   | { kind: 'cameraMove'; index: number }
   | { kind: 'broll'; index: number }
   | { kind: 'shot'; id: string }
+  | { kind: 'audioTrack' }
   | { kind: 'reviewNote'; id: string }
   | null;
+
+export interface AuditionMotionEntry {
+  scene: MotionSceneMeta;
+  props: Record<string, unknown>;
+}
 
 interface StudioStore {
   initialized: boolean;
@@ -56,6 +62,7 @@ interface StudioStore {
   trackVisibility: Record<TrackKey, boolean>;
   mediaRevision: number;
   liveSyncNotice: LiveSyncNotice | null;
+  auditionMotionScene: AuditionMotionEntry | null;
 
   contextChips: ContextChip[];
   agentDrawerOpen: boolean;
@@ -78,6 +85,7 @@ interface StudioStore {
   toggleTrackVisibility: (key: TrackKey) => void;
   bumpMediaRevision: () => void;
   setLiveSyncNotice: (notice: LiveSyncNotice | null) => void;
+  setAuditionMotionScene: (entry: AuditionMotionEntry | null) => void;
 
   pinContextChip: (chip: Omit<ContextChip, 'id'>) => void;
   removeContextChip: (id: string) => void;
@@ -130,6 +138,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   },
   mediaRevision: 1,
   liveSyncNotice: null,
+  auditionMotionScene: null,
 
   contextChips: [],
   agentDrawerOpen: false,
@@ -208,6 +217,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       activeProjectSlug: slug,
       projectState,
       previewTokensOverride: null,
+      auditionMotionScene: null,
       currentTimeSec: 0,
       isPlaying: false,
       selectedItem: null,
@@ -215,7 +225,11 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   },
 
   setCurrentTimeSec: (t) => set({ currentTimeSec: Math.max(0, t) }),
-  setIsPlaying: (playing) => set({ isPlaying: playing }),
+  setIsPlaying: (playing) =>
+    set((s) => ({
+      isPlaying: playing,
+      auditionMotionScene: playing ? null : s.auditionMotionScene,
+    })),
   setSelectedItem: (item) => set({ selectedItem: item }),
   setPreviewTokensOverride: (tokens) => set({ previewTokensOverride: tokens }),
   toggleTrackVisibility: (key) =>
@@ -224,6 +238,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
     })),
   bumpMediaRevision: () => set((s) => ({ mediaRevision: s.mediaRevision + 1 })),
   setLiveSyncNotice: (notice) => set({ liveSyncNotice: notice }),
+  setAuditionMotionScene: (entry) => set({ auditionMotionScene: entry }),
 
   pinContextChip: (chip) =>
     set((s) => ({

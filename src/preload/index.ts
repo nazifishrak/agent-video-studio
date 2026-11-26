@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { BrandTokens } from '../shared/designTokens.js';
 import type { StudioUiCommand } from '../shared/liveContext.js';
 import type {
@@ -78,6 +78,7 @@ export const studioApi = {
   syncStudioContext: (ctx: Record<string, unknown>) => ipcRenderer.invoke('studio:syncContext', ctx),
   openExternalUrl: (url: string) => ipcRenderer.invoke('studio:openExternalUrl', url),
   openInExternalTerminal: () => ipcRenderer.invoke('terminal:openExternal'),
+  getPathForFile: (file: File) => webUtils.getPathForFile(file),
   terminalStart: (opts: { sessionId: number; cols: number; rows: number; initialCommand?: string }) =>
     ipcRenderer.invoke('terminal:start', opts),
   terminalWrite: (data: string) => ipcRenderer.send('terminal:write', data),
