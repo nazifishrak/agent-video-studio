@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>38 / Testimonial Card</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.tc { max-width:1380px; margin:0 auto; padding:68px 74px; display:flex; flex-direction:column; gap:36px; }
+        .mt { font-size:24px; font-weight:700; color:var(--accent-primary); background:var(--accent-soft); padding:10px 22px; border-radius:12px; width:fit-content; }
+        .q { font-size:56px; line-height:1.22; }
+        .au { font-size:28px; font-weight:600; }
+        .ro { font-size:22px; color:var(--text-muted); margin-top:4px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "38-testimonial-quote-card", "number": "38", "name": "Testimonial Card", "category": "Social Proof & Trust", "inspiration": "Notion / YC", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"quote": "We replaced a $15k monthly agency and doubled our organic reach in the first 30 days.", "author": "Elena Rostova", "role": "Head of Growth / Relay", "metric": "2.1x Organic Reach"},
+      mount(p) {
+root.innerHTML = `<div class="card tc" id="tc"><div class="mt">${p.metric}</div><div class="t-display q">“${p.quote}”</div><div><div class="au">${p.author}</div><div class="ro">${p.role}</div></div></div>`;
+      },
+      render(t, p) {
+const pr=prog(t,0.15,0.75,'expo.out'); el('tc').style.opacity=pr; el('tc').style.transform=`translateY(${lerp(36,0,pr)}px) scale(${lerp(0.96,1,pr)})`;
+      }
+    });
+  </script>
+</body>
+</html>

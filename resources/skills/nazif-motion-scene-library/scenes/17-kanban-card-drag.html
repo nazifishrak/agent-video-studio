@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>17 / Kanban Card Drag</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.cols { display:grid; grid-template-columns:repeat(3,1fr); gap:36px; height:720px; position:relative; }
+        .col { padding:32px; display:flex; flex-direction:column; gap:22px; }
+        .ct { font-size:28px; font-weight:700; color:var(--text-muted); }
+        .ghost { height:170px; border-radius:20px; border:2px dashed var(--border-subtle); }
+        .drag { position:absolute; width:460px; padding:32px; left:32px; top:112px; z-index:10; }
+        .dt { font-size:30px; font-weight:700; }
+        .dm { font-size:22px; color:var(--text-muted); margin-top:8px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "17-kanban-card-drag", "number": "17", "name": "Kanban Card Drag", "category": "Product UI & Micro-Demos", "inspiration": "Linear / Jira", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"col1": "In Review", "col2": "Approved", "col3": "Shipped", "cardTitle": "Launch Film Cut v3", "cardMeta": "4K Motion Plates"},
+      mount(p) {
+root.innerHTML = `<div class="cols">
+          <div class="card col"><div class="ct">${p.col1}</div><div class="ghost"></div></div>
+          <div class="card col"><div class="ct">${p.col2}</div><div class="ghost"></div></div>
+          <div class="card col" id="c3"><div class="ct">${p.col3}</div><div class="ghost"></div></div>
+          <div class="card drag" id="dg"><div class="dt">${p.cardTitle}</div><div class="dm">${p.cardMeta}</div></div>
+        </div>`;
+      },
+      render(t, p) {
+const m1=prog(t,0.75,1.1,'power3.inOut'), m2=prog(t,2.2,1.1,'power3.inOut');
+        const x=m1*565 + m2*565;
+        const lift=Math.sin(m1*Math.PI)*-26 + Math.sin(m2*Math.PI)*-26;
+        const rot=Math.sin(m1*Math.PI)*3 + Math.sin(m2*Math.PI)*3;
+        el('dg').style.transform=`translate(${x}px, ${lift}px) rotate(${rot}deg)`;
+        el('dg').style.borderColor=t>3.25?'var(--status-positive)':'var(--accent-primary)';
+      }
+    });
+  </script>
+</body>
+</html>

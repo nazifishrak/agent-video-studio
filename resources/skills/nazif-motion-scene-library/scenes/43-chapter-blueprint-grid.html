@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>43 / Chapter Blueprint Card</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.scene-root { background:#121316; color:#FFFFFF; }
+        .grid-bg { position:absolute; inset:0; background-image:radial-gradient(rgba(255,255,255,0.22) 2px, transparent 2px); background-size:64px 64px; opacity:0.5; }
+        .wrap { position:relative; z-index:4; display:flex; flex-direction:column; align-items:center; text-align:center; gap:26px; }
+        .num { font-size:26px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent-warm); }
+        .hl { font-size:108px; color:#FFFFFF; letter-spacing:0.04em; }
+        .line { width:260px; height:4px; background:var(--accent-warm); transform-origin:center; }
+        .sb { font-size:32px; color:#94A3B8; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "43-chapter-blueprint-grid", "number": "43", "name": "Chapter Blueprint Card", "category": "Chapters & Pacing", "inspiration": "Jeff Su / Documentary", "duration": 4.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"num": "Chapter 02", "title": "THE MOTION SYSTEM", "sub": "Decoupled scenes driven by a single DESIGN.md contract"},
+      mount(p) {
+root.innerHTML = `<div class="grid-bg"></div><div class="wrap"><div class="num" id="nm">${p.num}</div><div class="line" id="ln"></div><div class="t-display hl" id="hl">${p.title}</div><div class="sb" id="sb">${p.sub}</div></div>`;
+      },
+      render(t, p) {
+const l=prog(t,0.12,0.55,'expo.out'), h=prog(t,0.35,0.7,'expo.out'), s=prog(t,0.75,0.5,'power3.out');
+        el('ln').style.transform=`scaleX(${l})`;
+        el('nm').style.opacity=l; el('hl').style.opacity=h; el('hl').style.transform=`translateY(${lerp(28,0,h)}px)`;
+        el('sb').style.opacity=s;
+      }
+    });
+  </script>
+</body>
+</html>

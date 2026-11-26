@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>24 / Parallel Agent Lanes</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { text-align:center; font-size:60px; margin-bottom:52px; }
+        .lanes { display:flex; flex-direction:column; gap:28px; }
+        .ln { padding:34px 42px; display:flex; flex-direction:column; gap:18px; }
+        .top { display:flex; justify-content:space-between; font-size:28px; font-weight:600; }
+        .tr { height:18px; border-radius:999px; background:var(--surface-well); overflow:hidden; }
+        .fl { height:100%; background:var(--accent-primary); transform-origin:left; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "24-multi-agent-parallel", "number": "24", "name": "Parallel Agent Lanes", "category": "Workflows & Agents", "inspiration": "Coldtea / AI Dev", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Three streams running in parallel", "lanes": [["Stream 01", "A-Cut Clean Edit"], ["Stream 02", "Motion Plates Render"], ["Stream 03", "Audio Mix & Polish"]]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd" id="hd">${p.title}</div>
+        <div class="lanes">${p.lanes.map((l,i)=>`<div class="card ln" id="l${i}"><div class="top"><span>${l[0]} / ${l[1]}</span><span class="t-num" id="p${i}" style="color:var(--accent-primary)">0%</span></div><div class="tr"><div class="fl" id="f${i}"></div></div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+el('hd').style.opacity=prog(t,0.1,0.5,'expo.out');
+        p.lanes.forEach((_,i)=>{
+          const ent=prog(t,0.22+i*0.14,0.45,'expo.out'); el('l'+i).style.opacity=ent; el('l'+i).style.transform=`translateY(${lerp(26,0,ent)}px)`;
+          const fp=prog(t,0.75+i*0.25,2.2,'power2.inOut');
+          el('f'+i).style.transform=`scaleX(${fp})`; el('p'+i).textContent=`${Math.round(fp*100)}%`;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>50 / Three-Step Onboarding</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { text-align:center; font-size:62px; margin-bottom:56px; }
+        .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:36px; }
+        .st { padding:48px 40px; display:flex; flex-direction:column; gap:18px; }
+        .nm { font-size:26px; font-weight:700; color:var(--accent-primary); }
+        .tt { font-size:38px; font-weight:700; }
+        .ds { font-size:26px; color:var(--text-muted); line-height:1.4; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "50-three-step-how-it-works", "number": "50", "name": "Three-Step Onboarding", "category": "Features & CTAs", "inspiration": "Stripe / Notion", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "From script to final cut", "steps": [["01", "Drop DESIGN.md", "Compile colors and fonts to tokens"], ["02", "Pick Scenes", "Pass dynamic copy via JSON props"], ["03", "Render Plates", "Export MP4 or alpha overlays"]]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd">${p.title}</div>
+        <div class="grid">${p.steps.map((s,i)=>`<div class="card st" id="s${i}"><div class="nm t-num">${s[0]}</div><div class="tt">${s[1]}</div><div class="ds">${s[2]}</div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+p.steps.forEach((_,i)=>{ const pr=prog(t,0.22+i*0.38,0.55,'expo.out'); el('s'+i).style.opacity=pr; el('s'+i).style.transform=`translateY(${lerp(38,0,pr)}px)`; });
+      }
+    });
+  </script>
+</body>
+</html>

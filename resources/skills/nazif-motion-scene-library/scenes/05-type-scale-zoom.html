@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>05 / Optical Type Zoom</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; align-items:center; text-align:center; gap:28px; }
+        .ey { font-size:26px; font-weight:600; color:var(--accent-primary); text-transform:uppercase; letter-spacing:0.08em; }
+        .hl { font-size:138px; }
+        .dt { font-size:36px; color:var(--text-muted); max-width:980px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "05-type-scale-zoom", "number": "05", "name": "Optical Type Zoom", "category": "Kinetic Typography", "inspiration": "Apple / Jeff Su", "duration": 4.5, "fps": 30, "transparent_ready": false},
+      defaultProps: {"eyebrow": "Introducing v2.0", "headline": "Zero busywork.", "detail": "Every repetitive step automated cleanly in the background."},
+      mount(p) {
+root.innerHTML = `<div class="wrap" id="w">
+          <div class="ey" id="ey">${p.eyebrow}</div>
+          <div class="t-display hl" id="hl">${p.headline}</div>
+          <div class="dt" id="dt">${p.detail}</div>
+        </div>`;
+      },
+      render(t, p) {
+const z=prog(t,0.12,0.9,'expo.out'), d=prog(t,0.75,0.65,'power3.out');
+        el('hl').style.opacity=z; el('hl').style.transform=`scale(${lerp(1.18,1,z)})`; el('hl').style.filter=`blur(${lerp(16,0,z).toFixed(1)}px)`;
+        el('ey').style.opacity=z; el('dt').style.opacity=d; el('dt').style.transform=`translateY(${lerp(24,0,d)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,381 @@
+@import "tailwindcss";
+
+@theme {
+  /* Studio Dark */
+  --color-obsidian-950: #090B0A;
+  --color-obsidian-900: #141816;
+  --color-obsidian-800: #1E2421;
+  --color-obsidian-700: #28302C;
+
+  /* Editorial Light */
+  --color-chalk-50: #F6F9F4;
+  --color-chalk-100: #EBF1E7;
+  --color-chalk-200: #DCE5D8;
+
+  /* Brand & Timeline Accents */
+  --color-volt-400: #C4FF2E;
+  --color-volt-ink: #141A13;
+  --color-mint-400: #00D4AA;
+  --color-mint-600: #00A887;
+  --color-electric-500: #2E6BFF;
+  --color-electric-600: #2458E6;
+}
+
+:root,
+[data-theme="dark"] {
+  --bg-canvas: #090B0A;
+  --bg-surface: #141816;
+  --bg-surface-alt: #1E2421;
+  --text-primary: #F4F7F5;
+  --text-secondary: #A9B8B0;
+  --border-subtle: #28302C;
+
+  --accent-primary: #C4FF2E;
+  --accent-primary-ink: #090B0A;
+  --accent-primary-border: #C4FF2E;
+  --tab-active-bg: #C4FF2E;
+  --tab-active-ink: #090B0A;
+  --playhead-color: #C4FF2E;
+  --accent-mint: #00D4AA;
+  --accent-mint-ink: #061A15;
+  --accent-blue: #2E6BFF;
+  --accent-blue-ink: #FFFFFF;
+
+  --mesh-hero: linear-gradient(125deg, #C4FF2E 0%, #00D4AA 52%, #2E6BFF 100%);
+  --mesh-opacity: 0.26;
+
+  --overlay-scrim: rgba(9, 11, 10, 0.72);
+  --danger: #FF4D6A;
+}
+
+[data-theme="light"] {
+  --bg-canvas: #F6F9F4;
+  --bg-surface: #FFFFFF;
+  --bg-surface-alt: #EBF1E7;
+  --text-primary: #0F1410;
+  --text-secondary: #4F5D52;
+  --border-subtle: #DCE5D8;
+
+  --accent-primary: #C4FF2E;
+  --accent-primary-ink: #090B0A;
+  --accent-primary-border: rgba(9, 11, 10, 0.16);
+  --tab-active-bg: #0F1410;
+  --tab-active-ink: #FFFFFF;
+  --playhead-color: #0F1410;
+  --accent-mint: #00A887;
+  --accent-mint-ink: #FFFFFF;
+  --accent-blue: #2458E6;
+  --accent-blue-ink: #FFFFFF;
+
+  --mesh-hero: linear-gradient(
+    125deg,
+    rgba(196, 255, 46, 0.34) 0%,
+    rgba(0, 212, 170, 0.22) 52%,
+    rgba(46, 107, 255, 0.16) 100%
+  );
+  --mesh-opacity: 0.85;
+
+  --overlay-scrim: rgba(15, 20, 16, 0.56);
+  --danger: #DC2626;
+}
+
+:root {
+  --font-app: "Google Sans Flex", sans-serif;
+  --bg-app: var(--bg-canvas);
+  --bg-panel: var(--bg-surface);
+  --bg-soft: var(--bg-surface-alt);
+  --border-hairline: var(--border-subtle);
+  --ink: var(--text-primary);
+}
+
+* {
+  box-sizing: border-box;
+  font-family: "Google Sans Flex", sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: "Google Sans Flex", sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea,
+code,
+pre {
+  font-family: "Google Sans Flex", sans-serif;
+}
+
+/* Native fixed-cell metrics scoped strictly to the interactive xterm.js canvas */
+.xterm,
+.xterm * {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+.t-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stripe-Style Diagonal Hero Mesh Ribbon */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+}
+
+.hero-mesh-ribbon {
+  position: absolute;
+  inset: -35% -15% auto -15%;
+  height: 360px;
+  transform: skewY(-6deg);
+  background: var(--mesh-hero);
+  opacity: var(--mesh-opacity);
+  pointer-events: none;
+}
+
+.display-editorial {
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+}
+
+.eyebrow-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  color: var(--text-secondary);
+}
+
+.caption-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  line-height: 1.1;
+  color: var(--text-secondary);
+}
+
+.btn-primary {
+  background-color: var(--accent-primary);
+  color: var(--accent-primary-ink);
+  border: 1px solid var(--accent-primary-border);
+  border-radius: 50px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: opacity 0.15s ease;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  opacity: 0.88;
+}
+
+.btn-secondary {
+  background-color: var(--bg-surface-alt);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 50px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  transition: opacity 0.15s ease;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  opacity: 0.85;
+}
+
+.btn-icon {
+  background-color: var(--bg-surface-alt);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.btn-icon:hover {
+  opacity: 0.85;
+}
+
+.pill-tab {
+  border-radius: 50px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text-secondary);
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.pill-tab:hover {
+  background-color: var(--bg-surface-alt);
+  color: var(--text-primary);
+}
+
+.pill-tab-active {
+  border-radius: 50px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  background-color: var(--tab-active-bg);
+  color: var(--tab-active-ink);
+  cursor: pointer;
+}
+
+.checkerboard {
+  background-color: var(--bg-surface-alt);
+  background-image:
+    linear-gradient(45deg, rgba(128, 128, 128, 0.14) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(128, 128, 128, 0.14) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(128, 128, 128, 0.14) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(128, 128, 128, 0.14) 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Rendered Markdown Typography */
+.md-prose {
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.65;
+  font-weight: 400;
+}
+.md-prose h1 {
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  margin: 0 0 16px 0;
+  color: var(--text-primary);
+}
+.md-prose h2 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  margin: 24px 0 10px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+.md-prose h3 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 18px 0 8px 0;
+  color: var(--text-primary);
+}
+.md-prose p {
+  margin: 0 0 12px 0;
+  color: var(--text-primary);
+}
+.md-prose ul,
+.md-prose ol {
+  margin: 0 0 14px 0;
+  padding-left: 20px;
+}
+.md-prose ul {
+  list-style-type: disc;
+}
+.md-prose ol {
+  list-style-type: decimal;
+}
+.md-prose li {
+  margin: 5px 0;
+  color: var(--text-primary);
+}
+.md-prose li > ul,
+.md-prose li > ol {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.md-prose strong {
+  font-weight: 650;
+  color: var(--text-primary);
+}
+.md-prose em {
+  color: var(--text-secondary);
+}
+.md-prose blockquote {
+  margin: 12px 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent-primary);
+  background-color: var(--bg-surface-alt);
+  border-radius: 0 10px 10px 0;
+  color: var(--text-secondary);
+}
+.md-prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+.md-prose hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 20px 0;
+}
+.md-prose code {
+  background-color: var(--bg-surface-alt);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.md-prose pre {
+  background-color: var(--bg-surface-alt);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.md-prose pre code {
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+.md-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 13px;
+}
+.md-prose th,
+.md-prose td {
+  border: 1px solid var(--border-subtle);
+  padding: 8px 10px;
+  text-align: left;
+}
+.md-prose th {
+  background-color: var(--bg-surface-alt);
+  font-weight: 600;
+}
+
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 9999px;
+}

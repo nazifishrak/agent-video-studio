@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>51 / Pricing Tier Spotlight</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:36px; align-items:center; }
+        .tr { padding:52px 42px; display:flex; flex-direction:column; gap:18px; text-align:center; }
+        .nm { font-size:28px; font-weight:600; color:var(--text-muted); }
+        .pr { font-size:84px; }
+        .ds { font-size:26px; color:var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "51-pricing-tier-spotlight", "number": "51", "name": "Pricing Tier Spotlight", "category": "Features & CTAs", "inspiration": "SaaS Launch", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"tiers": [["Starter", "$0", "Upfront fee"], ["Growth", "CPM", "Pay only for views"], ["Enterprise", "Custom", "Dedicated roster"]]},
+      mount(p) {
+root.innerHTML = `<div class="grid">${p.tiers.map((x,i)=>`<div class="card tr" id="tr${i}"><div class="nm">${x[0]}</div><div class="t-display pr">${x[1]}</div><div class="ds">${x[2]}</div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+const sp=prog(t,1.2,0.55,'back.out(1.4)');
+        p.tiers.forEach((_,i)=>{
+          const e=prog(t,0.18+i*0.16,0.5,'expo.out');
+          const mid=i===1;
+          el('tr'+i).style.opacity=e*(mid?1:lerp(1,0.5,sp));
+          el('tr'+i).style.transform=`translateY(${lerp(36,0,e)}px) scale(${mid?lerp(1,1.06,sp):1})`;
+          el('tr'+i).style.borderColor=(mid&&sp>0.3)?'var(--accent-primary)':'var(--border-subtle)';
+        });
+      }
+    });
+  </script>
+</body>
+</html>

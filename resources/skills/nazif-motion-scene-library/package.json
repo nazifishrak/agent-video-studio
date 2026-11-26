@@ -1,0 +1,12 @@
+{
+  "name": "nazif-animation-artifacts",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "54 decoupled, DESIGN.md-driven motion scenes for AI video agents",
+  "scripts": {
+    "render": "node scripts/render_scene.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

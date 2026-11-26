@@ -1,0 +1,1334 @@
+{
+  "count": 60,
+  "scenes": [
+    {
+      "id": "01-kinetic-hook-mask",
+      "number": "01",
+      "name": "Kinetic Hook Mask",
+      "category": "Kinetic Typography",
+      "inspiration": "Apple / Ali Abdaal",
+      "duration": 4.8,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/01-kinetic-hook-mask.html",
+      "description": "Opening hook headline with masked slide-up and inline highlight sweep",
+      "default_props": {
+        "kicker": "Product Launch",
+        "line1": "Creator marketing",
+        "line2": "without the chaos",
+        "sub": "End-to-end campaigns built for teams that only pay for real results."
+      }
+    },
+    {
+      "id": "02-word-beat-stomp",
+      "number": "02",
+      "name": "Word Beat Stomp",
+      "category": "Kinetic Typography",
+      "inspiration": "Apple Keynote",
+      "duration": 4.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/02-word-beat-stomp.html",
+      "description": "Fast rhythmic word-by-word beat lockup synced to music hits",
+      "default_props": {
+        "words": [
+          "Faster.",
+          "Cleaner.",
+          "Built for scale."
+        ],
+        "sub": "Engineered from the ground up for modern product teams."
+      }
+    },
+    {
+      "id": "03-editorial-pullquote",
+      "number": "03",
+      "name": "Editorial Pullquote",
+      "category": "Kinetic Typography",
+      "inspiration": "Stripe / Editorial",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/03-editorial-pullquote.html",
+      "description": "Large editorial statement with rising hairline rule and attribution",
+      "default_props": {
+        "quote": "Good software removes the work you never wanted to do in the first place.",
+        "author": "Maya Chen",
+        "role": "VP of Product / Northstar"
+      }
+    },
+    {
+      "id": "04-kinetic-flip-verb",
+      "number": "04",
+      "name": "Kinetic Flip Verb",
+      "category": "Kinetic Typography",
+      "inspiration": "Linear / Vercel",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/04-kinetic-flip-verb.html",
+      "description": "Static prefix paired with vertical slot-machine verb cycling",
+      "default_props": {
+        "prefix": "One workspace to",
+        "verbs": [
+          "plan",
+          "build",
+          "review",
+          "ship"
+        ],
+        "suffix": "faster."
+      }
+    },
+    {
+      "id": "05-type-scale-zoom",
+      "number": "05",
+      "name": "Optical Type Zoom",
+      "category": "Kinetic Typography",
+      "inspiration": "Apple / Jeff Su",
+      "duration": 4.5,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/05-type-scale-zoom.html",
+      "description": "Depth-of-field blur-to-sharp zoom settle on a bold hero claim",
+      "default_props": {
+        "eyebrow": "Introducing v2.0",
+        "headline": "Zero busywork.",
+        "detail": "Every repetitive step automated cleanly in the background."
+      }
+    },
+    {
+      "id": "06-lower-third-clean",
+      "number": "06",
+      "name": "Clean Lower Third",
+      "category": "Kinetic Typography",
+      "inspiration": "Broadcast / YouTube",
+      "duration": 4.5,
+      "fps": 30,
+      "transparent_ready": true,
+      "file": "scenes/06-lower-third-clean.html",
+      "description": "Transparent-ready speaker nameplate and role bar sliding from bottom-left",
+      "default_props": {
+        "name": "Nazif Ishrak",
+        "role": "Solutions Engineer / Product Demo"
+      }
+    },
+    {
+      "id": "07-problem-split-dim",
+      "number": "07",
+      "name": "Problem Split Dim",
+      "category": "Problem & Comparison",
+      "inspiration": "Ali Abdaal / Jeff Su",
+      "duration": 5.4,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/07-problem-split-dim.html",
+      "description": "Two-column comparison where the first card dims as focus shifts to the second",
+      "default_props": {
+        "title": "Why campaigns stall",
+        "leftTitle": "Traditional Agency",
+        "leftTag": "High Overhead",
+        "leftRows": [
+          "Upfront monthly retainers",
+          "Six-week turnaround",
+          "No view guarantee"
+        ],
+        "rightTitle": "In-House Manual",
+        "rightTag": "Team Bottleneck",
+        "rightRows": [
+          "Cold DMing 200 creators",
+          "Contracts and briefs",
+          "Chasing invoices"
+        ]
+      }
+    },
+    {
+      "id": "08-before-after-wipe",
+      "number": "08",
+      "name": "Before / After Wipe",
+      "category": "Problem & Comparison",
+      "inspiration": "Linear / Framer",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/08-before-after-wipe.html",
+      "description": "Vertical divider clip-path wipe transforming old workflow into new workflow",
+      "default_props": {
+        "title": "Manual workflow vs. Automated",
+        "beforeTag": "Before",
+        "beforeHeadline": "14 tabs, 6 spreadsheets.",
+        "beforeSub": "Hours lost every week copying updates across tools.",
+        "afterTag": "After",
+        "afterHeadline": "One unified timeline.",
+        "afterSub": "Every approval, brief, and payout synced automatically."
+      }
+    },
+    {
+      "id": "09-pricing-strikethrough",
+      "number": "09",
+      "name": "Pricing Strikethrough",
+      "category": "Problem & Comparison",
+      "inspiration": "Ali Abdaal / Ramp",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/09-pricing-strikethrough.html",
+      "description": "Eliminates pricing objections with animated red strikethroughs before elevating hero offer",
+      "default_props": {
+        "c1": "Retainer",
+        "c1Sub": "No upfront agency lock-in.",
+        "c2": "Subscription",
+        "c2Sub": "No idle monthly seats.",
+        "hero": "Pay for Results",
+        "heroSub": "Only pay for approved assets or verified organic views."
+      }
+    },
+    {
+      "id": "10-pros-cons-matrix",
+      "number": "10",
+      "name": "Pros & Cons Matrix",
+      "category": "Problem & Comparison",
+      "inspiration": "Jeff Su Explainer",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/10-pros-cons-matrix.html",
+      "description": "Decision checklist pairing green check rows against red warning rows",
+      "default_props": {
+        "title": "Old Stack vs. New Stack",
+        "pros": [
+          "Deploys in under 5 minutes",
+          "Zero manual reconciliation",
+          "Real-time audit trail"
+        ],
+        "cons": [
+          "Fragile spreadsheet macros",
+          "Manual CSV exports",
+          "Delayed weekly reports"
+        ]
+      }
+    },
+    {
+      "id": "11-chaos-to-order",
+      "number": "11",
+      "name": "Chaos to Order Snap",
+      "category": "Problem & Comparison",
+      "inspiration": "Notion / Figma",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/11-chaos-to-order.html",
+      "description": "Scattered rotated task cards snapping smoothly into an aligned bento grid",
+      "default_props": {
+        "title": "Turn scattered work into a clean system",
+        "items": [
+          "Briefs",
+          "Approvals",
+          "Payouts",
+          "Analytics",
+          "Contracts",
+          "Assets"
+        ]
+      }
+    },
+    {
+      "id": "12-legacy-vs-modern-bar",
+      "number": "12",
+      "name": "Time & Cost Bar Race",
+      "category": "Problem & Comparison",
+      "inspiration": "Ramp / Stripe",
+      "duration": 4.8,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/12-legacy-vs-modern-bar.html",
+      "description": "Horizontal bar comparison contrasting legacy turnaround time vs. automated speed",
+      "default_props": {
+        "title": "Campaign launch turnaround",
+        "oldLabel": "Traditional agency workflow",
+        "oldVal": "42 days",
+        "newLabel": "Automated platform workflow",
+        "newVal": "48 hours"
+      }
+    },
+    {
+      "id": "13-cursor-approval-cards",
+      "number": "13",
+      "name": "Cursor Approval Cards",
+      "category": "Product UI & Micro-Demos",
+      "inspiration": "Ali Abdaal / Linear",
+      "duration": 5.5,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/13-cursor-approval-cards.html",
+      "description": "Two creator/item cards with an animated cursor gliding and clicking Approve",
+      "default_props": {
+        "title": "You only do two things",
+        "step1": "Step 01 / Pick Creators",
+        "step2": "Step 02 / Approve Content",
+        "card1Name": "Liam Mercer",
+        "card1Meta": "Tech UGC / 184K avg views",
+        "card2Name": "Maya Lin",
+        "card2Meta": "Lifestyle / 310K avg views"
+      }
+    },
+    {
+      "id": "14-command-palette-search",
+      "number": "14",
+      "name": "Command Palette Cmd+K",
+      "category": "Product UI & Micro-Demos",
+      "inspiration": "Raycast / Linear",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/14-command-palette-search.html",
+      "description": "Clean command bar typing a query and selecting the highlighted action",
+      "default_props": {
+        "query": "Launch Q4 creator campaign",
+        "results": [
+          "Create new campaign brief",
+          "Invite 25 vetted creators",
+          "Export CPM performance report"
+        ]
+      }
+    },
+    {
+      "id": "15-sidebar-view-switch",
+      "number": "15",
+      "name": "Sidebar View Switch",
+      "category": "Product UI & Micro-Demos",
+      "inspiration": "Linear / Notion",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/15-sidebar-view-switch.html",
+      "description": "SaaS workspace shell with cursor switching sidebar views and refreshing content",
+      "default_props": {
+        "app": "Workspace",
+        "tabs": [
+          "Overview",
+          "Campaigns",
+          "Payouts",
+          "Analytics"
+        ],
+        "view1Title": "Active Campaigns",
+        "view2Title": "Automated Payouts"
+      }
+    },
+    {
+      "id": "16-toggle-feature-flip",
+      "number": "16",
+      "name": "Settings Toggle Flip",
+      "category": "Product UI & Micro-Demos",
+      "inspiration": "Apple / iOS",
+      "duration": 4.8,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/16-toggle-feature-flip.html",
+      "description": "Three crisp switch toggles flipping on sequentially with instant status shift",
+      "default_props": {
+        "title": "Turn on autopilot",
+        "toggles": [
+          "Auto-match vetted creators",
+          "Instant brand-guideline QA",
+          "Automated milestone payouts"
+        ]
+      }
+    },
+    {
+      "id": "17-kanban-card-drag",
+      "number": "17",
+      "name": "Kanban Card Drag",
+      "category": "Product UI & Micro-Demos",
+      "inspiration": "Linear / Jira",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/17-kanban-card-drag.html",
+      "description": "Animated cursor picking up a task card and dropping it into Shipped",
+      "default_props": {
+        "col1": "In Review",
+        "col2": "Approved",
+        "col3": "Shipped",
+        "cardTitle": "Launch Film Cut v3",
+        "cardMeta": "4K Motion Plates"
+      }
+    },
+    {
+      "id": "18-notification-toast-stack",
+      "number": "18",
+      "name": "Notification Stack",
+      "category": "Product UI & Micro-Demos",
+      "inspiration": "Stripe / Slack",
+      "duration": 4.8,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/18-notification-toast-stack.html",
+      "description": "Crisp real-time activity notifications springing in cleanly from top-right",
+      "default_props": {
+        "title": "Real-time execution",
+        "toasts": [
+          [
+            "Creator Approved",
+            "Maya Lin accepted your Q4 brief"
+          ],
+          [
+            "Deliverable Uploaded",
+            "4K vertical cut ready for review"
+          ],
+          [
+            "Milestone Hit",
+            "Campaign crossed 500,000 organic views"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "19-six-stage-laser-pipeline",
+      "number": "19",
+      "name": "Six-Stage Laser Pipeline",
+      "category": "Workflows & Agents",
+      "inspiration": "Jeff Su / Ali Abdaal",
+      "duration": 5.6,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/19-six-stage-laser-pipeline.html",
+      "description": "6-card workflow grid with horizontal blue laser scan and green checkmarks",
+      "default_props": {
+        "title": "Everything else runs end to end",
+        "stages": [
+          "Creator Sourcing",
+          "Rate Negotiation",
+          "Creative Briefs",
+          "Quality Review",
+          "Invoicing & Payouts",
+          "Live View Tracking"
+        ]
+      }
+    },
+    {
+      "id": "20-hub-and-spoke-sync",
+      "number": "20",
+      "name": "Hub & Spoke Sync",
+      "category": "Workflows & Agents",
+      "inspiration": "Zapier / Stripe",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/20-hub-and-spoke-sync.html",
+      "description": "Central hub node sending animated SVG connector pulses to 4 connected apps",
+      "default_props": {
+        "hub": "Core Engine",
+        "spokes": [
+          "Slack",
+          "Notion",
+          "Stripe",
+          "Analytics"
+        ]
+      }
+    },
+    {
+      "id": "21-prompt-to-output-flow",
+      "number": "21",
+      "name": "Prompt to Deliverable",
+      "category": "Workflows & Agents",
+      "inspiration": "AI Launch / Claude",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/21-prompt-to-output-flow.html",
+      "description": "Prompt bar typing an instruction -> processing beam -> finished output card",
+      "default_props": {
+        "prompt": "Reskin all 8 launch plates to our new brand tokens",
+        "outputTitle": "8 Motion Plates Compiled",
+        "outputLines": [
+          "SF Pro Display typography applied",
+          "Light and dark tokens synced",
+          "Ready for 4K FFmpeg render"
+        ]
+      }
+    },
+    {
+      "id": "22-branching-router-tree",
+      "number": "22",
+      "name": "Branching Router Tree",
+      "category": "Workflows & Agents",
+      "inspiration": "n8n / Workflows",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/22-branching-router-tree.html",
+      "description": "Single trigger node branching cleanly via SVG curves into 3 parallel outcomes",
+      "default_props": {
+        "root": "Incoming Request",
+        "branches": [
+          "High-Intent Lead",
+          "Support Triage",
+          "Auto-Enrich CRM"
+        ]
+      }
+    },
+    {
+      "id": "23-memory-file-append",
+      "number": "23",
+      "name": "Document Scan & Append",
+      "category": "Workflows & Agents",
+      "inspiration": "Jeff Su / Notion",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/23-memory-file-append.html",
+      "description": "File card scanned by a blue laser beam before appending a new active skeleton line",
+      "default_props": {
+        "filename": "DESIGN.md",
+        "subtitle": "Live Brand Token Contract",
+        "badge": "Synced"
+      }
+    },
+    {
+      "id": "24-multi-agent-parallel",
+      "number": "24",
+      "name": "Parallel Agent Lanes",
+      "category": "Workflows & Agents",
+      "inspiration": "Coldtea / AI Dev",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/24-multi-agent-parallel.html",
+      "description": "Three parallel worker lanes filling progress bars simultaneously into one merge badge",
+      "default_props": {
+        "title": "Three streams running in parallel",
+        "lanes": [
+          [
+            "Stream 01",
+            "A-Cut Clean Edit"
+          ],
+          [
+            "Stream 02",
+            "Motion Plates Render"
+          ],
+          [
+            "Stream 03",
+            "Audio Mix & Polish"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "25-loom-pip-dashboard-zoom",
+      "number": "25",
+      "name": "Loom PiP + UI Zoom",
+      "category": "Callouts & PiP",
+      "inspiration": "Ali Abdaal / Loom",
+      "duration": 5.4,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/25-loom-pip-dashboard-zoom.html",
+      "description": "Floating circular speaker PiP over a dashboard that zooms into a focused amber row",
+      "default_props": {
+        "winTitle": "Q4 Launch Campaign / Active Deliverables",
+        "winMeta": "42 Creators / $0 Upfront",
+        "focusRow": "Organic CPM Reel \u2014 Morning Routine",
+        "callout": "Only billed once you click Approve",
+        "speakerInitials": "NI"
+      }
+    },
+    {
+      "id": "26-spotlight-callout-ring",
+      "number": "26",
+      "name": "Spotlight Callout Ring",
+      "category": "Callouts & PiP",
+      "inspiration": "Screen Studio / Jeff Su",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/26-spotlight-callout-ring.html",
+      "description": "Blurred UI background with one sharp popped-out card and amber leader pill",
+      "default_props": {
+        "focusTitle": "Automated Payout Trigger",
+        "focusDetail": "$1,450 released upon 100K verified views",
+        "note": "Zero manual invoice chasing"
+      }
+    },
+    {
+      "id": "27-split-screen-speaker-ui",
+      "number": "27",
+      "name": "Split-Screen Speaker + UI",
+      "category": "Callouts & PiP",
+      "inspiration": "YouTube / Parth",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/27-split-screen-speaker-ui.html",
+      "description": "35/65 editorial split layout pairing a speaker frame slot with animated key points",
+      "default_props": {
+        "speakerLabel": "Speaker A-Cut Slot",
+        "heading": "Why code beats timelines",
+        "points": [
+          "Deterministic 30fps frames",
+          "Instant DESIGN.md reskinning",
+          "Reusable across every launch"
+        ]
+      }
+    },
+    {
+      "id": "28-triple-chevron-pointer",
+      "number": "28",
+      "name": "Directional Chevron Cue",
+      "category": "Callouts & PiP",
+      "inspiration": "Jeff Su / Screencast",
+      "duration": 4.5,
+      "fps": 30,
+      "transparent_ready": true,
+      "file": "scenes/28-triple-chevron-pointer.html",
+      "description": "Transparent-ready animated triple chevrons pointing toward a highlighted UI target",
+      "default_props": {
+        "targetLabel": "Export 4K Motion Plate",
+        "hint": "Click here to render"
+      }
+    },
+    {
+      "id": "29-browser-window-tilt-3d",
+      "number": "29",
+      "name": "3D Browser Showcase",
+      "category": "Callouts & PiP",
+      "inspiration": "Apple / Framer",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/29-browser-window-tilt-3d.html",
+      "description": "Clean macOS browser window settling smoothly from a subtle 3D perspective angle",
+      "default_props": {
+        "url": "app.creatorgrid.io/campaigns",
+        "headline": "Campaign Control Center",
+        "metric": "98.4% On-Time Delivery"
+      }
+    },
+    {
+      "id": "30-mobile-frame-showcase",
+      "number": "30",
+      "name": "Mobile Frame Showcase",
+      "category": "Callouts & PiP",
+      "inspiration": "Apple / App Store",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/30-mobile-frame-showcase.html",
+      "description": "Minimalist phone frame rising cleanly while internal feed cards scroll upward",
+      "default_props": {
+        "appTitle": "Creator Feed",
+        "items": [
+          "Approved Cut #14",
+          "New Brief Assigned",
+          "Payout Cleared $840",
+          "124K Views Milestone"
+        ]
+      }
+    },
+    {
+      "id": "31-organic-spline-chart",
+      "number": "31",
+      "name": "Organic Spline Chart",
+      "category": "Data Viz & Metrics",
+      "inspiration": "Ali Abdaal / Stripe",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/31-organic-spline-chart.html",
+      "description": "Animated SVG spline curve with gradient fill and rolling tabular-nums counter",
+      "default_props": {
+        "kicker": "Performance Model",
+        "targetVal": 2.4,
+        "suffix": "M",
+        "sub": "Verified organic views delivered in 30 days.",
+        "cpm": 3.8
+      }
+    },
+    {
+      "id": "32-kpi-bento-trio",
+      "number": "32",
+      "name": "KPI Bento Trio",
+      "category": "Data Viz & Metrics",
+      "inspiration": "Stripe / Ramp",
+      "duration": 4.8,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/32-kpi-bento-trio.html",
+      "description": "Three high-contrast metric cards with rolling tabular-nums counters and deltas",
+      "default_props": {
+        "kpis": [
+          [
+            "Organic Views",
+            2400,
+            "K",
+            "+184%"
+          ],
+          [
+            "Effective CPM",
+            3.8,
+            "$",
+            "-42%"
+          ],
+          [
+            "Approval Rate",
+            96,
+            "%",
+            "+14%"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "33-bar-chart-race-rise",
+      "number": "33",
+      "name": "Vertical Bar Rise",
+      "category": "Data Viz & Metrics",
+      "inspiration": "ChartMogul / Vise",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/33-bar-chart-race-rise.html",
+      "description": "Six vertical bars rising with staggered expo.out and highlighting the peak month",
+      "default_props": {
+        "title": "Monthly campaign reach",
+        "bars": [
+          [
+            "May",
+            28
+          ],
+          [
+            "Jun",
+            41
+          ],
+          [
+            "Jul",
+            53
+          ],
+          [
+            "Aug",
+            68
+          ],
+          [
+            "Sep",
+            82
+          ],
+          [
+            "Oct",
+            96
+          ]
+        ]
+      }
+    },
+    {
+      "id": "34-donut-ring-progress",
+      "number": "34",
+      "name": "Donut Ring Gauge",
+      "category": "Data Viz & Metrics",
+      "inspiration": "Apple Health / SaaS",
+      "duration": 4.8,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/34-donut-ring-progress.html",
+      "description": "Crisp SVG circular progress ring sweeping smoothly to target percentage",
+      "default_props": {
+        "title": "Workflow time automated",
+        "pct": 94,
+        "sub": "Hours reclaimed every month across sourcing, QA, and billing."
+      }
+    },
+    {
+      "id": "35-roi-savings-ticker",
+      "number": "35",
+      "name": "ROI Savings Ticker",
+      "category": "Data Viz & Metrics",
+      "inspiration": "Ramp / Rippling",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/35-roi-savings-ticker.html",
+      "description": "Large centered annual savings counter rolling up with breakdown pills below",
+      "default_props": {
+        "eyebrow": "Estimated Annual Savings",
+        "amount": 148000,
+        "pills": [
+          "Zero Retainers",
+          "6x Faster Turnaround",
+          "100% View-Verified"
+        ]
+      }
+    },
+    {
+      "id": "36-funnel-conversion-bars",
+      "number": "36",
+      "name": "Conversion Funnel",
+      "category": "Data Viz & Metrics",
+      "inspiration": "Growth / Analytics",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/36-funnel-conversion-bars.html",
+      "description": "Four-stage horizontal funnel bars animating sequentially with conversion rates",
+      "default_props": {
+        "title": "Creator campaign funnel",
+        "steps": [
+          [
+            "Matched Creators",
+            100,
+            "240"
+          ],
+          [
+            "Approved Roster",
+            68,
+            "164"
+          ],
+          [
+            "Published Clips",
+            54,
+            "130"
+          ],
+          [
+            "Top Performers",
+            32,
+            "78"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "37-logo-wall-stagger",
+      "number": "37",
+      "name": "Monochrome Logo Wall",
+      "category": "Social Proof & Trust",
+      "inspiration": "Vercel / Stripe",
+      "duration": 4.6,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/37-logo-wall-stagger.html",
+      "description": "Restrained monochrome brand wordmarks staggering cleanly into a 2x4 grid",
+      "default_props": {
+        "title": "Trusted by fast-moving product teams",
+        "logos": [
+          "Notion",
+          "Wispr Flow",
+          "Todoist",
+          "Superhuman",
+          "Linear",
+          "Raycast",
+          "Vercel",
+          "Loom"
+        ]
+      }
+    },
+    {
+      "id": "38-testimonial-quote-card",
+      "number": "38",
+      "name": "Testimonial Card",
+      "category": "Social Proof & Trust",
+      "inspiration": "Notion / YC",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/38-testimonial-quote-card.html",
+      "description": "Single elevated customer quote card with bold outcome metric and author lockup",
+      "default_props": {
+        "quote": "We replaced a $15k monthly agency and doubled our organic reach in the first 30 days.",
+        "author": "Elena Rostova",
+        "role": "Head of Growth / Relay",
+        "metric": "2.1x Organic Reach"
+      }
+    },
+    {
+      "id": "39-milestone-counter-hero",
+      "number": "39",
+      "name": "Milestone Counter Hero",
+      "category": "Social Proof & Trust",
+      "inspiration": "Ali Abdaal / Launch",
+      "duration": 4.6,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/39-milestone-counter-hero.html",
+      "description": "Giant centered rolling milestone counter (10,000+) with rising subcopy",
+      "default_props": {
+        "target": 10000,
+        "suffix": "+",
+        "label": "Vetted creators ready to ship your next campaign"
+      }
+    },
+    {
+      "id": "40-rating-stars-reveal",
+      "number": "40",
+      "name": "Five-Star Rating Reveal",
+      "category": "Social Proof & Trust",
+      "inspiration": "App Store / G2",
+      "duration": 4.6,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/40-rating-stars-reveal.html",
+      "description": "Five crisp vector stars filling sequentially with 4.9/5 rating summary",
+      "default_props": {
+        "score": "4.9 / 5",
+        "sub": "Average rating across 420+ verified brand campaigns"
+      }
+    },
+    {
+      "id": "41-case-study-snapshot",
+      "number": "41",
+      "name": "Case Study Snapshot",
+      "category": "Social Proof & Trust",
+      "inspiration": "B2B SaaS Launch",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/41-case-study-snapshot.html",
+      "description": "Three-beat horizontal card: Company -> Challenge -> Verified Result",
+      "default_props": {
+        "company": "Wispr Flow",
+        "challenge": "Needed 60 authentic UGC clips in 3 weeks",
+        "result": "3.2M organic views at $3.40 CPM"
+      }
+    },
+    {
+      "id": "42-press-mention-marquee",
+      "number": "42",
+      "name": "Press & Brand Ticker",
+      "category": "Social Proof & Trust",
+      "inspiration": "Framer / Editorial",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/42-press-mention-marquee.html",
+      "description": "Smooth horizontal continuous marquee of clean typographic brand mentions",
+      "default_props": {
+        "kicker": "Featured & Built With",
+        "items": [
+          "Product Hunt #1",
+          "TechCrunch",
+          "Fast Company",
+          "The Verge",
+          "Wired",
+          "Stratechery"
+        ]
+      }
+    },
+    {
+      "id": "43-chapter-blueprint-grid",
+      "number": "43",
+      "name": "Chapter Blueprint Card",
+      "category": "Chapters & Pacing",
+      "inspiration": "Jeff Su / Documentary",
+      "duration": 4.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/43-chapter-blueprint-grid.html",
+      "description": "Subtle crosshair grid canvas with animated amber accent line and bold chapter title",
+      "default_props": {
+        "num": "Chapter 02",
+        "title": "THE MOTION SYSTEM",
+        "sub": "Decoupled scenes driven by a single DESIGN.md contract"
+      }
+    },
+    {
+      "id": "44-iris-split-line-reveal",
+      "number": "44",
+      "name": "Split-Line Chapter Reveal",
+      "category": "Chapters & Pacing",
+      "inspiration": "Apple / Minimalist",
+      "duration": 4.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/44-iris-split-line-reveal.html",
+      "description": "Center horizontal hairline expanding outward before revealing chapter title above and below",
+      "default_props": {
+        "top": "Part Three",
+        "bottom": "Instant Brand Reskinning"
+      }
+    },
+    {
+      "id": "45-numbered-agenda-list",
+      "number": "45",
+      "name": "Numbered Agenda Focus",
+      "category": "Chapters & Pacing",
+      "inspiration": "Keynote / Explainer",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/45-numbered-agenda-list.html",
+      "description": "Four-item agenda list where the active step illuminates while others dim softly",
+      "default_props": {
+        "title": "How the pipeline works",
+        "items": [
+          "Write a tight 45-second script",
+          "Cut clean A-roll footage",
+          "Generate decoupled motion plates",
+          "Composite and export in 4K"
+        ],
+        "activeIdx": 2
+      }
+    },
+    {
+      "id": "46-optical-blur-unveil",
+      "number": "46",
+      "name": "Optical Blur Unveil",
+      "category": "Chapters & Pacing",
+      "inspiration": "Jeff Su / Mystery Hook",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/46-optical-blur-unveil.html",
+      "description": "Three blurred mystery cards snapping sequentially into razor-sharp focus",
+      "default_props": {
+        "title": "Three layers of every great edit",
+        "cards": [
+          [
+            "01",
+            "Clean A-Cut"
+          ],
+          [
+            "02",
+            "Motion Plates"
+          ],
+          [
+            "03",
+            "Sound Design"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "47-audio-waveform-voice",
+      "number": "47",
+      "name": "Voice Waveform Caption",
+      "category": "Chapters & Pacing",
+      "inspiration": "Lovo AI / Podcast",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/47-audio-waveform-voice.html",
+      "description": "Dynamic vertical audio bars oscillating smoothly alongside a clean spoken caption",
+      "default_props": {
+        "caption": "When your video is code, changing your mind takes one prompt.",
+        "speaker": "Voiceover Track / 48kHz"
+      }
+    },
+    {
+      "id": "48-code-reskin-wipe",
+      "number": "48",
+      "name": "Code Reskin Wipe",
+      "category": "Chapters & Pacing",
+      "inspiration": "Ali Abdaal Learning #5",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/48-code-reskin-wipe.html",
+      "description": "Live vertical wipe morphing a legacy brand card into the new DESIGN.md system",
+      "default_props": {
+        "title": "One DESIGN.md updates every scene",
+        "oldBrand": "Legacy Style v1",
+        "newBrand": "New Brand System"
+      }
+    },
+    {
+      "id": "49-bento-feature-mosaic",
+      "number": "49",
+      "name": "Apple Bento Mosaic",
+      "category": "Features & CTAs",
+      "inspiration": "Apple Keynote",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/49-bento-feature-mosaic.html",
+      "description": "Asymmetric 4-tile bento grid staggering in with crisp hierarchy and generous padding",
+      "default_props": {
+        "tiles": [
+          [
+            "30 / 60 fps",
+            "Deterministic headless rendering"
+          ],
+          [
+            "DESIGN.md",
+            "One-command aesthetic reskinning"
+          ],
+          [
+            "54 Scenes",
+            "Decoupled launch & explainer templates"
+          ],
+          [
+            "Alpha Plates",
+            "Transparent ProRes 4444 overlays"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "50-three-step-how-it-works",
+      "number": "50",
+      "name": "Three-Step Onboarding",
+      "category": "Features & CTAs",
+      "inspiration": "Stripe / Notion",
+      "duration": 5.2,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/50-three-step-how-it-works.html",
+      "description": "Clean 01 / 02 / 03 horizontal step progression with connecting rules",
+      "default_props": {
+        "title": "From script to final cut",
+        "steps": [
+          [
+            "01",
+            "Drop DESIGN.md",
+            "Compile colors and fonts to tokens"
+          ],
+          [
+            "02",
+            "Pick Scenes",
+            "Pass dynamic copy via JSON props"
+          ],
+          [
+            "03",
+            "Render Plates",
+            "Export MP4 or alpha overlays"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "51-pricing-tier-spotlight",
+      "number": "51",
+      "name": "Pricing Tier Spotlight",
+      "category": "Features & CTAs",
+      "inspiration": "SaaS Launch",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/51-pricing-tier-spotlight.html",
+      "description": "Three clean pricing cards where the middle recommended tier elevates into focus",
+      "default_props": {
+        "tiers": [
+          [
+            "Starter",
+            "$0",
+            "Upfront fee"
+          ],
+          [
+            "Growth",
+            "CPM",
+            "Pay only for views"
+          ],
+          [
+            "Enterprise",
+            "Custom",
+            "Dedicated roster"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "52-founder-signoff-card",
+      "number": "52",
+      "name": "Founder Sign-Off Card",
+      "category": "Features & CTAs",
+      "inspiration": "Personal Brand / Launch",
+      "duration": 4.8,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/52-founder-signoff-card.html",
+      "description": "Clean editorial sign-off card with monogram avatar, personal note, and URL",
+      "default_props": {
+        "initials": "NI",
+        "note": "Built to help you ship studio-grade videos in minutes, not weeks.",
+        "name": "Nazif Ishrak",
+        "url": "creatorgrid.io"
+      }
+    },
+    {
+      "id": "53-product-launch-outro",
+      "number": "53",
+      "name": "Collapsing Line Outro",
+      "category": "Features & CTAs",
+      "inspiration": "Apple / Linear",
+      "duration": 4.6,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/53-product-launch-outro.html",
+      "description": "Expanding hairline resolving cleanly into centered brand wordmark and tagline",
+      "default_props": {
+        "brand": "Creator Grid",
+        "tagline": "Creator marketing without the chaos."
+      }
+    },
+    {
+      "id": "54-cta-url-endcard",
+      "number": "54",
+      "name": "Closing CTA End-Card",
+      "category": "Features & CTAs",
+      "inspiration": "SaaS Launch Outro",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/54-cta-url-endcard.html",
+      "description": "High-contrast closing headline, pill CTA button with cursor click, and clean domain",
+      "default_props": {
+        "headline": "Try it on your next launch.",
+        "cta": "Get Started Free",
+        "url": "creatorgrid.io"
+      }
+    },
+    {
+      "id": "55-apsis-streaming-console",
+      "number": "55",
+      "name": "Apsis Streaming Console",
+      "category": "Apsis Space Signature",
+      "inspiration": "Apsis Space DESIGN.md",
+      "duration": 5.4,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/55-apsis-streaming-console.html",
+      "description": "Live-streaming aerospace telemetry console with blinking #61A6FA caret and locked metric reveal (1,412 m/s, < 1.0e-8, 14 ms).",
+      "default_props": {
+        "eyebrow": "MERIDIAN TELEMETRY / LIVE STREAM",
+        "prompt": "Compute orbital burn trajectory and verify thermal tolerance.",
+        "stream": "Trajectory verified across 14 orbital nodes. Nominal delta-v envelope locked with zero structural drift.",
+        "m1": "1,412 m/s",
+        "m2": "< 1.0e-8",
+        "m3": "14 ms"
+      }
+    },
+    {
+      "id": "56-apsis-notched-testimonial",
+      "number": "56",
+      "name": "Apsis Notched Card",
+      "category": "Apsis Space Signature",
+      "inspiration": "Apsis Space DESIGN.md",
+      "duration": 4.8,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/56-apsis-notched-testimonial.html",
+      "description": "Signature #F0F4F9 notched testimonial card with bottom-right white cutout and #111729 -> #2664EC arrow action button.",
+      "default_props": {
+        "eyebrow": "MISSION VALIDATION / ORBITAL VAULT",
+        "quote": "Flat architectural telemetry and zero visual noise cut our mission review cycle in half.",
+        "author": "Dr. Aris Thorne",
+        "role": "Flight Systems Lead / Meridian"
+      }
+    },
+    {
+      "id": "57-apsis-stacking-cards",
+      "number": "57",
+      "name": "Apsis Sticky Stacking Cards",
+      "category": "Apsis Space Signature",
+      "inspiration": "Apsis Space DESIGN.md",
+      "duration": 5.4,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/57-apsis-stacking-cards.html",
+      "description": "Three architectural 22px-radius stacking cards gliding over each other with a clean 28px top peek edge.",
+      "default_props": {
+        "cards": [
+          [
+            "01 / MERIDIAN",
+            "Autonomous Guidance",
+            "Deterministic trajectory solver built for zero-latency orbital windows."
+          ],
+          [
+            "02 / ORBITAL VAULT",
+            "Cryptographic Telemetry",
+            "Air-gapped flight logs verified with flat architectural precision."
+          ],
+          [
+            "03 / SYSTEMS",
+            "Mission Control",
+            "Unified command layer across ground stations and live payloads."
+          ]
+        ]
+      }
+    },
+    {
+      "id": "58-apsis-segmented-pill",
+      "number": "58",
+      "name": "Apsis Segmented Filter Pill",
+      "category": "Apsis Space Signature",
+      "inspiration": "Apsis Space DESIGN.md",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/58-apsis-segmented-pill.html",
+      "description": "Dark #111729 pill bar with a sliding #FFFFFF indicator switching between Systems pillars and sliding top accent line.",
+      "default_props": {
+        "tabs": [
+          "Meridian",
+          "Systems",
+          "Security",
+          "Research"
+        ],
+        "panels": [
+          [
+            "Meridian Guidance",
+            "Real-time flight path verification at 14 ms latency."
+          ],
+          [
+            "Purpose-Built Systems",
+            "Modular hardware and software bands engineered as one stack."
+          ],
+          [
+            "Zero-Trust Security",
+            "Cryptographic attestation on every telemetry packet."
+          ],
+          [
+            "Applied Research",
+            "Open aerospace benchmarks published quarterly."
+          ]
+        ]
+      }
+    },
+    {
+      "id": "59-figma-color-block-poster",
+      "number": "59",
+      "name": "Figma Color-Block Poster",
+      "category": "Figma Editorial Signature",
+      "inspiration": "Figma Editorial DESIGN.md",
+      "duration": 5.0,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/59-figma-color-block-poster.html",
+      "description": "Oversized rounded pastel lime color-block poster on pure white canvas with tight negative-tracked headline and black/white pill CTA pair.",
+      "default_props": {
+        "eyebrow": "DESIGN SYSTEMS / COLOR BLOCK",
+        "headline": "Build once. Reskin every scene in one command.",
+        "body": "Monochrome chrome frames giant pastel story blocks\u2014zero drop shadows, zero gradients, pure typographic contrast.",
+        "ctaPrimary": "Start Building",
+        "ctaSecondary": "View Specs"
+      }
+    },
+    {
+      "id": "60-figma-pastel-story-sequence",
+      "number": "60",
+      "name": "Figma Pastel Story Blocks",
+      "category": "Figma Editorial Signature",
+      "inspiration": "Figma Editorial DESIGN.md",
+      "duration": 5.6,
+      "fps": 30,
+      "transparent_ready": false,
+      "file": "scenes/60-figma-pastel-story-sequence.html",
+      "description": "Rhythmic sequence rotating through Figma's signature Lilac, Deep Navy, and Coral full-width poster blocks.",
+      "default_props": {
+        "blocks": [
+          {
+            "tag": "01 / DESIGN",
+            "bg": "#D8C7FF",
+            "fg": "#000000",
+            "title": "Explore ideas on an editor-clean canvas."
+          },
+          {
+            "tag": "02 / SHIP",
+            "bg": "#1E1B4B",
+            "fg": "#FFFFFF",
+            "title": "Hand off deterministic motion code in seconds."
+          },
+          {
+            "tag": "03 / SCALE",
+            "bg": "#FFB09E",
+            "fg": "#000000",
+            "title": "Every launch film stays on-brand automatically."
+          }
+        ]
+      }
+    }
+  ]
+}

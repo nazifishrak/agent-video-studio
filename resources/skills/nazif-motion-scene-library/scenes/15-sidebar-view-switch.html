@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>15 / Sidebar View Switch</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.shell { height:760px; display:grid; grid-template-columns:340px 1fr; overflow:hidden; }
+        .side { background:var(--surface-well); padding:40px 28px; border-right:2px solid var(--border-subtle); display:flex; flex-direction:column; gap:14px; }
+        .app { font-size:28px; font-weight:700; margin-bottom:20px; padding:0 16px; }
+        .tab { padding:18px 20px; border-radius:14px; font-size:24px; font-weight:500; color:var(--text-muted); }
+        .main { padding:48px 56px; display:flex; flex-direction:column; gap:26px; }
+        .mt { font-size:44px; font-weight:700; }
+        .row { padding:26px 30px; border-radius:18px; background:var(--surface-well); display:flex; justify-content:space-between; font-size:24px; font-weight:500; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "15-sidebar-view-switch", "number": "15", "name": "Sidebar View Switch", "category": "Product UI & Micro-Demos", "inspiration": "Linear / Notion", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"app": "Workspace", "tabs": ["Overview", "Campaigns", "Payouts", "Analytics"], "view1Title": "Active Campaigns", "view2Title": "Automated Payouts"},
+      mount(p) {
+root.innerHTML = `<div class="card shell" id="sh">
+          <div class="side"><div class="app">${p.app}</div>${p.tabs.map((x,i)=>`<div class="tab" id="tb${i}">${x}</div>`).join('')}</div>
+          <div class="main"><div class="t-display mt" id="mt">${p.view1Title}</div>
+            <div class="row" id="rw0"><span>Q4 Creator Sprint</span><span style="color:var(--accent-primary)">Active</span></div>
+            <div class="row" id="rw1"><span>Organic Reels Batch</span><span style="color:var(--status-positive)">Verified</span></div>
+            <div class="row" id="rw2"><span>Paid Social Cutdowns</span><span style="color:var(--text-muted)">Scheduled</span></div>
+          </div>
+        </div>`;
+      },
+      render(t, p) {
+const sh=prog(t,0.1,0.55,'expo.out'); el('sh').style.opacity=sh; el('sh').style.transform=`translateY(${lerp(30,0,sh)}px)`;
+        const sw = t >= 2.2;
+        p.tabs.forEach((_,i)=>{
+          const active = sw ? i===2 : i===1;
+          el('tb'+i).style.background=active?'var(--surface-card)':'transparent';
+          el('tb'+i).style.color=active?'var(--text-primary)':'var(--text-muted)';
+        });
+        el('mt').textContent = sw ? p.view2Title : p.view1Title;
+        const rp = sw ? prog(t,2.2,0.5,'expo.out') : prog(t,0.4,0.5,'expo.out');
+        [0,1,2].forEach(i=>{ el('rw'+i).style.opacity=rp; el('rw'+i).style.transform=`translateY(${lerp(20,0,rp)}px)`; });
+      }
+    });
+  </script>
+</body>
+</html>

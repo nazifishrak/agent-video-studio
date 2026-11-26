@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>28 / Directional Chevron Cue</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; align-items:center; justify-content:center; gap:36px; }
+        .tgt { padding:34px 52px; border:3px solid var(--accent-warm); font-size:38px; font-weight:700; }
+        .chv { display:flex; gap:10px; font-size:68px; font-weight:700; color:var(--accent-warm); }
+        .ht { font-size:28px; font-weight:600; color:var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "28-triple-chevron-pointer", "number": "28", "name": "Directional Chevron Cue", "category": "Callouts & PiP", "inspiration": "Jeff Su / Screencast", "duration": 4.5, "fps": 30, "transparent_ready": true},
+      defaultProps: {"targetLabel": "Export 4K Motion Plate", "hint": "Click here to render"},
+      mount(p) {
+root.innerHTML = `<div class="wrap"><div class="card tgt" id="tg">${p.targetLabel}</div><div class="chv"><span id="c0">‹</span><span id="c1">‹</span><span id="c2">‹</span></div><div class="ht" id="ht">${p.hint}</div></div>`;
+      },
+      render(t, p) {
+const tg=prog(t,0.1,0.5,'back.out(1.4)'); el('tg').style.opacity=Math.min(1,tg); el('tg').style.transform=`scale(${lerp(0.88,1,tg)})`;
+        [0,1,2].forEach(i=>{ const osc=Math.sin((t*4.5)-(i*0.55)); el('c'+i).style.transform=`translateX(${osc*-14}px)`; el('c'+i).style.opacity=0.45+0.55*(osc*0.5+0.5); });
+        el('ht').style.opacity=prog(t,0.4,0.5,'power2.out');
+      }
+    });
+  </script>
+</body>
+</html>

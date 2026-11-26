@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>34 / Donut Ring Gauge</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:grid; grid-template-columns:520px 1fr; gap:72px; align-items:center; }
+        .ring { position:relative; width:460px; height:460px; display:flex; align-items:center; justify-content:center; }
+        .pct { position:absolute; font-size:112px; }
+        .hd { font-size:66px; }
+        .sub { font-size:32px; color:var(--text-muted); margin-top:20px; line-height:1.4; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "34-donut-ring-progress", "number": "34", "name": "Donut Ring Gauge", "category": "Data Viz & Metrics", "inspiration": "Apple Health / SaaS", "duration": 4.8, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Workflow time automated", "pct": 94, "sub": "Hours reclaimed every month across sourcing, QA, and billing."},
+      mount(p) {
+root.innerHTML = `<div class="wrap">
+          <div class="ring"><svg width="460" height="460" viewBox="0 0 460 460"><circle cx="230" cy="230" r="190" fill="none" stroke="var(--surface-well)" stroke-width="34"/><circle id="arc" cx="230" cy="230" r="190" fill="none" stroke="var(--accent-primary)" stroke-width="34" stroke-linecap="round" transform="rotate(-90 230 230)"/></svg><div class="t-display t-num pct" id="pc">0%</div></div>
+          <div><div class="t-display hd" id="hd">${p.title}</div><div class="sub" id="sub">${p.sub}</div></div>
+        </div>`;
+      },
+      render(t, p) {
+const c=2*Math.PI*190, pr=prog(t,0.35,1.8,'expo.out');
+        el('arc').style.strokeDasharray=c; el('arc').style.strokeDashoffset=c*(1-pr*(p.pct/100));
+        el('pc').textContent=`${Math.round(pr*p.pct)}%`;
+        el('hd').style.opacity=prog(t,0.15,0.5,'expo.out'); el('sub').style.opacity=prog(t,0.4,0.5,'expo.out');
+      }
+    });
+  </script>
+</body>
+</html>

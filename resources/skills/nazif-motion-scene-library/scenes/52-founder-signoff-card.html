@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>52 / Founder Sign-Off Card</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.cd { max-width:1180px; margin:0 auto; padding:68px 76px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:28px; }
+        .av { width:116px; height:116px; border-radius:50%; background:var(--accent-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:44px; font-weight:700; }
+        .nt { font-size:50px; line-height:1.25; }
+        .nm { font-size:28px; font-weight:600; color:var(--text-muted); }
+        .url { font-size:30px; font-weight:700; color:var(--accent-primary); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "52-founder-signoff-card", "number": "52", "name": "Founder Sign-Off Card", "category": "Features & CTAs", "inspiration": "Personal Brand / Launch", "duration": 4.8, "fps": 30, "transparent_ready": false},
+      defaultProps: {"initials": "NI", "note": "Built to help you ship studio-grade videos in minutes, not weeks.", "name": "Nazif Ishrak", "url": "creatorgrid.io"},
+      mount(p) {
+root.innerHTML = `<div class="card cd" id="cd"><div class="av">${p.initials}</div><div class="t-display nt">${p.note}</div><div class="nm">${p.name}</div><div class="url">${p.url}</div></div>`;
+      },
+      render(t, p) {
+const pr=prog(t,0.15,0.7,'expo.out'); el('cd').style.opacity=pr; el('cd').style.transform=`translateY(${lerp(34,0,pr)}px) scale(${lerp(0.95,1,pr)})`;
+      }
+    });
+  </script>
+</body>
+</html>

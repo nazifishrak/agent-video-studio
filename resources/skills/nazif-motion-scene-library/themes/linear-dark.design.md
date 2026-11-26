@@ -1,0 +1,33 @@
+# DESIGN.md — Linear Dark Studio Preset
+
+## Typography
+- display_font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif
+- body_font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif
+- display_weight: 600
+- display_tracking: -0.03em
+- body_tracking: -0.01em
+
+## Palette
+- stage_bg: #111318
+- surface_card: #1A1D24
+- surface_well: #232732
+- border_subtle: #2E3340
+- text_primary: #F8FAFC
+- text_muted: #94A3B8
+- accent_primary: #3B82F6
+- accent_soft: rgba(59, 130, 246, 0.22)
+- accent_warm: #F59E0B
+- accent_warm_soft: rgba(245, 158, 11, 0.20)
+- status_positive: #22C55E
+- status_positive_soft: rgba(34, 197, 94, 0.18)
+- status_negative: #EF4444
+- status_negative_soft: rgba(239, 68, 68, 0.18)
+- skeleton_primary: #475569
+- skeleton_secondary: #334155
+
+## Geometry & Atmosphere
+- radius_card: 24px
+- radius_control: 12px
+- shadow_card: 0 28px 70px -18px rgba(0, 0, 0, 0.55)
+- aurora_opacity: 0.22
+- aurora_gradient: linear-gradient(90deg, rgba(59, 130, 246, 0.35) 0%, rgba(139, 92, 246, 0.30) 50%, rgba(14, 165, 233, 0.30) 100%)

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>14 / Command Palette Cmd+K</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.box { width:1120px; margin:0 auto; overflow:hidden; }
+        .inp { padding:34px 40px; border-bottom:2px solid var(--border-subtle); font-size:36px; font-weight:500; display:flex; align-items:center; justify-content:space-between; }
+        .key { font-size:20px; font-weight:600; padding:8px 16px; border-radius:10px; background:var(--surface-well); color:var(--text-muted); }
+        .list { padding:18px; display:flex; flex-direction:column; gap:10px; }
+        .row { padding:24px 28px; border-radius:16px; font-size:28px; font-weight:500; display:flex; justify-content:space-between; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "14-command-palette-search", "number": "14", "name": "Command Palette Cmd+K", "category": "Product UI & Micro-Demos", "inspiration": "Raycast / Linear", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"query": "Launch Q4 creator campaign", "results": ["Create new campaign brief", "Invite 25 vetted creators", "Export CPM performance report"]},
+      mount(p) {
+root.innerHTML = `<div class="card box" id="bx">
+          <div class="inp"><span id="typed"></span><span class="key">Cmd + K</span></div>
+          <div class="list">${p.results.map((r,i)=>`<div class="row" id="r${i}"><span>${r}</span><span style="color:var(--text-muted)">Return</span></div>`).join('')}</div>
+        </div>`;
+      },
+      render(t, p) {
+const bx=prog(t,0.1,0.5,'back.out(1.25)');
+        el('bx').style.opacity=Math.min(1,bx); el('bx').style.transform=`scale(${lerp(0.92,1,bx)})`;
+        const tp=prog(t,0.45,1.5,'linear');
+        el('typed').textContent=p.query.slice(0,Math.round(tp*p.query.length));
+        p.results.forEach((_,i)=>{
+          const rp=prog(t,1.2+i*0.18,0.4,'expo.out');
+          const e=el('r'+i);
+          e.style.opacity=rp; e.style.transform=`translateY(${lerp(16,0,rp)}px)`;
+          const active = (i===0 && t>=2.35);
+          e.style.background=active?'var(--accent-soft)':'transparent';
+          e.style.color=active?'var(--accent-primary)':'var(--text-primary)';
+        });
+      }
+    });
+  </script>
+</body>
+</html>

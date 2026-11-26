@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>33 / Vertical Bar Rise</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { font-size:60px; margin-bottom:44px; }
+        .cc { padding:52px; height:640px; display:grid; grid-template-columns:repeat(6,1fr); gap:32px; align-items:end; }
+        .col { display:flex; flex-direction:column; align-items:center; gap:18px; height:100%; justify-content:flex-end; }
+        .b { width:100%; border-radius:16px 16px 8px 8px; background:var(--accent-soft); transform-origin:bottom; }
+        .lb { font-size:24px; font-weight:600; color:var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "33-bar-chart-race-rise", "number": "33", "name": "Vertical Bar Rise", "category": "Data Viz & Metrics", "inspiration": "ChartMogul / Vise", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Monthly campaign reach", "bars": [["May", 28], ["Jun", 41], ["Jul", 53], ["Aug", 68], ["Sep", 82], ["Oct", 96]]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd" id="hd">${p.title}</div>
+        <div class="card cc">${p.bars.map((b,i)=>`<div class="col"><div class="b" id="b${i}" style="height:${b[1]}%;${i===p.bars.length-1?'background:var(--accent-primary)':''}"></div><div class="lb">${b[0]}</div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+el('hd').style.opacity=prog(t,0.1,0.5,'expo.out');
+        p.bars.forEach((_,i)=>{ const pr=prog(t,0.35+i*0.12,0.85,'expo.out'); el('b'+i).style.transform=`scaleY(${pr})`; });
+      }
+    });
+  </script>
+</body>
+</html>

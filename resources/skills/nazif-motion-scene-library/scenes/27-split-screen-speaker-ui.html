@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>27 / Split-Screen Speaker + UI</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.grid { display:grid; grid-template-columns:560px 1fr; gap:52px; height:780px; }
+        .sp { background:var(--text-primary); color:var(--stage-bg); display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:600; border-radius:var(--radius-card); }
+        .ui { padding:52px; display:flex; flex-direction:column; justify-content:center; gap:26px; }
+        .hd { font-size:56px; }
+        .pt { padding:24px 28px; border-radius:16px; background:var(--surface-well); font-size:28px; font-weight:500; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "27-split-screen-speaker-ui", "number": "27", "name": "Split-Screen Speaker + UI", "category": "Callouts & PiP", "inspiration": "YouTube / Parth", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"speakerLabel": "Speaker A-Cut Slot", "heading": "Why code beats timelines", "points": ["Deterministic 30fps frames", "Instant DESIGN.md reskinning", "Reusable across every launch"]},
+      mount(p) {
+root.innerHTML = `<div class="grid">
+          <div class="sp" id="sp">${p.speakerLabel}</div>
+          <div class="card ui"><div class="t-display hd" id="hd">${p.heading}</div>${p.points.map((x,i)=>`<div class="pt" id="pt${i}">✓ ${x}</div>`).join('')}</div>
+        </div>`;
+      },
+      render(t, p) {
+const sp=prog(t,0.1,0.55,'expo.out'); el('sp').style.opacity=sp; el('sp').style.transform=`translateX(${lerp(-40,0,sp)}px)`;
+        el('hd').style.opacity=prog(t,0.3,0.5,'expo.out');
+        p.points.forEach((_,i)=>{ const pr=prog(t,0.65+i*0.32,0.48,'expo.out'); el('pt'+i).style.opacity=pr; el('pt'+i).style.transform=`translateX(${lerp(36,0,pr)}px)`; });
+      }
+    });
+  </script>
+</body>
+</html>

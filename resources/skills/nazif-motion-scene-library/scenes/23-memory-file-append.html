@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>23 / Document Scan & Append</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.card-f { width:920px; margin:0 auto; padding:52px; display:flex; flex-direction:column; gap:24px; position:relative; overflow:hidden; }
+        .fh { display:flex; justify-content:space-between; align-items:center; }
+        .fn { font-size:40px; font-weight:700; }
+        .fs { font-size:24px; color:var(--text-muted); }
+        .bdg { padding:10px 20px; border-radius:12px; background:var(--status-positive-soft); color:var(--status-positive); font-size:22px; font-weight:600; opacity:0; }
+        .las { position:absolute; left:24px; right:24px; height:4px; background:var(--accent-primary); box-shadow:0 0 18px var(--accent-primary); opacity:0; }
+        .newl { height:18px; border-radius:999px; background:var(--accent-primary); width:78%; transform-origin:left; transform:scaleX(0); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "23-memory-file-append", "number": "23", "name": "Document Scan & Append", "category": "Workflows & Agents", "inspiration": "Jeff Su / Notion", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"filename": "DESIGN.md", "subtitle": "Live Brand Token Contract", "badge": "Synced"},
+      mount(p) {
+root.innerHTML = `<div class="card card-f" id="cf">
+          <div class="las" id="las"></div>
+          <div class="fh"><div><div class="fn">${p.filename}</div><div class="fs">${p.subtitle}</div></div><div class="bdg" id="bdg">✓ ${p.badge}</div></div>
+          <div class="skel" style="width:88%"></div><div class="skel soft" style="width:72%"></div><div class="skel" style="width:82%"></div>
+          <div class="newl" id="nl"></div>
+        </div>`;
+      },
+      render(t, p) {
+const cf=prog(t,0.1,0.55,'expo.out'); el('cf').style.opacity=cf; el('cf').style.transform=`translateY(${lerp(30,0,cf)}px)`;
+        const lp=prog(t,0.75,0.9,'power2.inOut');
+        el('las').style.opacity=(t>=0.75&&t<=1.7)?Math.sin(lp*Math.PI):0; el('las').style.top=`${lerp(18,86,lp)}%`;
+        const nl=prog(t,1.8,0.85,'expo.out'); el('nl').style.transform=`scaleX(${nl})`;
+        el('nl').style.background=t>3.0?'var(--skeleton-primary)':'var(--accent-primary)';
+        const bd=prog(t,2.85,0.4,'back.out(1.6)'); el('bdg').style.opacity=Math.min(1,bd); el('bdg').style.transform=`scale(${lerp(0.6,1,bd)})`;
+      }
+    });
+  </script>
+</body>
+</html>

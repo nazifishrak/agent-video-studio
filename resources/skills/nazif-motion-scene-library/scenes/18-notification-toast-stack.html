@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>18 / Notification Stack</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:grid; grid-template-columns:1fr 1.15fr; gap:64px; align-items:center; }
+        .hd { font-size:74px; }
+        .stack { display:flex; flex-direction:column; gap:24px; }
+        .ts { padding:34px 38px; display:flex; flex-direction:column; gap:8px; }
+        .tt { font-size:28px; font-weight:700; color:var(--accent-primary); }
+        .tb { font-size:26px; color:var(--text-primary); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "18-notification-toast-stack", "number": "18", "name": "Notification Stack", "category": "Product UI & Micro-Demos", "inspiration": "Stripe / Slack", "duration": 4.8, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Real-time execution", "toasts": [["Creator Approved", "Maya Lin accepted your Q4 brief"], ["Deliverable Uploaded", "4K vertical cut ready for review"], ["Milestone Hit", "Campaign crossed 500,000 organic views"]]},
+      mount(p) {
+root.innerHTML = `<div class="wrap">
+          <div class="t-display hd" id="hd">${p.title}</div>
+          <div class="stack">${p.toasts.map((x,i)=>`<div class="card ts" id="t${i}"><div class="tt">${x[0]}</div><div class="tb">${x[1]}</div></div>`).join('')}</div>
+        </div>`;
+      },
+      render(t, p) {
+el('hd').style.opacity=prog(t,0.1,0.5,'expo.out');
+        p.toasts.forEach((_,i)=>{ const pr=prog(t,0.45+i*0.65,0.58,'back.out(1.35)'); el('t'+i).style.opacity=Math.min(1,pr); el('t'+i).style.transform=`translateX(${lerp(80,0,pr)}px)`; });
+      }
+    });
+  </script>
+</body>
+</html>

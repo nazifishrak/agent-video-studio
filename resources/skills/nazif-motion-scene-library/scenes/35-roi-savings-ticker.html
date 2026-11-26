@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>35 / ROI Savings Ticker</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; align-items:center; text-align:center; gap:32px; }
+        .ey { font-size:26px; font-weight:600; color:var(--accent-primary); text-transform:uppercase; letter-spacing:0.08em; }
+        .amt { font-size:148px; }
+        .pls { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
+        .pl { padding:16px 28px; border-radius:16px; background:var(--surface-well); font-size:26px; font-weight:600; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "35-roi-savings-ticker", "number": "35", "name": "ROI Savings Ticker", "category": "Data Viz & Metrics", "inspiration": "Ramp / Rippling", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"eyebrow": "Estimated Annual Savings", "amount": 148000, "pills": ["Zero Retainers", "6x Faster Turnaround", "100% View-Verified"]},
+      mount(p) {
+root.innerHTML = `<div class="wrap"><div class="ey">${p.eyebrow}</div><div class="t-display t-num amt" id="am">$0</div><div class="pls">${p.pills.map((x,i)=>`<div class="pl" id="pl${i}">${x}</div>`).join('')}</div></div>`;
+      },
+      render(t, p) {
+const c=prog(t,0.25,1.9,'expo.out'); el('am').textContent=`$${Math.round(c*p.amount).toLocaleString()}`;
+        p.pills.forEach((_,i)=>{ const pr=prog(t,1.2+i*0.18,0.45,'expo.out'); el('pl'+i).style.opacity=pr; el('pl'+i).style.transform=`translateY(${lerp(20,0,pr)}px)`; });
+      }
+    });
+  </script>
+</body>
+</html>

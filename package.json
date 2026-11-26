@@ -1,0 +1,51 @@
+{
+  "name": "agent-video-studio",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Open-source local-first desktop video editor & content planner driven by AI agents via MCP and plain files.",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "dev:renderer": "vite",
+    "build:main": "tsc -p tsconfig.node.json",
+    "build:pty": "node scripts/build-pty.mjs",
+    "build:renderer": "vite build",
+    "build": "npm run build:main && npm run build:pty && npm run build:renderer",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.renderer.json --noEmit",
+    "dev": "concurrently -k \"npm run dev:renderer\" \"npm run build:main && npm run build:pty && wait-on http://127.0.0.1:5173 && ELECTRON_DEV_URL=http://127.0.0.1:5173 electron .\"",
+    "start": "npm run build && electron .",
+    "mcp": "node dist/mcp/server.js",
+    "test:smoke": "tsx scripts/smoke-test.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-unicode11": "^0.9.0",
+    "@xterm/addon-web-links": "^0.12.0",
+    "@xterm/addon-webgl": "^0.19.0",
+    "@xterm/xterm": "^6.0.0",
+    "chokidar": "^4.0.3",
+    "gray-matter": "^4.0.3",
+    "lucide-react": "^0.511.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "zod": "^3.25.32",
+    "zustand": "^5.0.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.7",
+    "@types/node": "^22.15.18",
+    "@types/react": "^19.1.4",
+    "@types/react-dom": "^19.1.4",
+    "@vitejs/plugin-react": "^4.4.1",
+    "concurrently": "^9.1.2",
+    "electron": "^35.2.1",
+    "tailwindcss": "^4.1.7",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "wait-on": "^8.0.3"
+  }
+}

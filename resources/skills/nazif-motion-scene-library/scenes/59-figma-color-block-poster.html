@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>59 / Figma Color-Block Poster</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.scene-root { background:#FFFFFF; padding:64px 88px; }
+        .poster { width:100%; height:100%; background:#C4FA6F; color:#000000; border-radius:28px; padding:78px 92px; display:flex; flex-direction:column; justify-content:space-between; }
+        .ey { font-size:20px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#000000; }
+        .hl { font-family:var(--font-display); font-size:96px; font-weight:400; line-height:1.02; letter-spacing:-0.025em; max-width:1360px; color:#000000; }
+        .bd { font-size:32px; font-weight:400; line-height:1.4; max-width:1080px; color:#000000; margin-top:26px; }
+        .ctas { display:flex; gap:18px; align-items:center; }
+        .btn-b { background:#000000; color:#FFFFFF; padding:20px 38px; border-radius:50px; font-size:26px; font-weight:500; }
+        .btn-w { background:#FFFFFF; color:#000000; padding:20px 38px; border-radius:50px; font-size:26px; font-weight:500; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "59-figma-color-block-poster", "number": "59", "name": "Figma Color-Block Poster", "category": "Figma Editorial Signature", "inspiration": "Figma Editorial DESIGN.md", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"eyebrow": "DESIGN SYSTEMS / COLOR BLOCK", "headline": "Build once. Reskin every scene in one command.", "body": "Monochrome chrome frames giant pastel story blocks\u2014zero drop shadows, zero gradients, pure typographic contrast.", "ctaPrimary": "Start Building", "ctaSecondary": "View Specs"},
+      mount(p) {
+root.innerHTML = `<div class="poster" id="pos">
+          <div class="ey" id="ey">${p.eyebrow}</div>
+          <div><div class="hl" id="hl">${p.headline}</div><div class="bd" id="bd">${p.body}</div></div>
+          <div class="ctas" id="ct"><div class="btn-b">${p.ctaPrimary}</div><div class="btn-w">${p.ctaSecondary}</div></div>
+        </div>`;
+      },
+      render(t, p) {
+const pos=prog(t,0.1,0.65,'expo.out'), hl=prog(t,0.35,0.7,'expo.out'), bd=prog(t,0.65,0.6,'power3.out'), ct=prog(t,1.0,0.55,'back.out(1.3)');
+        el('pos').style.opacity=pos; el('pos').style.transform=`scale(${lerp(0.95,1,pos)})`;
+        el('hl').style.opacity=hl; el('hl').style.transform=`translateY(${lerp(34,0,hl)}px)`;
+        el('bd').style.opacity=bd; el('bd').style.transform=`translateY(${lerp(24,0,bd)}px)`;
+        el('ct').style.opacity=Math.min(1,ct); el('ct').style.transform=`translateY(${lerp(20,0,ct)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

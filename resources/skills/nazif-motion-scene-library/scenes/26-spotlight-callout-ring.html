@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>26 / Spotlight Callout Ring</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.bg { padding:52px; display:flex; flex-direction:column; gap:28px; }
+        .foc { position:absolute; left:240px; top:320px; width:960px; padding:44px 52px; border:3px solid var(--accent-warm); z-index:10; }
+        .ft { font-size:40px; font-weight:700; }
+        .fd { font-size:28px; color:var(--text-muted); margin-top:10px; }
+        .nt { position:absolute; right:140px; top:220px; padding:20px 30px; background:var(--accent-warm); color:#fff; border-radius:16px; font-size:26px; font-weight:600; z-index:12; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "26-spotlight-callout-ring", "number": "26", "name": "Spotlight Callout Ring", "category": "Callouts & PiP", "inspiration": "Screen Studio / Jeff Su", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"focusTitle": "Automated Payout Trigger", "focusDetail": "$1,450 released upon 100K verified views", "note": "Zero manual invoice chasing"},
+      mount(p) {
+root.innerHTML = `<div class="card bg" id="bg"><div class="skel" style="width:45%"></div><div class="skel soft" style="width:88%"></div><div class="skel soft" style="width:76%"></div><div class="skel soft" style="width:82%"></div><div class="skel soft" style="width:65%"></div></div>
+        <div class="card foc" id="foc"><div class="ft">${p.focusTitle}</div><div class="fd">${p.focusDetail}</div></div>
+        <div class="nt" id="nt">${p.note}</div>`;
+      },
+      render(t, p) {
+const p1=prog(t,0.65,0.65,'expo.out'), p2=prog(t,1.2,0.5,'back.out(1.4)');
+        el('bg').style.filter=`blur(${(p1*8).toFixed(1)}px)`; el('bg').style.opacity=lerp(1,0.4,p1);
+        el('foc').style.opacity=p1; el('foc').style.transform=`scale(${lerp(0.9,1.03,p1)})`;
+        el('nt').style.opacity=Math.min(1,p2); el('nt').style.transform=`translateY(${lerp(24,0,p2)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>36 / Conversion Funnel</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { font-size:60px; margin-bottom:44px; }
+        .box { padding:48px 56px; display:flex; flex-direction:column; gap:26px; }
+        .row { display:grid; grid-template-columns:340px 1fr 120px; align-items:center; gap:28px; font-size:28px; font-weight:600; }
+        .tr { height:46px; border-radius:12px; background:var(--surface-well); overflow:hidden; }
+        .fl { height:100%; background:var(--accent-primary); border-radius:12px; transform-origin:left; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "36-funnel-conversion-bars", "number": "36", "name": "Conversion Funnel", "category": "Data Viz & Metrics", "inspiration": "Growth / Analytics", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Creator campaign funnel", "steps": [["Matched Creators", 100, "240"], ["Approved Roster", 68, "164"], ["Published Clips", 54, "130"], ["Top Performers", 32, "78"]]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd">${p.title}</div>
+        <div class="card box">${p.steps.map((s,i)=>`<div class="row"><span>${s[0]}</span><div class="tr"><div class="fl" id="f${i}" style="width:${s[1]}%;opacity:${1-i*0.15}"></div></div><span class="t-num" style="text-align:right">${s[2]}</span></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+p.steps.forEach((_,i)=>{ el('f'+i).style.transform=`scaleX(${prog(t,0.3+i*0.28,0.8,'expo.out')})`; });
+      }
+    });
+  </script>
+</body>
+</html>

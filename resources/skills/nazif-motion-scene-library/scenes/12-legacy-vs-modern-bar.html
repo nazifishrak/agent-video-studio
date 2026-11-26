@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>12 / Time & Cost Bar Race</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { font-size:62px; margin-bottom:56px; }
+        .box { padding:56px; display:flex; flex-direction:column; gap:44px; }
+        .row { display:flex; flex-direction:column; gap:16px; }
+        .top { display:flex; justify-content:space-between; font-size:30px; font-weight:600; }
+        .track { height:56px; border-radius:16px; background:var(--surface-well); overflow:hidden; }
+        .fill { height:100%; border-radius:16px; transform-origin:left; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "12-legacy-vs-modern-bar", "number": "12", "name": "Time & Cost Bar Race", "category": "Problem & Comparison", "inspiration": "Ramp / Stripe", "duration": 4.8, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Campaign launch turnaround", "oldLabel": "Traditional agency workflow", "oldVal": "42 days", "newLabel": "Automated platform workflow", "newVal": "48 hours"},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd" id="hd">${p.title}</div>
+        <div class="card box" id="bx">
+          <div class="row"><div class="top"><span>${p.oldLabel}</span><span class="t-num" style="color:var(--text-muted)">${p.oldVal}</span></div><div class="track"><div class="fill" id="f1" style="width:92%;background:var(--skeleton-primary)"></div></div></div>
+          <div class="row"><div class="top"><span>${p.newLabel}</span><span class="t-num" style="color:var(--accent-primary)">${p.newVal}</span></div><div class="track"><div class="fill" id="f2" style="width:18%;background:var(--accent-primary)"></div></div></div>
+        </div>`;
+      },
+      render(t, p) {
+const hd=prog(t,0.1,0.5,'expo.out'), b1=prog(t,0.5,1.1,'expo.out'), b2=prog(t,1.2,0.85,'expo.out');
+        el('hd').style.opacity=hd; el('hd').style.transform=`translateY(${lerp(24,0,hd)}px)`;
+        el('f1').style.transform=`scaleX(${b1})`; el('f2').style.transform=`scaleX(${b2})`;
+      }
+    });
+  </script>
+</body>
+</html>

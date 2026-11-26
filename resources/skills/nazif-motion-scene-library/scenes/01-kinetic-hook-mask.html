@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>01 / Kinetic Hook Mask</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; align-items:center; text-align:center; gap:30px; }
+        .kicker { font-size:26px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent-primary); }
+        .mask { overflow:hidden; padding:6px 18px; }
+        .line { font-size:116px; display:inline-block; }
+        .hl-wrap { position:relative; display:inline-block; padding:4px 24px 8px; }
+        .hl-bg { position:absolute; inset:6px 0; background:var(--accent-soft); border-radius:22px; transform-origin:left center; z-index:-1; }
+        .sub { font-size:36px; color:var(--text-muted); max-width:1100px; line-height:1.4; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "01-kinetic-hook-mask", "number": "01", "name": "Kinetic Hook Mask", "category": "Kinetic Typography", "inspiration": "Apple / Ali Abdaal", "duration": 4.8, "fps": 30, "transparent_ready": false},
+      defaultProps: {"kicker": "Product Launch", "line1": "Creator marketing", "line2": "without the chaos", "sub": "End-to-end campaigns built for teams that only pay for real results."},
+      mount(p) {
+root.innerHTML = `<div class="wrap" id="w">
+          <div class="kicker" id="k">${p.kicker}</div>
+          <div>
+            <div class="mask"><span class="t-display line" id="l1">${p.line1}</span></div>
+            <div class="mask"><span class="t-display line hl-wrap" id="l2"><span class="hl-bg" id="hl"></span>${p.line2}</span></div>
+          </div>
+          <div class="sub" id="sub">${p.sub}</div>
+        </div>`;
+      },
+      render(t, p) {
+const k=prog(t,0.12,0.45,'power3.out'), l1=prog(t,0.25,0.72,'expo.out'), l2=prog(t,0.42,0.72,'expo.out'), hl=prog(t,0.98,0.46,'power2.out'), sub=prog(t,1.28,0.62,'power3.out'), d=prog(t,1.5,3.2,'sine.inOut');
+        el('k').style.opacity=k; el('k').style.transform=`translateY(${lerp(24,0,k)}px)`;
+        el('l1').style.transform=`translateY(${lerp(115,0,l1)}%)`;
+        el('l2').style.transform=`translateY(${lerp(115,0,l2)}%)`;
+        el('hl').style.transform=`scaleX(${hl})`;
+        el('sub').style.opacity=sub; el('sub').style.transform=`translateY(${lerp(24,0,sub)}px)`;
+        el('w').style.transform=`scale(${lerp(1,1.03,d)})`;
+      }
+    });
+  </script>
+</body>
+</html>

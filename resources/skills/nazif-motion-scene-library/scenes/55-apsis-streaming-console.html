@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>55 / Apsis Streaming Console</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.con { max-width:1420px; margin:0 auto; background:var(--neural-dark, #111729); color:#FFFFFF; border:1px solid var(--neural-dark-1, #1e293c); border-radius:20px; padding:52px 56px; display:flex; flex-direction:column; gap:34px; }
+        .ey { font-family:var(--font-display); font-size:20px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--neural-blue-2, #61a6fa); }
+        .pr { font-size:30px; color:var(--neural-gray, #94a3b7); border-left:2px solid var(--neural-dark-2, #324155); padding-left:24px; }
+        .st { font-family:var(--font-display); font-size:48px; font-weight:500; line-height:1.22; letter-spacing:-0.02em; min-height:180px; }
+        .caret { display:inline-block; width:4px; height:44px; background:var(--neural-blue-2, #61a6fa); margin-left:6px; vertical-align:middle; }
+        .mets { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; border-top:1px solid var(--neural-dark-2, #324155); padding-top:32px; }
+        .mb { background:var(--neural-dark-1, #1e293c); border:1px solid var(--neural-dark-2, #324155); border-radius:14px; padding:24px 28px; }
+        .mk { font-size:18px; color:var(--neural-gray, #94a3b7); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; }
+        .mv { font-family:var(--font-display); font-size:46px; font-weight:500; margin-top:8px; color:#FFFFFF; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "55-apsis-streaming-console", "number": "55", "name": "Apsis Streaming Console", "category": "Apsis Space Signature", "inspiration": "Apsis Space DESIGN.md", "duration": 5.4, "fps": 30, "transparent_ready": false},
+      defaultProps: {"eyebrow": "MERIDIAN TELEMETRY / LIVE STREAM", "prompt": "Compute orbital burn trajectory and verify thermal tolerance.", "stream": "Trajectory verified across 14 orbital nodes. Nominal delta-v envelope locked with zero structural drift.", "m1": "1,412 m/s", "m2": "< 1.0e-8", "m3": "14 ms"},
+      mount(p) {
+root.innerHTML = `<div class="con" id="con">
+          <div class="ey">${p.eyebrow}</div>
+          <div class="pr">${p.prompt}</div>
+          <div class="st"><span id="txt"></span><span class="caret" id="car"></span></div>
+          <div class="mets">
+            <div class="mb"><div class="mk">Delta-V</div><div class="mv t-num" id="m1">...</div></div>
+            <div class="mb"><div class="mk">Drift Error</div><div class="mv t-num" id="m2">...</div></div>
+            <div class="mb"><div class="mk">Latency</div><div class="mv t-num" id="m3">...</div></div>
+          </div>
+        </div>`;
+      },
+      render(t, p) {
+const c=prog(t,0.1,0.5,'expo.out'); el('con').style.opacity=c; el('con').style.transform=`translateY(${lerp(24,0,c)}px)`;
+        const sp=prog(t,0.45,2.6,'linear');
+        el('txt').textContent=p.stream.slice(0,Math.round(sp*p.stream.length));
+        el('car').style.opacity=Math.floor(t*2.2)%2===0?1:0;
+        const done=t>=3.15;
+        el('m1').textContent=done?p.m1:'...';
+        el('m2').textContent=done?p.m2:'...';
+        el('m3').textContent=done?p.m3:'...';
+        if(done){ el('m1').style.color='var(--neural-blue-3, #92c4fc)'; el('m2').style.color='var(--neural-blue-3, #92c4fc)'; el('m3').style.color='var(--neural-blue-3, #92c4fc)'; }
+      }
+    });
+  </script>
+</body>
+</html>

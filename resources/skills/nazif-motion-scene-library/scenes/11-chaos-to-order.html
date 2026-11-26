@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>11 / Chaos to Order Snap</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { text-align:center; font-size:60px; margin-bottom:56px; }
+        .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; }
+        .it { padding:42px; display:flex; flex-direction:column; gap:16px; }
+        .it-t { font-size:34px; font-weight:600; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "11-chaos-to-order", "number": "11", "name": "Chaos to Order Snap", "category": "Problem & Comparison", "inspiration": "Notion / Figma", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Turn scattered work into a clean system", "items": ["Briefs", "Approvals", "Payouts", "Analytics", "Contracts", "Assets"]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd" id="hd">${p.title}</div>
+        <div class="grid">${p.items.map((x,i)=>`<div class="card it" id="it${i}"><div class="it-t">${x}</div><div class="skel" style="width:78%"></div><div class="skel soft" style="width:52%"></div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+const offs=[[-90,-70,-11],[40,-95,9],[110,-40,-8],[-100,80,10],[20,100,-7],[95,75,12]];
+        const hd=prog(t,0.1,0.5,'expo.out'); el('hd').style.opacity=hd;
+        p.items.forEach((_,i)=>{
+          const snap=prog(t,0.85+i*0.12,0.75,'back.out(1.35)');
+          const [ox,oy,or]=offs[i%offs.length];
+          const e=el('it'+i);
+          e.style.opacity=prog(t,0.15+i*0.06,0.35,'power2.out');
+          e.style.transform=`translate(${lerp(ox,0,snap)}px, ${lerp(oy,0,snap)}px) rotate(${lerp(or,0,snap)}deg)`;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

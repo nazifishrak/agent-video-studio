@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>37 / Monochrome Logo Wall</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { text-align:center; font-size:54px; margin-bottom:56px; }
+        .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:28px; }
+        .lg { padding:44px 28px; text-align:center; font-size:34px; font-weight:700; color:var(--text-muted); letter-spacing:-0.02em; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "37-logo-wall-stagger", "number": "37", "name": "Monochrome Logo Wall", "category": "Social Proof & Trust", "inspiration": "Vercel / Stripe", "duration": 4.6, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Trusted by fast-moving product teams", "logos": ["Notion", "Wispr Flow", "Todoist", "Superhuman", "Linear", "Raycast", "Vercel", "Loom"]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd" id="hd">${p.title}</div>
+        <div class="grid">${p.logos.map((l,i)=>`<div class="card lg" id="lg${i}">${l}</div>`).join('')}</div>`;
+      },
+      render(t, p) {
+el('hd').style.opacity=prog(t,0.1,0.5,'expo.out');
+        p.logos.forEach((_,i)=>{ const pr=prog(t,0.3+i*0.1,0.5,'expo.out'); el('lg'+i).style.opacity=pr; el('lg'+i).style.transform=`translateY(${lerp(24,0,pr)}px)`; });
+      }
+    });
+  </script>
+</body>
+</html>

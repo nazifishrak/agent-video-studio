@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>29 / 3D Browser Showcase</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.stage3d { perspective:1800px; display:flex; justify-content:center; }
+        .win { width:1420px; height:740px; overflow:hidden; display:flex; flex-direction:column; }
+        .bar { padding:20px 32px; background:var(--surface-well); border-bottom:2px solid var(--border-subtle); font-size:22px; color:var(--text-muted); }
+        .body { flex:1; padding:64px; display:flex; flex-direction:column; justify-content:center; gap:26px; }
+        .hl { font-size:74px; }
+        .mt { font-size:36px; font-weight:600; color:var(--accent-primary); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "29-browser-window-tilt-3d", "number": "29", "name": "3D Browser Showcase", "category": "Callouts & PiP", "inspiration": "Apple / Framer", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"url": "app.creatorgrid.io/campaigns", "headline": "Campaign Control Center", "metric": "98.4% On-Time Delivery"},
+      mount(p) {
+root.innerHTML = `<div class="stage3d"><div class="card win" id="win"><div class="bar">${p.url}</div><div class="body"><div class="t-display hl">${p.headline}</div><div class="mt t-num">${p.metric}</div><div class="skel" style="width:65%"></div><div class="skel soft" style="width:48%"></div></div></div></div>`;
+      },
+      render(t, p) {
+const pr=prog(t,0.15,1.25,'expo.out');
+        el('win').style.opacity=pr;
+        el('win').style.transform=`rotateX(${lerp(18,0,pr)}deg) rotateY(${lerp(-14,0,pr)}deg) scale(${lerp(0.9,1,pr)})`;
+      }
+    });
+  </script>
+</body>
+</html>

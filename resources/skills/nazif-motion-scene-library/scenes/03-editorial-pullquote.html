@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>03 / Editorial Pullquote</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { max-width:1420px; margin:0 auto; display:flex; flex-direction:column; gap:40px; }
+        .rule { width:120px; height:6px; border-radius:6px; background:var(--accent-primary); transform-origin:left; }
+        .q { font-size:82px; line-height:1.15; }
+        .attr { display:flex; flex-direction:column; gap:6px; }
+        .au { font-size:32px; font-weight:600; }
+        .ro { font-size:24px; color:var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "03-editorial-pullquote", "number": "03", "name": "Editorial Pullquote", "category": "Kinetic Typography", "inspiration": "Stripe / Editorial", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"quote": "Good software removes the work you never wanted to do in the first place.", "author": "Maya Chen", "role": "VP of Product / Northstar"},
+      mount(p) {
+root.innerHTML = `<div class="wrap">
+          <div class="rule" id="r"></div>
+          <div class="t-display q" id="q">“${p.quote}”</div>
+          <div class="attr" id="a"><div class="au">${p.author}</div><div class="ro">${p.role}</div></div>
+        </div>`;
+      },
+      render(t, p) {
+const r=prog(t,0.15,0.5,'expo.out'), q=prog(t,0.35,0.85,'expo.out'), a=prog(t,1.15,0.6,'power3.out');
+        el('r').style.transform=`scaleX(${r})`;
+        el('q').style.opacity=q; el('q').style.transform=`translateY(${lerp(36,0,q)}px)`;
+        el('a').style.opacity=a; el('a').style.transform=`translateY(${lerp(22,0,a)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

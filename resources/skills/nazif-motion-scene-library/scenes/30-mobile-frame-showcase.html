@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>30 / Mobile Frame Showcase</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; justify-content:center; }
+        .phone { width:440px; height:860px; border-radius:56px; border:14px solid var(--text-primary); background:var(--surface-card); padding:40px 26px; overflow:hidden; box-shadow:var(--shadow-card); }
+        .pt { font-size:30px; font-weight:700; margin-bottom:28px; }
+        .feed { display:flex; flex-direction:column; gap:18px; }
+        .fc { padding:28px 24px; border-radius:20px; background:var(--surface-well); font-size:24px; font-weight:600; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "30-mobile-frame-showcase", "number": "30", "name": "Mobile Frame Showcase", "category": "Callouts & PiP", "inspiration": "Apple / App Store", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"appTitle": "Creator Feed", "items": ["Approved Cut #14", "New Brief Assigned", "Payout Cleared $840", "124K Views Milestone"]},
+      mount(p) {
+root.innerHTML = `<div class="wrap"><div class="phone" id="ph"><div class="pt">${p.appTitle}</div><div class="feed" id="fd">${p.items.map(x=>`<div class="fc">${x}</div>`).join('')}</div></div></div>`;
+      },
+      render(t, p) {
+const ph=prog(t,0.12,0.75,'expo.out'), sc=prog(t,1.1,2.6,'power2.inOut');
+        el('ph').style.opacity=ph; el('ph').style.transform=`translateY(${lerp(90,0,ph)}px)`;
+        el('fd').style.transform=`translateY(${lerp(0,-120,sc)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

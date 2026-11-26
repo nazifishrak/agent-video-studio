@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>47 / Voice Waveform Caption</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { max-width:1320px; margin:0 auto; padding:64px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:40px; }
+        .bars { display:flex; align-items:center; gap:14px; height:160px; }
+        .bar { width:16px; border-radius:999px; background:var(--accent-primary); }
+        .cap { font-size:54px; line-height:1.2; }
+        .sp { font-size:24px; color:var(--text-muted); font-weight:600; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "47-audio-waveform-voice", "number": "47", "name": "Voice Waveform Caption", "category": "Chapters & Pacing", "inspiration": "Lovo AI / Podcast", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"caption": "When your video is code, changing your mind takes one prompt.", "speaker": "Voiceover Track / 48kHz"},
+      mount(p) {
+root.innerHTML = `<div class="card wrap"><div class="bars">${Array.from({length:24}).map((_,i)=>`<div class="bar" id="b${i}"></div>`).join('')}</div><div class="t-display cap" id="cp">“${p.caption}”</div><div class="sp">${p.speaker}</div></div>`;
+      },
+      render(t, p) {
+for(let i=0;i<24;i++){ const h=28+Math.abs(Math.sin(t*5.2+i*0.48))*124; el('b'+i).style.height=`${h.toFixed(0)}px`; }
+        el('cp').style.opacity=prog(t,0.2,0.6,'expo.out');
+      }
+    });
+  </script>
+</body>
+</html>

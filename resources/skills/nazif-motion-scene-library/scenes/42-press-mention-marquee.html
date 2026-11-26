@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>42 / Press & Brand Ticker</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; gap:44px; overflow:hidden; }
+        .k { text-align:center; font-size:26px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; }
+        .track { display:flex; gap:48px; white-space:nowrap; }
+        .it { padding:28px 46px; font-size:36px; font-weight:700; flex-shrink:0; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "42-press-mention-marquee", "number": "42", "name": "Press & Brand Ticker", "category": "Social Proof & Trust", "inspiration": "Framer / Editorial", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"kicker": "Featured & Built With", "items": ["Product Hunt #1", "TechCrunch", "Fast Company", "The Verge", "Wired", "Stratechery"]},
+      mount(p) {
+const dbl=[...p.items,...p.items];
+        root.innerHTML = `<div class="wrap"><div class="k">${p.kicker}</div><div class="track" id="tr">${dbl.map(x=>`<div class="card it">${x}</div>`).join('')}</div></div>`;
+      },
+      render(t, p) {
+el('tr').style.transform=`translateX(-${(t*220)%1400}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

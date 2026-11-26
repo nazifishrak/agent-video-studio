@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>06 / Clean Lower Third</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.scene-root { justify-content:flex-end; align-items:flex-start; padding:88px 96px; }
+        .lt { display:flex; align-items:center; gap:24px; padding:26px 38px; }
+        .bar { width:8px; height:76px; border-radius:8px; background:var(--accent-primary); transform-origin:bottom; }
+        .nm { font-size:42px; font-weight:700; letter-spacing:-0.02em; }
+        .rl { font-size:24px; color:var(--text-muted); margin-top:4px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "06-lower-third-clean", "number": "06", "name": "Clean Lower Third", "category": "Kinetic Typography", "inspiration": "Broadcast / YouTube", "duration": 4.5, "fps": 30, "transparent_ready": true},
+      defaultProps: {"name": "Nazif Ishrak", "role": "Solutions Engineer / Product Demo"},
+      mount(p) {
+root.innerHTML = `<div class="card lt" id="lt">
+          <div class="bar" id="bar"></div>
+          <div><div class="nm" id="nm">${p.name}</div><div class="rl" id="rl">${p.role}</div></div>
+        </div>`;
+      },
+      render(t, p) {
+const inp=prog(t,0.15,0.58,'expo.out'), out=prog(t,3.75,0.55,'power3.inOut');
+        const vis=inp*(1-out);
+        el('lt').style.opacity=vis; el('lt').style.transform=`translateX(${lerp(-64,0,inp)+lerp(0,-48,out)}px)`;
+        el('bar').style.transform=`scaleY(${prog(t,0.28,0.45,'expo.out')})`;
+      }
+    });
+  </script>
+</body>
+</html>

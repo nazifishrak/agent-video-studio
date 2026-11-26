@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>41 / Case Study Snapshot</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:36px; }
+        .bx { padding:48px 40px; display:flex; flex-direction:column; gap:16px; }
+        .k { font-size:20px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--accent-primary); }
+        .v { font-size:36px; font-weight:700; line-height:1.25; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "41-case-study-snapshot", "number": "41", "name": "Case Study Snapshot", "category": "Social Proof & Trust", "inspiration": "B2B SaaS Launch", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"company": "Wispr Flow", "challenge": "Needed 60 authentic UGC clips in 3 weeks", "result": "3.2M organic views at $3.40 CPM"},
+      mount(p) {
+root.innerHTML = `<div class="grid">
+          <div class="card bx" id="b0"><div class="k">Brand</div><div class="t-display v">${p.company}</div></div>
+          <div class="card bx" id="b1"><div class="k">Challenge</div><div class="v">${p.challenge}</div></div>
+          <div class="card bx" id="b2" style="border-color:var(--accent-primary)"><div class="k">Result</div><div class="v" style="color:var(--accent-primary)">${p.result}</div></div>
+        </div>`;
+      },
+      render(t, p) {
+[0,1,2].forEach(i=>{ const pr=prog(t,0.2+i*0.45,0.55,'expo.out'); el('b'+i).style.opacity=pr; el('b'+i).style.transform=`translateY(${lerp(36,0,pr)}px)`; });
+      }
+    });
+  </script>
+</body>
+</html>

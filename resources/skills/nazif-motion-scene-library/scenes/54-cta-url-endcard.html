@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>54 / Closing CTA End-Card</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; align-items:center; text-align:center; gap:36px; }
+    .hl { font-size:96px; }
+    .btn { padding:26px 56px; border-radius:999px; background:var(--accent-primary); color:#fff; font-size:34px; font-weight:600; box-shadow:0 18px 40px rgba(37,99,235,0.28); }
+    .url { font-size:30px; font-weight:600; color:var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "54-cta-url-endcard", "number": "54", "name": "Closing CTA End-Card", "category": "Features & CTAs", "inspiration": "SaaS Launch Outro", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"headline": "Try it on your next launch.", "cta": "Get Started Free", "url": "creatorgrid.io"},
+      mount(p) {
+root.innerHTML = `<div class="wrap"><div class="t-display hl" id="hl">${p.headline}</div><div class="btn" id="btn">${p.cta}</div><div class="url" id="url">${p.url}</div></div>`;
+      },
+      render(t, p) {
+const h=prog(t,0.15,0.65,'expo.out'), b=prog(t,0.65,0.55,'back.out(1.5)'), u=prog(t,1.05,0.5,'power2.out');
+    el('hl').style.opacity=h; el('hl').style.transform=`translateY(${lerp(30,0,h)}px)`;
+    const clk = (t>=2.1&&t<=2.32)?0.94:1;
+    el('btn').style.opacity=Math.min(1,b); el('btn').style.transform=`scale(${lerp(0.8,1,b)*clk})`;
+    el('url').style.opacity=u;
+      }
+    });
+  </script>
+</body>
+</html>

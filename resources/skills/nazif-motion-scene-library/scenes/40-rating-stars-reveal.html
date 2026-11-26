@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>40 / Five-Star Rating Reveal</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; align-items:center; text-align:center; gap:28px; }
+        .stars { display:flex; gap:18px; font-size:96px; color:var(--accent-warm); }
+        .sc { font-size:74px; }
+        .sb { font-size:32px; color:var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "40-rating-stars-reveal", "number": "40", "name": "Five-Star Rating Reveal", "category": "Social Proof & Trust", "inspiration": "App Store / G2", "duration": 4.6, "fps": 30, "transparent_ready": false},
+      defaultProps: {"score": "4.9 / 5", "sub": "Average rating across 420+ verified brand campaigns"},
+      mount(p) {
+root.innerHTML = `<div class="wrap"><div class="stars">${[0,1,2,3,4].map(i=>`<span id="st${i}">★</span>`).join('')}</div><div class="t-display t-num sc" id="sc">${p.score}</div><div class="sb" id="sb">${p.sub}</div></div>`;
+      },
+      render(t, p) {
+[0,1,2,3,4].forEach(i=>{ const pr=prog(t,0.2+i*0.18,0.45,'back.out(1.7)'); el('st'+i).style.opacity=Math.min(1,pr); el('st'+i).style.transform=`scale(${lerp(0.4,1,pr)})`; });
+        el('sc').style.opacity=prog(t,1.2,0.5,'expo.out'); el('sb').style.opacity=prog(t,1.45,0.5,'expo.out');
+      }
+    });
+  </script>
+</body>
+</html>

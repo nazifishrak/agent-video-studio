@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>07 / Problem Split Dim</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { text-align:center; font-size:64px; margin-bottom:48px; }
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:44px; }
+        .pc { padding:48px; display:flex; flex-direction:column; gap:24px; }
+        .ch { display:flex; justify-content:space-between; align-items:center; }
+        .ct { font-size:38px; font-weight:600; }
+        .tg { font-size:20px; font-weight:600; padding:8px 18px; border-radius:12px; background:var(--surface-well); color:var(--text-muted); }
+        .rw { display:flex; align-items:center; gap:18px; padding:20px 24px; border-radius:16px; background:var(--status-negative-soft); font-size:26px; font-weight:500; }
+        .xb { width:38px; height:38px; border-radius:50%; background:var(--status-negative); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "07-problem-split-dim", "number": "07", "name": "Problem Split Dim", "category": "Problem & Comparison", "inspiration": "Ali Abdaal / Jeff Su", "duration": 5.4, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Why campaigns stall", "leftTitle": "Traditional Agency", "leftTag": "High Overhead", "leftRows": ["Upfront monthly retainers", "Six-week turnaround", "No view guarantee"], "rightTitle": "In-House Manual", "rightTag": "Team Bottleneck", "rightRows": ["Cold DMing 200 creators", "Contracts and briefs", "Chasing invoices"]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd" id="hd">${p.title}</div>
+        <div class="grid">
+          <div class="card pc" id="c1"><div class="ch"><span class="ct">${p.leftTitle}</span><span class="tg">${p.leftTag}</span></div>
+            ${p.leftRows.map((r,i)=>`<div class="rw" id="lr${i}"><span class="xb">✕</span><span>${r}</span></div>`).join('')}
+          </div>
+          <div class="card pc" id="c2"><div class="ch"><span class="ct">${p.rightTitle}</span><span class="tg">${p.rightTag}</span></div>
+            ${p.rightRows.map((r,i)=>`<div class="rw" id="rr${i}"><span class="xb">✕</span><span>${r}</span></div>`).join('')}
+          </div>
+        </div>`;
+      },
+      render(t, p) {
+const hd=prog(t,0.1,0.5,'expo.out'), c1=prog(t,0.3,0.55,'expo.out'), dim=prog(t,2.0,0.5,'power2.inOut'), c2=prog(t,2.05,0.55,'expo.out');
+        el('hd').style.opacity=hd; el('hd').style.transform=`translateY(${lerp(28,0,hd)}px)`;
+        el('c1').style.opacity=c1*lerp(1,0.38,dim); el('c1').style.filter=`grayscale(${Math.round(dim*100)}%)`; el('c1').style.transform=`translateY(${lerp(40,0,c1)}px) scale(${lerp(1,0.98,dim)})`;
+        p.leftRows.forEach((_,i)=>{ const pr=prog(t,0.62+i*0.15,0.4,'power3.out'); el('lr'+i).style.opacity=pr; el('lr'+i).style.transform=`translateX(${lerp(-24,0,pr)}px)`; });
+        el('c2').style.opacity=c2; el('c2').style.transform=`translateY(${lerp(40,0,c2)}px)`;
+        el('c2').style.borderColor=t>2.4?'var(--accent-primary)':'var(--border-subtle)';
+        p.rightRows.forEach((_,i)=>{ const pr=prog(t,2.45+i*0.15,0.4,'power3.out'); el('rr'+i).style.opacity=pr; el('rr'+i).style.transform=`translateX(${lerp(-24,0,pr)}px)`; });
+      }
+    });
+  </script>
+</body>
+</html>

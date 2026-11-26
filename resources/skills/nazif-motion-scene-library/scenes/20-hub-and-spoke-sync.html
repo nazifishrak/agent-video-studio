@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>20 / Hub & Spoke Sync</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+        .hub { width:300px; height:160px; display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:700; border:3px solid var(--accent-primary); z-index:4; }
+        .sp { position:absolute; width:280px; padding:32px; text-align:center; font-size:30px; font-weight:600; z-index:4; }
+        svg.lines { position:absolute; inset:0; width:100%; height:100%; z-index:2; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "20-hub-and-spoke-sync", "number": "20", "name": "Hub & Spoke Sync", "category": "Workflows & Agents", "inspiration": "Zapier / Stripe", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"hub": "Core Engine", "spokes": ["Slack", "Notion", "Stripe", "Analytics"]},
+      mount(p) {
+const pos=[['left:100px;top:120px'],['right:100px;top:120px'],['left:100px;bottom:120px'],['right:100px;bottom:120px']];
+        root.innerHTML = `<div class="wrap">
+          <svg class="lines" viewBox="0 0 1696 912">
+            <line id="ln0" x1="848" y1="456" x2="240" y2="170" stroke="var(--accent-primary)" stroke-width="5"/>
+            <line id="ln1" x1="848" y1="456" x2="1456" y2="170" stroke="var(--accent-primary)" stroke-width="5"/>
+            <line id="ln2" x1="848" y1="456" x2="240" y2="742" stroke="var(--accent-primary)" stroke-width="5"/>
+            <line id="ln3" x1="848" y1="456" x2="1456" y2="742" stroke="var(--accent-primary)" stroke-width="5"/>
+          </svg>
+          <div class="card hub" id="hub">${p.hub}</div>
+          ${p.spokes.map((s,i)=>`<div class="card sp" id="sp${i}" style="${pos[i]}">${s}</div>`).join('')}
+        </div>`;
+      },
+      render(t, p) {
+const h=prog(t,0.12,0.55,'back.out(1.4)'); el('hub').style.opacity=Math.min(1,h); el('hub').style.transform=`scale(${lerp(0.8,1,h)})`;
+        [0,1,2,3].forEach(i=>{
+          const ln=el('ln'+i), len=720, lp=prog(t,0.7+i*0.25,0.65,'expo.out');
+          ln.style.strokeDasharray=len; ln.style.strokeDashoffset=len*(1-lp);
+          const sp=prog(t,1.1+i*0.25,0.5,'back.out(1.4)');
+          el('sp'+i).style.opacity=Math.min(1,sp); el('sp'+i).style.transform=`scale(${lerp(0.82,1,sp)})`;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

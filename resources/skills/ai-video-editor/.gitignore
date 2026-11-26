@@ -1,0 +1,5 @@
+engine/node_modules/
+engine/.remotion/
+__pycache__/
+*.pyc
+.DS_Store

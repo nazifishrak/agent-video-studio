@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>56 / Apsis Notched Card</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.nc { position:relative; max-width:1280px; margin:0 auto; background:var(--neural-gray-3, #f0f4f9); color:var(--neural-dark, #111729); border-radius:22px; padding:64px 68px 110px 68px; border:1px solid var(--neural-gray-1, #ccd5e2); }
+        .ey { font-family:var(--font-display); font-size:20px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--neural-blue, #2664ec); margin-bottom:28px; }
+        .q { font-family:var(--font-display); font-size:62px; font-weight:500; line-height:1.15; letter-spacing:-0.025em; }
+        .au { font-size:28px; font-weight:600; margin-top:44px; }
+        .ro { font-size:22px; color:var(--neural-dark-3, #465569); margin-top:4px; }
+        .cut { position:absolute; right:-1px; bottom:-1px; width:120px; height:120px; background:var(--stage-bg); border-top-left-radius:28px; display:flex; align-items:flex-end; justify-content:flex-end; }
+        .btn { width:94px; height:94px; border-radius:18px; background:var(--neural-dark, #111729); color:#FFFFFF; display:flex; align-items:center; justify-content:center; font-size:40px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "56-apsis-notched-testimonial", "number": "56", "name": "Apsis Notched Card", "category": "Apsis Space Signature", "inspiration": "Apsis Space DESIGN.md", "duration": 4.8, "fps": 30, "transparent_ready": false},
+      defaultProps: {"eyebrow": "MISSION VALIDATION / ORBITAL VAULT", "quote": "Flat architectural telemetry and zero visual noise cut our mission review cycle in half.", "author": "Dr. Aris Thorne", "role": "Flight Systems Lead / Meridian"},
+      mount(p) {
+root.innerHTML = `<div class="nc" id="nc">
+          <div class="ey">${p.eyebrow}</div>
+          <div class="q">“${p.quote}”</div>
+          <div class="au">${p.author}</div>
+          <div class="ro">${p.role}</div>
+          <div class="cut"><div class="btn" id="btn">↗</div></div>
+        </div>`;
+      },
+      render(t, p) {
+const e=prog(t,0.12,0.7,'expo.out'); el('nc').style.opacity=e; el('nc').style.transform=`translateY(${lerp(26,0,e)}px)`;
+        const hv=prog(t,1.9,0.35,'power2.out');
+        el('nc').style.background=hv>0.5?'var(--neural-gray-2, #e2e7ef)':'var(--neural-gray-3, #f0f4f9)';
+        el('btn').style.background=hv>0.5?'var(--neural-blue, #2664ec)':'var(--neural-dark, #111729)';
+        el('btn').style.transform=`translate(${lerp(0,4,hv)}px, ${lerp(0,-4,hv)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

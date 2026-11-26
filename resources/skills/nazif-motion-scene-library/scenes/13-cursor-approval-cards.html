@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>13 / Cursor Approval Cards</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; gap:44px; position:relative; }
+        .top { display:flex; justify-content:space-between; align-items:flex-end; }
+        .hd { font-size:62px; }
+        .bdg { font-size:24px; font-weight:600; color:var(--accent-primary); background:var(--accent-soft); padding:12px 24px; border-radius:14px; }
+        .cards { display:grid; grid-template-columns:1fr 1fr; gap:44px; }
+        .cc { padding:40px; display:flex; flex-direction:column; gap:24px; position:relative; }
+        .av { width:84px; height:84px; border-radius:22px; background:var(--accent-soft); color:var(--accent-primary); display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:700; }
+        .nm { font-size:38px; font-weight:700; }
+        .mt { font-size:24px; color:var(--text-muted); }
+        .btn { padding:20px 28px; border-radius:14px; background:var(--accent-primary); color:#fff; font-size:24px; font-weight:600; text-align:center; }
+        .ok { position:absolute; top:32px; right:32px; background:var(--status-positive); color:#fff; padding:8px 18px; border-radius:12px; font-size:20px; font-weight:600; opacity:0; }
+        .cur { position:absolute; width:54px; height:54px; pointer-events:none; z-index:20; filter:drop-shadow(0 8px 14px rgba(0,0,0,0.22)); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "13-cursor-approval-cards", "number": "13", "name": "Cursor Approval Cards", "category": "Product UI & Micro-Demos", "inspiration": "Ali Abdaal / Linear", "duration": 5.5, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "You only do two things", "step1": "Step 01 / Pick Creators", "step2": "Step 02 / Approve Content", "card1Name": "Liam Mercer", "card1Meta": "Tech UGC / 184K avg views", "card2Name": "Maya Lin", "card2Meta": "Lifestyle / 310K avg views"},
+      mount(p) {
+root.innerHTML = `<div class="wrap">
+          <div class="top"><div class="t-display hd" id="hd">${p.title}</div><div class="bdg" id="bdg">${p.step1}</div></div>
+          <div class="cards">
+            <div class="card cc" id="c1"><div class="ok" id="ok1">✓ Approved</div><div class="av">LM</div><div class="nm">${p.card1Name}</div><div class="mt">${p.card1Meta}</div><div class="btn" id="b1">Approve Creator</div></div>
+            <div class="card cc" id="c2"><div class="ok" id="ok2">✓ Approved</div><div class="av">ML</div><div class="nm">${p.card2Name}</div><div class="mt">${p.card2Meta}</div><div class="btn" id="b2">Approve Content</div></div>
+          </div>
+          <svg class="cur" id="cur" viewBox="0 0 36 36" fill="none"><path d="M6 4L29 18.5L18.5 21L13.5 31L6 4Z" fill="#111827" stroke="#FFFFFF" stroke-width="2.5" stroke-linejoin="round"/></svg>
+        </div>`;
+      },
+      render(t, p) {
+const c1=prog(t,0.25,0.55,'expo.out'), c2=prog(t,0.42,0.55,'expo.out');
+        el('c1').style.opacity=c1; el('c1').style.transform=`translateY(${lerp(40,0,c1)}px)`;
+        el('c2').style.opacity=c2; el('c2').style.transform=`translateY(${lerp(40,0,c2)}px)`;
+        el('bdg').textContent=t>=2.9?p.step2:p.step1;
+        let cx=980, cy=680, ca=0;
+        if(t>=1.0&&t<2.9){ const m=prog(t,1.0,0.85,'power3.inOut'); cx=lerp(980,380,m); cy=lerp(680,490,m); ca=Math.min(1,m*3); }
+        else if(t>=2.9){ const m=prog(t,2.9,0.85,'power3.inOut'); cx=lerp(380,1240,m); cy=490; ca=1; }
+        el('cur').style.opacity=ca; el('cur').style.transform=`translate(${cx}px,${cy}px)`;
+        el('b1').style.transform=`scale(${t>=1.95&&t<=2.2?0.94:1})`;
+        const v1=prog(t,2.1,0.38,'back.out(1.7)'); el('ok1').style.opacity=Math.min(1,v1); el('ok1').style.transform=`scale(${lerp(0.65,1,v1)})`;
+        el('c1').style.borderColor=t>=2.1?'var(--status-positive)':'var(--border-subtle)';
+        el('b2').style.transform=`scale(${t>=3.8&&t<=4.05?0.94:1})`;
+        const v2=prog(t,3.95,0.38,'back.out(1.7)'); el('ok2').style.opacity=Math.min(1,v2); el('ok2').style.transform=`scale(${lerp(0.65,1,v2)})`;
+        el('c2').style.borderColor=t>=3.95?'var(--status-positive)':'var(--border-subtle)';
+      }
+    });
+  </script>
+</body>
+</html>

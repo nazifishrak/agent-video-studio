@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>31 / Organic Spline Chart</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:grid; grid-template-columns:520px 1fr; gap:60px; align-items:center; }
+        .k { font-size:24px; font-weight:600; color:var(--accent-primary); text-transform:uppercase; letter-spacing:0.08em; }
+        .big { font-size:132px; line-height:1; margin:20px 0; }
+        .sub { font-size:32px; color:var(--text-muted); line-height:1.4; }
+        .cc { padding:46px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "31-organic-spline-chart", "number": "31", "name": "Organic Spline Chart", "category": "Data Viz & Metrics", "inspiration": "Ali Abdaal / Stripe", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"kicker": "Performance Model", "targetVal": 2.4, "suffix": "M", "sub": "Verified organic views delivered in 30 days.", "cpm": 3.8},
+      mount(p) {
+root.innerHTML = `<div class="wrap">
+          <div><div class="k">${p.kicker}</div><div class="t-display t-num big" id="num">0.0${p.suffix}</div><div class="sub">${p.sub}</div><div style="margin-top:28px;font-size:28px;font-weight:600" class="t-num" id="cpm">CPM $0.00</div></div>
+          <div class="card cc"><svg viewBox="0 0 900 480" style="width:100%;height:480px;overflow:visible">
+            <path id="ln" d="M 40 420 C 180 410, 280 340, 420 270 C 560 200, 680 120, 860 60" fill="none" stroke="var(--accent-primary)" stroke-width="9" stroke-linecap="round"/>
+            <circle id="dt" cx="860" cy="60" r="14" fill="var(--accent-primary)" stroke="#fff" stroke-width="5" opacity="0"/>
+          </svg></div>
+        </div>`;
+      },
+      render(t, p) {
+const ln=el('ln'), len=ln.getTotalLength(), dr=prog(t,0.4,2.2,'power2.inOut');
+        ln.style.strokeDasharray=len; ln.style.strokeDashoffset=len*(1-dr);
+        const np=prog(t,0.4,2.2,'power2.out');
+        el('num').textContent=`${(np*p.targetVal).toFixed(1)}${p.suffix}`;
+        el('cpm').textContent=`CPM $${(np*p.cpm).toFixed(2)}`;
+        el('dt').style.opacity=prog(t,2.5,0.25,'power2.out');
+      }
+    });
+  </script>
+</body>
+</html>

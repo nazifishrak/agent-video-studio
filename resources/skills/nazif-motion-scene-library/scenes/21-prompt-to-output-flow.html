@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>21 / Prompt to Deliverable</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { max-width:1280px; margin:0 auto; display:flex; flex-direction:column; gap:36px; }
+        .bar { padding:34px 40px; font-size:32px; font-weight:500; border:2px solid var(--accent-primary); }
+        .out { padding:46px 52px; display:flex; flex-direction:column; gap:20px; }
+        .ot { font-size:40px; font-weight:700; color:var(--accent-primary); }
+        .ol { font-size:28px; color:var(--text-primary); padding:16px 22px; border-radius:14px; background:var(--surface-well); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "21-prompt-to-output-flow", "number": "21", "name": "Prompt to Deliverable", "category": "Workflows & Agents", "inspiration": "AI Launch / Claude", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"prompt": "Reskin all 8 launch plates to our new brand tokens", "outputTitle": "8 Motion Plates Compiled", "outputLines": ["SF Pro Display typography applied", "Light and dark tokens synced", "Ready for 4K FFmpeg render"]},
+      mount(p) {
+root.innerHTML = `<div class="wrap">
+          <div class="card bar" id="bar"><span id="pt"></span></div>
+          <div class="card out" id="out"><div class="ot">${p.outputTitle}</div>${p.outputLines.map((l,i)=>`<div class="ol" id="ol${i}">✓ ${l}</div>`).join('')}</div>
+        </div>`;
+      },
+      render(t, p) {
+const b=prog(t,0.1,0.45,'expo.out'); el('bar').style.opacity=b;
+        const tp=prog(t,0.35,1.5,'linear'); el('pt').textContent=p.prompt.slice(0,Math.round(tp*p.prompt.length));
+        const o=prog(t,2.0,0.6,'expo.out'); el('out').style.opacity=o; el('out').style.transform=`translateY(${lerp(36,0,o)}px)`;
+        p.outputLines.forEach((_,i)=>{ const lp=prog(t,2.45+i*0.22,0.4,'power3.out'); el('ol'+i).style.opacity=lp; el('ol'+i).style.transform=`translateX(${lerp(-20,0,lp)}px)`; });
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>32 / KPI Bento Trio</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:40px; }
+        .k { padding:52px 44px; display:flex; flex-direction:column; gap:16px; }
+        .lb { font-size:26px; color:var(--text-muted); font-weight:500; }
+        .vl { font-size:88px; }
+        .dl { font-size:24px; font-weight:600; padding:8px 18px; border-radius:12px; background:var(--status-positive-soft); color:var(--status-positive); width:fit-content; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "32-kpi-bento-trio", "number": "32", "name": "KPI Bento Trio", "category": "Data Viz & Metrics", "inspiration": "Stripe / Ramp", "duration": 4.8, "fps": 30, "transparent_ready": false},
+      defaultProps: {"kpis": [["Organic Views", 2400, "K", "+184%"], ["Effective CPM", 3.8, "$", "-42%"], ["Approval Rate", 96, "%", "+14%"]]},
+      mount(p) {
+root.innerHTML = `<div class="grid">${p.kpis.map((x,i)=>`<div class="card k" id="k${i}"><div class="lb">${x[0]}</div><div class="t-display t-num vl" id="v${i}">0</div><div class="dl t-num">${x[3]}</div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+p.kpis.forEach((x,i)=>{
+          const e=prog(t,0.15+i*0.16,0.55,'expo.out'), c=prog(t,0.4+i*0.16,1.6,'power2.out');
+          el('k'+i).style.opacity=e; el('k'+i).style.transform=`translateY(${lerp(36,0,e)}px)`;
+          const val=x[2]==='$'?`$${(c*x[1]).toFixed(2)}`:`${Math.round(c*x[1]).toLocaleString()}${x[2]}`;
+          el('v'+i).textContent=val;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>39 / Milestone Counter Hero</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; align-items:center; text-align:center; gap:24px; }
+        .big { font-size:186px; color:var(--accent-primary); }
+        .lb { font-size:40px; color:var(--text-muted); max-width:980px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "39-milestone-counter-hero", "number": "39", "name": "Milestone Counter Hero", "category": "Social Proof & Trust", "inspiration": "Ali Abdaal / Launch", "duration": 4.6, "fps": 30, "transparent_ready": false},
+      defaultProps: {"target": 10000, "suffix": "+", "label": "Vetted creators ready to ship your next campaign"},
+      mount(p) {
+root.innerHTML = `<div class="wrap"><div class="t-display t-num big" id="bg">0${p.suffix}</div><div class="lb" id="lb">${p.label}</div></div>`;
+      },
+      render(t, p) {
+const c=prog(t,0.2,1.8,'expo.out'); el('bg').textContent=`${Math.round(c*p.target).toLocaleString()}${p.suffix}`;
+        const l=prog(t,0.9,0.6,'power3.out'); el('lb').style.opacity=l; el('lb').style.transform=`translateY(${lerp(24,0,l)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

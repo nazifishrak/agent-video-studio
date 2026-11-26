@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>25 / Loom PiP + UI Zoom</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.cam { width:100%; height:100%; transform-origin:62% 52%; display:flex; flex-direction:column; }
+        .win { flex:1; padding:42px 48px; display:flex; flex-direction:column; gap:26px; }
+        .wh { display:flex; justify-content:space-between; padding-bottom:22px; border-bottom:2px solid var(--border-subtle); font-size:32px; font-weight:700; }
+        .rw { padding:26px 32px; border-radius:18px; background:var(--surface-well); font-size:26px; font-weight:500; display:flex; justify-content:space-between; border:2px solid transparent; }
+        .call { position:absolute; right:120px; top:180px; padding:24px 32px; border:3px solid var(--accent-warm); font-size:28px; font-weight:600; z-index:12; opacity:0; }
+        .pip { position:absolute; left:84px; bottom:72px; width:240px; height:240px; border-radius:50%; border:8px solid #fff; background:var(--accent-primary); color:#fff; display:flex; align-items:center; justify-content:center; font-size:68px; font-weight:700; box-shadow:0 24px 60px rgba(0,0,0,0.25); z-index:20; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "25-loom-pip-dashboard-zoom", "number": "25", "name": "Loom PiP + UI Zoom", "category": "Callouts & PiP", "inspiration": "Ali Abdaal / Loom", "duration": 5.4, "fps": 30, "transparent_ready": false},
+      defaultProps: {"winTitle": "Q4 Launch Campaign / Active Deliverables", "winMeta": "42 Creators / $0 Upfront", "focusRow": "Organic CPM Reel \u2014 Morning Routine", "callout": "Only billed once you click Approve", "speakerInitials": "NI"},
+      mount(p) {
+root.innerHTML = `<div class="cam" id="cam"><div class="card win" id="win">
+          <div class="wh"><span>${p.winTitle}</span><span style="font-size:22px;color:var(--text-muted)">${p.winMeta}</span></div>
+          <div class="rw dim"><span>Hook Variation A</span><span style="color:var(--status-positive)">Live</span></div>
+          <div class="rw" id="foc" style="background:var(--surface-card)"><span>${p.focusRow}</span><span style="color:var(--accent-primary)">Approved</span></div>
+          <div class="rw dim"><span>Paid Social Cutdown</span><span style="color:var(--status-positive)">Live</span></div>
+        </div></div>
+        <div class="card call" id="call">${p.callout}</div>
+        <div class="pip" id="pip">${p.speakerInitials}</div>`;
+      },
+      render(t, p) {
+const z=prog(t,1.1,1.15,'expo.out'), dm=prog(t,1.2,0.5,'power2.out'), cl=prog(t,1.65,0.48,'expo.out'), pp=prog(t,0.25,0.55,'back.out(1.4)');
+        el('cam').style.transform=`translate(${lerp(0,-56,z)}px,${lerp(0,-20,z)}px) scale(${lerp(1,1.14,z)})`;
+        document.querySelectorAll('.dim').forEach(r=>{ r.style.opacity=lerp(1,0.3,dm); r.style.filter=`blur(${(dm*3).toFixed(1)}px)`; });
+        el('foc').style.borderColor=dm>0.2?'var(--accent-warm)':'transparent';
+        el('call').style.opacity=cl; el('call').style.transform=`translateY(${lerp(22,0,cl)}px)`;
+        el('pip').style.opacity=Math.min(1,pp); el('pip').style.transform=`scale(${lerp(0.75,1,pp)})`;
+      }
+    });
+  </script>
+</body>
+</html>

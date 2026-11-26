@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>58 / Apsis Segmented Filter Pill</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { max-width:1320px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:44px; }
+        .pill { position:relative; background:var(--neural-dark, #111729); border-radius:9999px; padding:10px; display:grid; grid-template-columns:repeat(4,240px); }
+        .ind { position:absolute; top:10px; bottom:10px; left:10px; width:240px; border-radius:9999px; background:#FFFFFF; z-index:1; }
+        .tb { position:relative; z-index:2; text-align:center; padding:18px 0; font-size:26px; font-weight:500; }
+        .pan { width:100%; position:relative; padding:60px 68px; border-radius:20px; background:var(--surface-card); border:1px solid var(--border-subtle); overflow:hidden; }
+        .acc { position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, #2664EC 0%, #61A6FA 60%, #92C4FC 100%); transform-origin:left; }
+        .pt { font-family:var(--font-display); font-size:60px; font-weight:500; letter-spacing:-0.025em; }
+        .pd { font-size:30px; color:var(--text-muted); margin-top:18px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "58-apsis-segmented-pill", "number": "58", "name": "Apsis Segmented Filter Pill", "category": "Apsis Space Signature", "inspiration": "Apsis Space DESIGN.md", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"tabs": ["Meridian", "Systems", "Security", "Research"], "panels": [["Meridian Guidance", "Real-time flight path verification at 14 ms latency."], ["Purpose-Built Systems", "Modular hardware and software bands engineered as one stack."], ["Zero-Trust Security", "Cryptographic attestation on every telemetry packet."], ["Applied Research", "Open aerospace benchmarks published quarterly."]]},
+      mount(p) {
+root.innerHTML = `<div class="wrap">
+          <div class="pill"><div class="ind" id="ind"></div>${p.tabs.map((x,i)=>`<div class="tb" id="tb${i}">${x}</div>`).join('')}</div>
+          <div class="pan" id="pan"><div class="acc" id="acc"></div><div class="pt" id="pt">${p.panels[0][0]}</div><div class="pd" id="pd">${p.panels[0][1]}</div></div>
+        </div>`;
+      },
+      render(t, p) {
+const s1=prog(t,1.1,0.5,'expo.out'), s2=prog(t,2.4,0.5,'expo.out'), s3=prog(t,3.7,0.5,'expo.out');
+        const pos=(s1+s2+s3)*240;
+        el('ind').style.transform=`translateX(${pos}px)`;
+        const idx = t>=3.85?3 : t>=2.55?2 : t>=1.25?1 : 0;
+        p.tabs.forEach((_,i)=>{ el('tb'+i).style.color=(i===idx)?'#111729':'#94A3B7'; });
+        el('pt').textContent=p.panels[idx][0]; el('pd').textContent=p.panels[idx][1];
+        const segStart = idx===0?0.1 : idx===1?1.25 : idx===2?2.55 : 3.85;
+        el('acc').style.transform=`scaleX(${prog(t,segStart,0.45,'expo.out')})`;
+      }
+    });
+  </script>
+</body>
+</html>

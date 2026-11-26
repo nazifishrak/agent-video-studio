@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>57 / Apsis Sticky Stacking Cards</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.stack { position:relative; width:1360px; height:620px; margin:0 auto; }
+        .sc { position:absolute; left:0; right:0; height:480px; border-radius:22px; padding:56px 64px; display:flex; flex-direction:column; justify-content:space-between; border:1px solid var(--neural-dark-2, #324155); }
+        .ey { font-family:var(--font-display); font-size:20px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; }
+        .tt { font-family:var(--font-display); font-size:66px; font-weight:500; letter-spacing:-0.03em; }
+        .ds { font-size:28px; max-width:940px; line-height:1.45; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "57-apsis-stacking-cards", "number": "57", "name": "Apsis Sticky Stacking Cards", "category": "Apsis Space Signature", "inspiration": "Apsis Space DESIGN.md", "duration": 5.4, "fps": 30, "transparent_ready": false},
+      defaultProps: {"cards": [["01 / MERIDIAN", "Autonomous Guidance", "Deterministic trajectory solver built for zero-latency orbital windows."], ["02 / ORBITAL VAULT", "Cryptographic Telemetry", "Air-gapped flight logs verified with flat architectural precision."], ["03 / SYSTEMS", "Mission Control", "Unified command layer across ground stations and live payloads."]]},
+      mount(p) {
+const styles = [
+          'background:#FFFFFF;color:#111729;border-color:#CCD5E2;top:0px;',
+          'background:#111729;color:#FFFFFF;border-color:#1E293C;top:44px;',
+          'background:#020202;color:#FFFFFF;border-color:#324155;top:88px;'
+        ];
+        root.innerHTML = `<div class="stack">${p.cards.map((c,i)=>`<div class="sc" id="s${i}" style="${styles[i]}"><div class="ey" style="color:${i===0?'#2664EC':'#61A6FA'}">${c[0]}</div><div><div class="tt">${c[1]}</div><div class="ds" style="opacity:0.78;margin-top:16px">${c[2]}</div></div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+const c0=prog(t,0.1,0.6,'expo.out'), c1=prog(t,1.4,0.8,'expo.out'), c2=prog(t,2.8,0.8,'expo.out');
+        el('s0').style.opacity=c0; el('s0').style.transform=`translateY(${lerp(60,0,c0)}px)`;
+        el('s1').style.opacity=c1; el('s1').style.transform=`translateY(${lerp(420,0,c1)}px)`;
+        el('s2').style.opacity=c2; el('s2').style.transform=`translateY(${lerp(420,0,c2)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

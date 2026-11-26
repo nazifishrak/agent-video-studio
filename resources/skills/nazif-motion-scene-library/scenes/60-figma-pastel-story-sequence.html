@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>60 / Figma Pastel Story Blocks</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.scene-root { background:#FFFFFF; padding:64px 88px; }
+        .stage-box { position:relative; width:100%; height:100%; overflow:hidden; border-radius:28px; }
+        .blk { position:absolute; inset:0; padding:84px 96px; display:flex; flex-direction:column; justify-content:space-between; border-radius:28px; }
+        .tg { font-size:22px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+        .tt { font-family:var(--font-display); font-size:94px; font-weight:400; line-height:1.04; letter-spacing:-0.025em; max-width:1320px; }
+        .pill { padding:16px 32px; border-radius:50px; font-size:22px; font-weight:500; width:fit-content; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "60-figma-pastel-story-sequence", "number": "60", "name": "Figma Pastel Story Blocks", "category": "Figma Editorial Signature", "inspiration": "Figma Editorial DESIGN.md", "duration": 5.6, "fps": 30, "transparent_ready": false},
+      defaultProps: {"blocks": [{"tag": "01 / DESIGN", "bg": "#D8C7FF", "fg": "#000000", "title": "Explore ideas on an editor-clean canvas."}, {"tag": "02 / SHIP", "bg": "#1E1B4B", "fg": "#FFFFFF", "title": "Hand off deterministic motion code in seconds."}, {"tag": "03 / SCALE", "bg": "#FFB09E", "fg": "#000000", "title": "Every launch film stays on-brand automatically."}]},
+      mount(p) {
+root.innerHTML = `<div class="stage-box">${p.blocks.map((b,i)=>`<div class="blk" id="b${i}" style="background:${b.bg};color:${b.fg}"><div class="tg">${b.tag}</div><div class="tt">${b.title}</div><div class="pill" style="background:${b.fg};color:${b.bg}">Explore Story →</div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+const b0=prog(t,0.08,0.55,'expo.out'), b1=prog(t,1.8,0.75,'expo.out'), b2=prog(t,3.55,0.75,'expo.out');
+        el('b0').style.opacity=b0; el('b0').style.transform=`translateY(${lerp(40,0,b0)}px)`;
+        el('b1').style.transform=`translateY(${lerp(100,0,b1)}%)`;
+        el('b2').style.transform=`translateY(${lerp(100,0,b2)}%)`;
+      }
+    });
+  </script>
+</body>
+</html>

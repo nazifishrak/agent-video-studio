@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>19 / Six-Stage Laser Pipeline</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { text-align:center; font-size:60px; margin-bottom:54px; }
+        .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; }
+        .nd { padding:34px; display:flex; flex-direction:column; gap:16px; position:relative; overflow:hidden; }
+        .nt { display:flex; justify-content:space-between; align-items:center; }
+        .idx { font-size:20px; font-weight:600; color:var(--text-muted); }
+        .chk { width:36px; height:36px; border-radius:50%; background:var(--status-positive-soft); color:var(--status-positive); display:flex; align-items:center; justify-content:center; font-weight:700; opacity:0; }
+        .ttl { font-size:32px; font-weight:600; }
+        .las { position:absolute; left:16px; right:16px; height:4px; border-radius:4px; background:var(--accent-primary); box-shadow:0 0 18px var(--accent-primary); opacity:0; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "19-six-stage-laser-pipeline", "number": "19", "name": "Six-Stage Laser Pipeline", "category": "Workflows & Agents", "inspiration": "Jeff Su / Ali Abdaal", "duration": 5.6, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Everything else runs end to end", "stages": ["Creator Sourcing", "Rate Negotiation", "Creative Briefs", "Quality Review", "Invoicing & Payouts", "Live View Tracking"]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd" id="hd">${p.title}</div>
+        <div class="grid">${p.stages.map((s,i)=>`<div class="card nd" id="n${i}"><div class="las" id="l${i}"></div><div class="nt"><span class="idx t-num">0${i+1}</span><span class="chk" id="k${i}">✓</span></div><div class="ttl">${s}</div><div class="skel" style="width:80%"></div><div class="skel soft" style="width:56%"></div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+el('hd').style.opacity=prog(t,0.1,0.5,'expo.out');
+        p.stages.forEach((_,i)=>{
+          const np=prog(t,0.25+i*0.08,0.5,'expo.out');
+          el('n'+i).style.opacity=np; el('n'+i).style.transform=`translateY(${lerp(34,0,np)}px)`;
+          const ss=0.95+i*0.6, lp=prog(t,ss,0.44,'power2.inOut'), act=t>=ss&&t<=ss+0.5;
+          el('l'+i).style.opacity=act?Math.sin(lp*Math.PI):0; el('l'+i).style.top=`${lerp(12,86,lp)}%`;
+          el('n'+i).style.borderColor=act?'var(--accent-primary)':'var(--border-subtle)';
+          const kp=prog(t,ss+0.34,0.34,'back.out(1.7)');
+          el('k'+i).style.opacity=Math.min(1,kp); el('k'+i).style.transform=`scale(${lerp(0.5,1,kp)})`;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

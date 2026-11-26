@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>53 / Collapsing Line Outro</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; align-items:center; text-align:center; gap:28px; }
+        .ln { width:480px; height:4px; background:var(--accent-primary); transform-origin:center; }
+        .br { font-size:112px; }
+        .tg { font-size:36px; color:var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "53-product-launch-outro", "number": "53", "name": "Collapsing Line Outro", "category": "Features & CTAs", "inspiration": "Apple / Linear", "duration": 4.6, "fps": 30, "transparent_ready": false},
+      defaultProps: {"brand": "Creator Grid", "tagline": "Creator marketing without the chaos."},
+      mount(p) {
+root.innerHTML = `<div class="wrap"><div class="t-display br" id="br">${p.brand}</div><div class="ln" id="ln"></div><div class="tg" id="tg">${p.tagline}</div></div>`;
+      },
+      render(t, p) {
+const l=prog(t,0.15,0.6,'expo.out'), b=prog(t,0.5,0.65,'expo.out'), g=prog(t,0.9,0.55,'power3.out');
+        el('ln').style.transform=`scaleX(${l})`;
+        el('br').style.opacity=b; el('br').style.transform=`translateY(${lerp(28,0,b)}px)`;
+        el('tg').style.opacity=g; el('tg').style.transform=`translateY(${lerp(-18,0,g)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

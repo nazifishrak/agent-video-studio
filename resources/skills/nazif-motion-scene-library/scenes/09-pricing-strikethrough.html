@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>09 / Pricing Strikethrough</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.grid { display:grid; grid-template-columns:1fr 1fr 1.25fr; gap:36px; }
+        .tile { padding:52px 42px; display:flex; flex-direction:column; gap:18px; }
+        .sw { position:relative; display:inline-block; width:fit-content; }
+        .sl { position:absolute; left:-6px; right:-6px; top:52%; height:6px; border-radius:6px; background:var(--status-negative); transform-origin:left; transform:scaleX(0); }
+        .tv { font-size:56px; }
+        .ts { font-size:26px; color:var(--text-muted); line-height:1.4; }
+        .hero { border:3px solid var(--accent-primary); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "09-pricing-strikethrough", "number": "09", "name": "Pricing Strikethrough", "category": "Problem & Comparison", "inspiration": "Ali Abdaal / Ramp", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"c1": "Retainer", "c1Sub": "No upfront agency lock-in.", "c2": "Subscription", "c2Sub": "No idle monthly seats.", "hero": "Pay for Results", "heroSub": "Only pay for approved assets or verified organic views."},
+      mount(p) {
+root.innerHTML = `<div class="grid">
+          <div class="card tile" id="t1"><div class="sw"><span class="t-display tv">${p.c1}</span><span class="sl" id="s1"></span></div><div class="ts">${p.c1Sub}</div></div>
+          <div class="card tile" id="t2"><div class="sw"><span class="t-display tv">${p.c2}</span><span class="sl" id="s2"></span></div><div class="ts">${p.c2Sub}</div></div>
+          <div class="card tile hero" id="t3"><div class="t-display tv" style="color:var(--accent-primary)">${p.hero}</div><div class="ts">${p.heroSub}</div></div>
+        </div>`;
+      },
+      render(t, p) {
+const a=prog(t,0.15,0.55,'expo.out'), b=prog(t,0.3,0.55,'expo.out'), c=prog(t,0.45,0.55,'expo.out');
+        const s1=prog(t,1.1,0.36,'power2.out'), s2=prog(t,1.55,0.36,'power2.out'), dim=prog(t,1.95,0.45,'power2.out'), pop=prog(t,1.95,0.5,'back.out(1.5)');
+        el('t1').style.opacity=a*lerp(1,0.42,dim); el('t1').style.transform=`translateY(${lerp(36,0,a)}px)`;
+        el('t2').style.opacity=b*lerp(1,0.42,dim); el('t2').style.transform=`translateY(${lerp(36,0,b)}px)`;
+        el('t3').style.opacity=c; el('t3').style.transform=`translateY(${lerp(36,0,c)}px) scale(${lerp(1,1.04,pop)})`;
+        el('s1').style.transform=`scaleX(${s1})`; el('s2').style.transform=`scaleX(${s2})`;
+      }
+    });
+  </script>
+</body>
+</html>

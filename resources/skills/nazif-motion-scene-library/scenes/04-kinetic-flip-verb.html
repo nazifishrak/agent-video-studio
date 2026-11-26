@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>04 / Kinetic Flip Verb</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; align-items:center; justify-content:center; gap:28px; flex-wrap:wrap; }
+        .txt { font-size:96px; }
+        .slot { height:118px; overflow:hidden; padding:0 28px; border-radius:22px; background:var(--accent-soft); color:var(--accent-primary); display:inline-flex; align-items:flex-start; }
+        .track { display:flex; flex-direction:column; }
+        .v { height:118px; line-height:118px; font-size:96px; color:var(--accent-primary); text-align:center; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "04-kinetic-flip-verb", "number": "04", "name": "Kinetic Flip Verb", "category": "Kinetic Typography", "inspiration": "Linear / Vercel", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"prefix": "One workspace to", "verbs": ["plan", "build", "review", "ship"], "suffix": "faster."},
+      mount(p) {
+root.innerHTML = `<div class="wrap" id="w">
+          <span class="t-display txt">${p.prefix}</span>
+          <span class="slot"><span class="track" id="tr">${p.verbs.map(v=>`<span class="t-display v">${v}</span>`).join('')}</span></span>
+          <span class="t-display txt">${p.suffix}</span>
+        </div>`;
+      },
+      render(t, p) {
+const intro=prog(t,0.1,0.55,'expo.out');
+        el('w').style.opacity=intro; el('w').style.transform=`translateY(${lerp(30,0,intro)}px)`;
+        const steps=p.verbs.length-1;
+        let y=0;
+        for(let i=0;i<steps;i++){ y += prog(t,0.9+i*0.95,0.55,'expo.out')*118; }
+        el('tr').style.transform=`translateY(-${y}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>10 / Pros & Cons Matrix</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { text-align:center; font-size:62px; margin-bottom:48px; }
+        .grid { display:grid; grid-template-columns:1fr 1fr; gap:44px; }
+        .col { padding:44px; display:flex; flex-direction:column; gap:20px; }
+        .row { display:flex; align-items:center; gap:18px; padding:22px 26px; border-radius:16px; font-size:26px; font-weight:500; }
+        .pro { background:var(--status-positive-soft); }
+        .con { background:var(--status-negative-soft); }
+        .ic { width:38px; height:38px; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "10-pros-cons-matrix", "number": "10", "name": "Pros & Cons Matrix", "category": "Problem & Comparison", "inspiration": "Jeff Su Explainer", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Old Stack vs. New Stack", "pros": ["Deploys in under 5 minutes", "Zero manual reconciliation", "Real-time audit trail"], "cons": ["Fragile spreadsheet macros", "Manual CSV exports", "Delayed weekly reports"]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd" id="hd">${p.title}</div>
+        <div class="grid">
+          <div class="card col" id="c1">${p.pros.map((x,i)=>`<div class="row pro" id="p${i}"><span class="ic" style="background:var(--status-positive)">✓</span><span>${x}</span></div>`).join('')}</div>
+          <div class="card col" id="c2">${p.cons.map((x,i)=>`<div class="row con" id="n${i}"><span class="ic" style="background:var(--status-negative)">✕</span><span>${x}</span></div>`).join('')}</div>
+        </div>`;
+      },
+      render(t, p) {
+const hd=prog(t,0.1,0.5,'expo.out'); el('hd').style.opacity=hd; el('hd').style.transform=`translateY(${lerp(24,0,hd)}px)`;
+        p.pros.forEach((_,i)=>{ const pr=prog(t,0.4+i*0.2,0.45,'expo.out'); el('p'+i).style.opacity=pr; el('p'+i).style.transform=`translateX(${lerp(-28,0,pr)}px)`; });
+        p.cons.forEach((_,i)=>{ const pr=prog(t,1.25+i*0.2,0.45,'expo.out'); el('n'+i).style.opacity=pr; el('n'+i).style.transform=`translateX(${lerp(28,0,pr)}px)`; });
+      }
+    });
+  </script>
+</body>
+</html>

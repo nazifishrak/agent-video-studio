@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>46 / Optical Blur Unveil</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { text-align:center; font-size:60px; margin-bottom:52px; }
+        .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:36px; }
+        .cd { padding:56px 40px; text-align:center; display:flex; flex-direction:column; gap:18px; }
+        .nm { font-size:26px; font-weight:700; color:var(--accent-primary); }
+        .tt { font-size:44px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "46-optical-blur-unveil", "number": "46", "name": "Optical Blur Unveil", "category": "Chapters & Pacing", "inspiration": "Jeff Su / Mystery Hook", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Three layers of every great edit", "cards": [["01", "Clean A-Cut"], ["02", "Motion Plates"], ["03", "Sound Design"]]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd">${p.title}</div>
+        <div class="grid">${p.cards.map((c,i)=>`<div class="card cd" id="c${i}"><div class="nm t-num">${c[0]}</div><div class="t-display tt">${c[1]}</div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+p.cards.forEach((_,i)=>{
+          const pr=prog(t,0.4+i*0.85,0.65,'back.out(1.35)');
+          el('c'+i).style.filter=`blur(${lerp(16,0,Math.min(1,pr)).toFixed(1)}px) grayscale(${Math.round(lerp(100,0,Math.min(1,pr)))}%)`;
+          el('c'+i).style.opacity=lerp(0.45,1,Math.min(1,pr));
+          el('c'+i).style.transform=`scale(${lerp(0.92,1,pr)})`;
+        });
+      }
+    });
+  </script>
+</body>
+</html>

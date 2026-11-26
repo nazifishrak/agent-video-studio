@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>48 / Code Reskin Wipe</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { text-align:center; font-size:58px; margin-bottom:40px; }
+        .stage { width:1460px; height:640px; margin:0 auto; position:relative; border-radius:32px; overflow:hidden; border:2px solid var(--border-subtle); box-shadow:var(--shadow-card); }
+        .layer { position:absolute; inset:0; padding:68px 80px; display:flex; flex-direction:column; justify-content:space-between; }
+        .old { background:var(--surface-well); color:var(--text-muted); }
+        .new { background:var(--text-primary); color:var(--stage-bg); clip-path:inset(0 100% 0 0); }
+        .div { position:absolute; top:0; bottom:0; left:0; width:6px; background:var(--accent-primary); box-shadow:0 0 28px var(--accent-primary); z-index:10; }
+        .tag { font-size:22px; font-weight:600; padding:10px 22px; border-radius:12px; width:fit-content; }
+        .big { font-size:74px; line-height:1.08; letter-spacing:-0.03em; font-weight:700; }
+        .sm { font-size:30px; opacity:0.78; margin-top:16px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "48-code-reskin-wipe", "number": "48", "name": "Code Reskin Wipe", "category": "Chapters & Pacing", "inspiration": "Ali Abdaal Learning #5", "duration": 5.0, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "One DESIGN.md updates every scene", "oldBrand": "Legacy Style v1", "newBrand": "New Brand System"},
+      mount(p) {
+const bTag = p.beforeTag || p.oldBrand || 'Before';
+        const aTag = p.afterTag || p.newBrand || 'After';
+        const bH = p.beforeHeadline || 'Legacy visual style.';
+        const aH = p.afterHeadline || 'Unified DESIGN.md system.';
+        const bS = p.beforeSub || 'Manual edits across every separate timeline.';
+        const aS = p.afterSub || 'One token file reskins all 54 scenes instantly.';
+        root.innerHTML = `<div class="t-display hd" id="hd">${p.title}</div>
+        <div class="stage" id="st">
+          <div class="layer old"><div class="tag" style="background:var(--border-subtle)">${bTag}</div><div><div class="big">${bH}</div><div class="sm">${bS}</div></div><div style="font-size:24px;font-weight:600">v1.0</div></div>
+          <div class="layer new" id="nl"><div class="tag" style="background:var(--accent-primary);color:#fff">${aTag}</div><div><div class="t-display big" style="color:var(--stage-bg)">${aH}</div><div class="sm">${aS}</div></div><div style="font-size:24px;font-weight:600;color:var(--accent-soft)">v2.0</div></div>
+          <div class="div" id="dv"></div>
+        </div>`;
+      },
+      render(t, p) {
+const hd=prog(t,0.1,0.5,'expo.out'), st=prog(t,0.25,0.55,'expo.out'), w=prog(t,0.95,1.85,'power3.inOut'), fd=prog(t,2.85,0.25,'power2.out');
+        el('hd').style.opacity=hd; el('hd').style.transform=`translateY(${lerp(24,0,hd)}px)`;
+        el('st').style.opacity=st; el('st').style.transform=`translateY(${lerp(32,0,st)}px)`;
+        const pct=w*100;
+        el('nl').style.clipPath=`inset(0 ${(100-pct).toFixed(2)}% 0 0)`;
+        el('dv').style.left=`${pct.toFixed(2)}%`; el('dv').style.opacity=t>=0.9?(1-fd):0;
+      }
+    });
+  </script>
+</body>
+</html>

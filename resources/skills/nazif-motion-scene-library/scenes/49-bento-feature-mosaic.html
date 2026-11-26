@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>49 / Apple Bento Mosaic</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.grid { display:grid; grid-template-columns:1.2fr 1fr; grid-template-rows:1fr 1fr; gap:32px; height:740px; }
+        .tile { padding:52px; display:flex; flex-direction:column; justify-content:space-between; }
+        .tv { font-size:66px; color:var(--accent-primary); }
+        .ts { font-size:30px; color:var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "49-bento-feature-mosaic", "number": "49", "name": "Apple Bento Mosaic", "category": "Features & CTAs", "inspiration": "Apple Keynote", "duration": 5.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"tiles": [["30 / 60 fps", "Deterministic headless rendering"], ["DESIGN.md", "One-command aesthetic reskinning"], ["54 Scenes", "Decoupled launch & explainer templates"], ["Alpha Plates", "Transparent ProRes 4444 overlays"]]},
+      mount(p) {
+root.innerHTML = `<div class="grid">${p.tiles.map((x,i)=>`<div class="card tile" id="t${i}"><div class="t-display tv">${x[0]}</div><div class="ts">${x[1]}</div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+p.tiles.forEach((_,i)=>{ const pr=prog(t,0.18+i*0.16,0.6,'expo.out'); el('t'+i).style.opacity=pr; el('t'+i).style.transform=`translateY(${lerp(36,0,pr)}px) scale(${lerp(0.95,1,pr)})`; });
+      }
+    });
+  </script>
+</body>
+</html>

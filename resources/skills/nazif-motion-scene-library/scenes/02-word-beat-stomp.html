@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>02 / Word Beat Stomp</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; align-items:center; text-align:center; gap:36px; }
+        .words { display:flex; flex-wrap:wrap; justify-content:center; gap:28px; }
+        .w { font-size:120px; }
+        .sub { font-size:34px; color:var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "02-word-beat-stomp", "number": "02", "name": "Word Beat Stomp", "category": "Kinetic Typography", "inspiration": "Apple Keynote", "duration": 4.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"words": ["Faster.", "Cleaner.", "Built for scale."], "sub": "Engineered from the ground up for modern product teams."},
+      mount(p) {
+root.innerHTML = `<div class="wrap">
+          <div class="words">${p.words.map((w,i)=>`<span class="t-display w" id="w${i}">${w}</span>`).join('')}</div>
+          <div class="sub" id="sub">${p.sub}</div>
+        </div>`;
+      },
+      render(t, p) {
+p.words.forEach((_,i)=>{ const pr=prog(t,0.18+i*0.52,0.48,'back.out(1.4)'); const e=el('w'+i); e.style.opacity=Math.min(1,pr); e.style.transform=`translateY(${lerp(42,0,pr)}px) scale(${lerp(0.88,1,pr)})`; });
+        const s=prog(t,1.9,0.6,'power3.out'); el('sub').style.opacity=s; el('sub').style.transform=`translateY(${lerp(20,0,s)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>

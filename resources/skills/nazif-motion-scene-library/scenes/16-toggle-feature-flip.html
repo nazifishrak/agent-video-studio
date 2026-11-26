@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>16 / Settings Toggle Flip</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.hd { text-align:center; font-size:62px; margin-bottom:48px; }
+        .box { width:1140px; margin:0 auto; padding:44px 52px; display:flex; flex-direction:column; gap:28px; }
+        .row { display:flex; justify-content:space-between; align-items:center; padding:26px 30px; border-radius:20px; background:var(--surface-well); font-size:30px; font-weight:600; }
+        .sw { width:92px; height:52px; border-radius:999px; background:var(--border-subtle); position:relative; padding:6px; }
+        .kn { width:40px; height:40px; border-radius:50%; background:#fff; box-shadow:0 4px 10px rgba(0,0,0,0.18); }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "16-toggle-feature-flip", "number": "16", "name": "Settings Toggle Flip", "category": "Product UI & Micro-Demos", "inspiration": "Apple / iOS", "duration": 4.8, "fps": 30, "transparent_ready": false},
+      defaultProps: {"title": "Turn on autopilot", "toggles": ["Auto-match vetted creators", "Instant brand-guideline QA", "Automated milestone payouts"]},
+      mount(p) {
+root.innerHTML = `<div class="t-display hd" id="hd">${p.title}</div>
+        <div class="card box">${p.toggles.map((x,i)=>`<div class="row" id="r${i}"><span>${x}</span><div class="sw" id="s${i}"><div class="kn" id="k${i}"></div></div></div>`).join('')}</div>`;
+      },
+      render(t, p) {
+el('hd').style.opacity=prog(t,0.1,0.5,'expo.out');
+        p.toggles.forEach((_,i)=>{
+          const ent=prog(t,0.25+i*0.14,0.45,'expo.out');
+          el('r'+i).style.opacity=ent; el('r'+i).style.transform=`translateY(${lerp(24,0,ent)}px)`;
+          const fl=prog(t,1.1+i*0.65,0.38,'back.out(1.3)');
+          el('k'+i).style.transform=`translateX(${lerp(0,40,fl)}px)`;
+          el('s'+i).style.background=fl>0.4?'var(--status-positive)':'var(--border-subtle)';
+        });
+      }
+    });
+  </script>
+</body>
+</html>

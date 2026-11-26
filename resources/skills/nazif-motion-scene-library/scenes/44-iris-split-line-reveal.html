@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>44 / Split-Line Chapter Reveal</title>
+  <link rel="stylesheet" href="../engine/tokens.css">
+  <style>
+.wrap { display:flex; flex-direction:column; align-items:center; gap:28px; }
+        .line { width:960px; height:3px; background:var(--text-primary); transform-origin:center; }
+        .top { font-size:34px; font-weight:600; color:var(--accent-primary); text-transform:uppercase; letter-spacing:0.1em; }
+        .bot { font-size:88px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div class="stage-aurora"></div>
+    <div class="scene-root" id="scene-root"></div>
+  </div>
+  <script src="../engine/motion-engine.js"></script>
+  <script>
+    const root = document.getElementById('scene-root');
+    const el = (id) => document.getElementById(id);
+    const { prog, lerp, bootScene } = window.MotionEngine;
+    bootScene({
+      meta: {"id": "44-iris-split-line-reveal", "number": "44", "name": "Split-Line Chapter Reveal", "category": "Chapters & Pacing", "inspiration": "Apple / Minimalist", "duration": 4.2, "fps": 30, "transparent_ready": false},
+      defaultProps: {"top": "Part Three", "bottom": "Instant Brand Reskinning"},
+      mount(p) {
+root.innerHTML = `<div class="wrap"><div class="top" id="tp">${p.top}</div><div class="line" id="ln"></div><div class="t-display bot" id="bt">${p.bottom}</div></div>`;
+      },
+      render(t, p) {
+const l=prog(t,0.12,0.5,'expo.out'), r=prog(t,0.45,0.65,'expo.out');
+        el('ln').style.transform=`scaleX(${l})`;
+        el('tp').style.opacity=r; el('tp').style.transform=`translateY(${lerp(24,0,r)}px)`;
+        el('bt').style.opacity=r; el('bt').style.transform=`translateY(${lerp(-24,0,r)}px)`;
+      }
+    });
+  </script>
+</body>
+</html>
