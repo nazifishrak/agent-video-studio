@@ -514,16 +514,45 @@ async function main() {
   );
 
   server.tool(
+    'check_environment',
+    'Check installed video tools (ffmpeg, ffprobe, node, npx, hyperframes, Chrome), FFmpeg capabilities, and all bundled skills',
+    {},
+    async () => {
+      try {
+        const scriptPath = path.join(resourcesDir, 'skills', 'ai-video-editor', 'scripts', 'bootstrap_env.mjs');
+        const mod = await import(scriptPath);
+        return ok(mod.checkEnvironment(path.join(resourcesDir, 'skills')));
+      } catch (err) {
+        return fail(err);
+      }
+    }
+  );
+
+  server.tool(
     'export_video',
-    'Render and export the project timeline (shots, cuts, captions, color grade, music) to MP4',
+    'Render and export the project timeline (shots, cuts, captions, color grade, music) to MP4 at 720p, 1080p, 4K, or custom resolution',
     {
       projectSlug: z.string(),
-      preset: z.enum(['preview-720p', 'master-1080p']).optional(),
+      preset: z.enum(['preview-720p', 'master-1080p', 'master-4k', 'custom']).optional(),
+      width: z.number().int().positive().optional(),
+      height: z.number().int().positive().optional(),
+      fps: z.number().int().positive().optional(),
       outPath: z.string().optional(),
     },
-    async ({ projectSlug, preset, outPath }) => {
+    async ({ projectSlug, preset, width, height, fps, outPath }) => {
       try {
-        return ok(await exportProjectVideo({ vaultRoot, projectSlug, preset, outPath }));
+        return ok(
+          await exportProjectVideo({
+            vaultRoot,
+            projectSlug,
+            resourcesDir,
+            preset,
+            width,
+            height,
+            fps,
+            outPath,
+          })
+        );
       } catch (err) {
         return fail(err);
       }

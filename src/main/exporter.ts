@@ -6,20 +6,37 @@ import { promisify } from 'node:util';
 import {
   assertSafeChild,
   getProjectState,
+  listMotionScenes,
   probeMediaPaths,
   resolveVaultPaths,
   updateProjectManifest,
 } from './vault.js';
 import type { BrandTokens } from '../shared/designTokens.js';
-import type { EditPlanV2 } from '../shared/schemas.js';
+import type { EditPlanV2, MotionPlate } from '../shared/schemas.js';
 
 const execFileAsync = promisify(execFile);
+
+export type ExportPreset = 'preview-720p' | 'master-1080p' | 'master-4k' | 'custom';
 
 export interface ExportProjectOptions {
   vaultRoot: string;
   projectSlug: string;
-  preset?: 'preview-720p' | 'master-1080p';
+  resourcesDir?: string;
+  preset?: ExportPreset;
+  width?: number;
+  height?: number;
+  fps?: number;
+  bitrateMbps?: number;
   outPath?: string;
+  renderMotionPlateVideo?: (opts: {
+    plate: MotionPlate;
+    sceneFile: string;
+    tokens: BrandTokens;
+    width: number;
+    height: number;
+    fps: number;
+    outVideoPath: string;
+  }) => Promise<boolean>;
   renderCaptionPng?: (opts: {
     text: string;
     highlightWord?: string;
@@ -118,18 +135,35 @@ export async function exportProjectVideo(opts: ExportProjectOptions): Promise<Ex
   const { vaultRoot, projectSlug, preset = 'master-1080p', onProgress } = opts;
   onProgress?.(5, 'Loading project timeline...');
   const state = await getProjectState(vaultRoot, projectSlug);
-  const paths = resolveVaultPaths(vaultRoot);
+  const paths = resolveVaultPaths(vaultRoot, opts.resourcesDir);
   const projectDir = assertSafeChild(paths.projectsDir, path.join(paths.projectsDir, projectSlug));
   const exportsDir = path.join(projectDir, 'exports');
   await fs.mkdir(exportsDir, { recursive: true });
 
   const plan = state.editPlan;
-  const baseW = plan.width || (state.manifest.aspectRatio === '9:16' ? 1080 : 1920);
-  const baseH = plan.height || (state.manifest.aspectRatio === '9:16' ? 1920 : 1080);
-  const scaleFactor = preset === 'preview-720p' ? (baseW >= baseH ? 1280 / baseW : 720 / baseW) : 1;
-  const outW = Math.round((baseW * scaleFactor) / 2) * 2;
-  const outH = Math.round((baseH * scaleFactor) / 2) * 2;
-  const fps = plan.fps || 30;
+  const isVertical = state.manifest.aspectRatio === '9:16';
+  const baseW = plan.width || (isVertical ? 1080 : 1920);
+  const baseH = plan.height || (isVertical ? 1920 : 1080);
+
+  let rawW = baseW;
+  let rawH = baseH;
+  if (preset === 'preview-720p') {
+    rawW = isVertical ? 720 : 1280;
+    rawH = isVertical ? 1280 : 720;
+  } else if (preset === 'master-1080p') {
+    rawW = isVertical ? 1080 : 1920;
+    rawH = isVertical ? 1920 : 1080;
+  } else if (preset === 'master-4k') {
+    rawW = isVertical ? 2160 : 3840;
+    rawH = isVertical ? 3840 : 2160;
+  } else if (preset === 'custom') {
+    rawW = opts.width || baseW;
+    rawH = opts.height || baseH;
+  }
+
+  const outW = Math.max(320, Math.round(rawW / 2) * 2);
+  const outH = Math.max(240, Math.round(rawH / 2) * 2);
+  const fps = Math.max(12, Math.min(120, Math.round(opts.fps || plan.fps || 30)));
 
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const outPath = opts.outPath
@@ -262,6 +296,41 @@ export async function exportProjectVideo(opts: ExportProjectOptions): Promise<Ex
     }
   }
 
+  // Composite HTML Motion Plates when renderMotionPlateVideo is provided (Electron offscreen renderer)
+  const tmpPlatePaths: string[] = [];
+  if (plan.motionPlates.length > 0 && opts.renderMotionPlateVideo) {
+    const scenes = await listMotionScenes(vaultRoot, opts.resourcesDir);
+    onProgress?.(30, `Rendering ${plan.motionPlates.length} motion plate(s)...`);
+    for (let i = 0; i < plan.motionPlates.length; i++) {
+      const plate = plan.motionPlates[i];
+      const meta = scenes.find((s) => s.id === plate.sceneId);
+      if (!meta) continue;
+      const ext = plate.transparent ? '.mov' : '.mp4';
+      const platePath = path.join(exportsDir, `.plate-${ts}-${i}${ext}`);
+      const ok = await opts.renderMotionPlateVideo({
+        plate,
+        sceneFile: meta.file,
+        tokens: state.brandTokens,
+        width: outW,
+        height: outH,
+        fps,
+        outVideoPath: platePath,
+      });
+      if (ok && fsSync.existsSync(platePath)) {
+        tmpPlatePaths.push(platePath);
+        const pIdx = inputIdx++;
+        args.push('-i', platePath);
+        const shiftTag = `[pshift${i}]`;
+        const outTag = `[vplate${i}]`;
+        filterParts.push(`[${pIdx}:v]setpts=PTS-STARTPTS+${plate.start.toFixed(3)}/TB${shiftTag}`);
+        filterParts.push(
+          `${videoLabel}${shiftTag}overlay=0:0:enable='between(t,${plate.start.toFixed(3)},${plate.end.toFixed(3)})':eof_action=pass${outTag}`
+        );
+        videoLabel = outTag;
+      }
+    }
+  }
+
   // Burn captions: use libass when compiled in, otherwise render transparent PNGs via Electron
   let tmpAssPath: string | null = null;
   const tmpPngPaths: string[] = [];
@@ -309,20 +378,26 @@ export async function exportProjectVideo(opts: ExportProjectOptions): Promise<Ex
   }
 
   if (encoder === 'h264_videotoolbox') {
-    args.push('-c:v', 'h264_videotoolbox', '-b:v', preset === 'preview-720p' ? '6M' : '14M');
+    const defaultMbps = preset === 'master-4k' ? 35 : preset === 'preview-720p' ? 6 : 14;
+    const mbps = opts.bitrateMbps ?? defaultMbps;
+    args.push('-c:v', 'h264_videotoolbox', '-b:v', `${mbps}M`);
   } else {
-    args.push('-c:v', 'libx264', '-crf', preset === 'preview-720p' ? '22' : '18', '-preset', 'medium');
+    const crf = preset === 'master-4k' ? '16' : preset === 'preview-720p' ? '22' : '18';
+    args.push('-c:v', 'libx264', '-crf', crf, '-preset', 'medium');
   }
   args.push('-pix_fmt', 'yuv420p', '-movflags', '+faststart', outPath);
 
-  onProgress?.(45, `Encoding with ${encoder} (${outW}x${outH})...`);
+  onProgress?.(45, `Encoding with ${encoder} (${outW}x${outH} @ ${fps}fps)...`);
   try {
     await execFileAsync('ffmpeg', args, { maxBuffer: 1024 * 1024 * 16 });
   } finally {
     if (tmpAssPath) {
       await fs.unlink(tmpAssPath).catch(() => undefined);
     }
-    await Promise.all(tmpPngPaths.map((p) => fs.unlink(p).catch(() => undefined)));
+    await Promise.all([
+      ...tmpPngPaths.map((p) => fs.unlink(p).catch(() => undefined)),
+      ...tmpPlatePaths.map((p) => fs.unlink(p).catch(() => undefined)),
+    ]);
   }
 
   onProgress?.(95, 'Finalizing export...');

@@ -46,8 +46,21 @@ export const studioApi = {
   probeMedia: (paths: string[]) => ipcRenderer.invoke('projects:probeMedia', paths),
   registerMedia: (slug: string, paths: string[], mode?: 'link' | 'copy') =>
     ipcRenderer.invoke('projects:registerMedia', slug, paths, mode),
-  exportVideo: (slug: string, preset?: 'preview-720p' | 'master-1080p') =>
-    ipcRenderer.invoke('projects:exportVideo', slug, preset),
+  exportVideo: (
+    slug: string,
+    options?:
+      | 'preview-720p'
+      | 'master-1080p'
+      | 'master-4k'
+      | 'custom'
+      | {
+          preset?: 'preview-720p' | 'master-1080p' | 'master-4k' | 'custom';
+          width?: number;
+          height?: number;
+          fps?: number;
+        }
+  ) => ipcRenderer.invoke('projects:exportVideo', slug, options),
+  checkEnvironment: () => ipcRenderer.invoke('studio:checkEnvironment'),
   inspectTimeline: (slug: string, frameCount?: number) =>
     ipcRenderer.invoke('projects:inspectTimeline', slug, frameCount),
   revealPath: (targetPath: string) => ipcRenderer.invoke('studio:revealPath', targetPath),

@@ -230,6 +230,16 @@ async function testMcpServer(expectedIdeaCount: number) {
     const searchRes = await waitForId(4);
     const searchJson = JSON.parse(searchRes.result.content[0].text);
     assert.ok(searchJson.count >= 1, 'Expected ROI motion scene match');
+
+    send({
+      jsonrpc: '2.0',
+      id: 5,
+      method: 'tools/call',
+      params: { name: 'check_environment', arguments: {} },
+    });
+    const envRes = await waitForId(5);
+    const envJson = JSON.parse(envRes.result.content[0].text);
+    assert.ok(envJson.bundled_skills.includes('hyperframes'), 'check_environment should list bundled hyperframes');
   } finally {
     child.kill('SIGTERM');
   }
@@ -339,9 +349,27 @@ async function testStarterVaultAndHarness() {
     const exportRes = await exportProjectVideo({
       vaultRoot: tmpVault,
       projectSlug: 'export-smoke',
-      preset: 'preview-720p',
+      preset: 'custom',
+      width: 1280,
+      height: 720,
+      fps: 24,
     });
     assert.ok(exportRes.sizeBytes > 1000, 'Exported MP4 should be non-empty');
+
+    // Verify bundled HyperFrames & fixed motion-library scripts
+    const renderSceneSrc = await fs.readFile(
+      path.join(RESOURCES_DIR, 'skills', 'nazif-motion-scene-library', 'scripts', 'render_scene.mjs'),
+      'utf8'
+    );
+    assert.ok(renderSceneSrc.includes('fileURLToPath'), 'render_scene.mjs should use fileURLToPath');
+    const tokensCss = await fs.readFile(
+      path.join(RESOURCES_DIR, 'skills', 'nazif-motion-scene-library', 'engine', 'tokens.css'),
+      'utf8'
+    );
+    assert.ok(tokensCss.includes('html:has(body.transparent)'), 'tokens.css should fix transparent html');
+    assert.ok(tokensCss.includes('Google Sans Flex'), 'tokens.css should use Google Sans Flex');
+    await fs.access(path.join(RESOURCES_DIR, 'skills', 'hyperframes', 'SKILL.md'));
+    await fs.access(path.join(RESOURCES_DIR, 'skills', 'hyperframes-core', 'SKILL.md'));
     const sheetRes = await inspectTimelineContactSheet({
       vaultRoot: tmpVault,
       projectSlug: 'export-smoke',

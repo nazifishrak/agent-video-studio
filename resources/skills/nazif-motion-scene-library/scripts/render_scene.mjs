@@ -6,12 +6,12 @@
  * Usage:
  *   node scripts/render_scene.mjs --scene scenes/01-kinetic-hook-mask.html --out out/hook.mp4
  *   node scripts/render_scene.mjs --scene scenes/01-kinetic-hook-mask.html --design themes/linear-dark.design.md --props '{"line1":"Ship faster","line2":"without the chaos"}' --fps 30 --out out/hook.mp4
- *   node scripts/render_scene.mjs --scene scenes/06-lower-third-clean.html --transparent --out out/lower-third.mov
+ *   node scripts/render_scene.mjs --scene scenes/06-lower-third-clean.html --transparent --width 3840 --height 2160 --out out/lower-third.mov
  */
-import { execFileSync, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 function parseArgs(argv) {
   const args = { fps: 30, width: 1920, height: 1080, transparent: false, mode: 'light' };
@@ -28,19 +28,28 @@ function parseArgs(argv) {
     else if (a === '--transparent') args.transparent = true;
   }
   if (!args.scene || !args.out) {
-    console.error('Usage: node scripts/render_scene.mjs --scene <path> --out <output.mp4|mov> [--design DESIGN.md] [--props JSON] [--fps 30] [--transparent]');
+    console.error('Usage: node scripts/render_scene.mjs --scene <path> --out <output.mp4|mov> [--design DESIGN.md] [--props JSON] [--fps 30] [--width 1920] [--height 1080] [--transparent]');
     process.exit(1);
   }
   return args;
 }
 
+function parseDesignTokensFromMd(designPath) {
+  const raw = fs.readFileSync(path.resolve(designPath), 'utf8');
+  const tokens = {};
+  for (const line of raw.split(/\r?\n/)) {
+    const m = line.match(/^\s*(?:[-*]\s+)?`?([a-z0-9_]+)`?\s*:\s*["']?([^"'\r\n]+?)["']?\s*$/i);
+    if (m) {
+      tokens[m[1]] = m[2].trim();
+    }
+  }
+  return tokens;
+}
+
 async function main() {
   const args = parseArgs(process.argv);
-  const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
-
-  if (args.design) {
-    execFileSync('python3', [path.join(root, 'scripts/parse_design_md.py'), path.resolve(args.design), '--mode', args.mode], { stdio: 'inherit' });
-  }
+  const _here = path.dirname(fileURLToPath(import.meta.url));
+  const designTokens = args.design ? parseDesignTokensFromMd(args.design) : null;
 
   let chromium;
   try {
@@ -63,9 +72,14 @@ async function main() {
 
   const sceneUrl = new URL(pathToFileURL(path.resolve(args.scene)).href);
   sceneUrl.searchParams.set('manual', '1');
+  sceneUrl.searchParams.set('w', String(args.width));
+  sceneUrl.searchParams.set('h', String(args.height));
   if (args.transparent) sceneUrl.searchParams.set('transparent', '1');
 
   await page.goto(sceneUrl.href, { waitUntil: 'networkidle' });
+  if (designTokens) {
+    await page.evaluate((t) => window.applyDesignTokens && window.applyDesignTokens(t), designTokens);
+  }
   if (args.props) {
     const parsedProps = fs.existsSync(args.props) ? JSON.parse(fs.readFileSync(args.props, 'utf8')) : JSON.parse(args.props);
     await page.evaluate((p) => window.setProps && window.setProps(p), parsedProps);
@@ -73,7 +87,7 @@ async function main() {
 
   const meta = await page.evaluate(() => window.SCENE_META);
   const totalFrames = Math.ceil(meta.duration * args.fps);
-  console.log(`Rendering ${meta.id} (${meta.duration}s @ ${args.fps}fps = ${totalFrames} frames) -> ${args.out}`);
+  console.log(`Rendering ${meta.id} (${meta.duration}s @ ${args.fps}fps ${args.width}x${args.height} = ${totalFrames} frames) -> ${args.out}`);
 
   const ffmpegArgs = args.transparent
     ? ['-y', '-f', 'image2pipe', '-vcodec', 'png', '-r', String(args.fps), '-i', '-', '-c:v', 'prores_ks', '-profile:v', '4444', '-pix_fmt', 'yuva444p10le', path.resolve(args.out)]

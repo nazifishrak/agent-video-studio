@@ -13,7 +13,12 @@ export const ExportModal: React.FC = () => {
     refreshVaultData,
   } = useStudioStore();
 
-  const [preset, setPreset] = useState<'preview-720p' | 'master-1080p'>('master-1080p');
+  const [preset, setPreset] = useState<'preview-720p' | 'master-1080p' | 'master-4k' | 'custom'>(
+    'master-1080p'
+  );
+  const [customWidth, setCustomWidth] = useState(1920);
+  const [customHeight, setCustomHeight] = useState(1080);
+  const [customFps, setCustomFps] = useState(30);
   const [exporting, setExporting] = useState(false);
   const [progress, setProgress] = useState<{ pct: number; message: string } | null>(null);
   const [result, setResult] = useState<{
@@ -44,7 +49,12 @@ export const ExportModal: React.FC = () => {
     setResult(null);
     setProgress({ pct: 2, message: 'Starting render...' });
     try {
-      const res = await window.studio.exportVideo(activeProjectSlug, preset);
+      const res = await window.studio.exportVideo(activeProjectSlug, {
+        preset,
+        width: preset === 'custom' ? customWidth : undefined,
+        height: preset === 'custom' ? customHeight : undefined,
+        fps: preset === 'custom' ? customFps : undefined,
+      });
       setResult(res);
       await refreshVaultData();
     } catch (err) {
@@ -95,38 +105,84 @@ export const ExportModal: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-xs">
-          <button
-            onClick={() => setPreset('preview-720p')}
-            className={`p-3.5 rounded-2xl border text-left cursor-pointer transition ${
-              preset === 'preview-720p' ? 'border-[#C4FF2E]' : ''
-            }`}
-            style={{
-              backgroundColor: 'var(--bg-surface-alt)',
-              borderColor: preset === 'preview-720p' ? 'var(--accent-primary)' : 'var(--border-subtle)',
-            }}
-          >
-            <div className="font-semibold">Fast Draft (720p)</div>
-            <div className="mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Quick review render for pacing & captions.
-            </div>
-          </button>
-
-          <button
-            onClick={() => setPreset('master-1080p')}
-            className={`p-3.5 rounded-2xl border text-left cursor-pointer transition ${
-              preset === 'master-1080p' ? 'border-[#C4FF2E]' : ''
-            }`}
-            style={{
-              backgroundColor: 'var(--bg-surface-alt)',
-              borderColor: preset === 'master-1080p' ? 'var(--accent-primary)' : 'var(--border-subtle)',
-            }}
-          >
-            <div className="font-semibold">Master ({projectState.manifest.aspectRatio})</div>
-            <div className="mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Full {projectState.editPlan.width}×{projectState.editPlan.height} @ {projectState.editPlan.fps}fps.
-            </div>
-          </button>
+          {(
+            [
+              {
+                id: 'preview-720p',
+                title: 'Fast Draft (720p)',
+                desc: 'Quick review render for pacing & captions.',
+              },
+              {
+                id: 'master-1080p',
+                title: `Master 1080p (${projectState.manifest.aspectRatio})`,
+                desc: `Full HD @ ${projectState.editPlan.fps}fps.`,
+              },
+              {
+                id: 'master-4k',
+                title: `4K Ultra HD (${projectState.manifest.aspectRatio})`,
+                desc:
+                  projectState.manifest.aspectRatio === '9:16'
+                    ? '2160×3840 high-bitrate master.'
+                    : '3840×2160 high-bitrate master.',
+              },
+              {
+                id: 'custom',
+                title: 'Custom Resolution & FPS',
+                desc: 'Specify exact width, height, and frame rate.',
+              },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setPreset(item.id)}
+              className="p-3.5 rounded-2xl border text-left cursor-pointer transition"
+              style={{
+                backgroundColor: 'var(--bg-surface-alt)',
+                borderColor: preset === item.id ? 'var(--accent-primary)' : 'var(--border-subtle)',
+              }}
+            >
+              <div className="font-semibold">{item.title}</div>
+              <div className="mt-1" style={{ color: 'var(--text-secondary)' }}>
+                {item.desc}
+              </div>
+            </button>
+          ))}
         </div>
+
+        {preset === 'custom' && (
+          <div className="grid grid-cols-3 gap-2.5 text-xs">
+            <label className="space-y-1">
+              <span className="caption-label block">WIDTH</span>
+              <input
+                type="number"
+                value={customWidth}
+                onChange={(e) => setCustomWidth(Number(e.target.value) || 1920)}
+                className="w-full px-3 py-1.5 rounded-lg border t-num"
+                style={{ backgroundColor: 'var(--bg-surface-alt)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="caption-label block">HEIGHT</span>
+              <input
+                type="number"
+                value={customHeight}
+                onChange={(e) => setCustomHeight(Number(e.target.value) || 1080)}
+                className="w-full px-3 py-1.5 rounded-lg border t-num"
+                style={{ backgroundColor: 'var(--bg-surface-alt)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+              />
+            </label>
+            <label className="space-y-1">
+              <span className="caption-label block">FPS</span>
+              <input
+                type="number"
+                value={customFps}
+                onChange={(e) => setCustomFps(Number(e.target.value) || 30)}
+                className="w-full px-3 py-1.5 rounded-lg border t-num"
+                style={{ backgroundColor: 'var(--bg-surface-alt)', borderColor: 'var(--border-subtle)', color: 'var(--text-primary)' }}
+              />
+            </label>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-2.5">
           <button

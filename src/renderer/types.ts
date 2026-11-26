@@ -92,7 +92,17 @@ export interface StudioApi {
   registerMedia: (slug: string, paths: string[], mode?: 'link' | 'copy') => Promise<unknown>;
   exportVideo: (
     slug: string,
-    preset?: 'preview-720p' | 'master-1080p'
+    options?:
+      | 'preview-720p'
+      | 'master-1080p'
+      | 'master-4k'
+      | 'custom'
+      | {
+          preset?: 'preview-720p' | 'master-1080p' | 'master-4k' | 'custom';
+          width?: number;
+          height?: number;
+          fps?: number;
+        }
   ) => Promise<{
     outPath: string;
     relativePath: string;
@@ -100,6 +110,7 @@ export interface StudioApi {
     sizeBytes: number;
     encoder: string;
   }>;
+  checkEnvironment: () => Promise<Record<string, unknown>>;
   inspectTimeline: (
     slug: string,
     frameCount?: number

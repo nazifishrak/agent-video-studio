@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
@@ -297,13 +297,86 @@ function registerIpcHandlers(): void {
     async (_, slug: string, paths: string[], mode?: 'link' | 'copy') =>
       registerMediaInProject(requireVault(), slug, paths, mode ?? 'link')
   );
+  ipcMain.handle('studio:checkEnvironment', async () => {
+    const scriptPath = path.join(resourcesDir, 'skills', 'ai-video-editor', 'scripts', 'bootstrap_env.mjs');
+    const mod = await import(scriptPath);
+    return mod.checkEnvironment(path.join(resourcesDir, 'skills'));
+  });
+
   ipcMain.handle(
     'projects:exportVideo',
-    async (_, slug: string, preset?: 'preview-720p' | 'master-1080p') =>
-      exportProjectVideo({
+    async (
+      _,
+      slug: string,
+      presetOrOpts?:
+        | 'preview-720p'
+        | 'master-1080p'
+        | 'master-4k'
+        | 'custom'
+        | {
+            preset?: 'preview-720p' | 'master-1080p' | 'master-4k' | 'custom';
+            width?: number;
+            height?: number;
+            fps?: number;
+          }
+    ) => {
+      const optsObj =
+        typeof presetOrOpts === 'string'
+          ? { preset: presetOrOpts }
+          : presetOrOpts ?? { preset: 'master-1080p' as const };
+      return exportProjectVideo({
         vaultRoot: requireVault(),
         projectSlug: slug,
-        preset: preset ?? 'master-1080p',
+        resourcesDir,
+        preset: optsObj.preset ?? 'master-1080p',
+        width: optsObj.width,
+        height: optsObj.height,
+        fps: optsObj.fps,
+        renderMotionPlateVideo: async ({ plate, sceneFile, tokens, width, height, fps, outVideoPath }) => {
+          if (!assetServer) return false;
+          const win = new BrowserWindow({
+            width,
+            height,
+            show: false,
+            frame: false,
+            transparent: plate.transparent,
+            enableLargerThanScreen: true,
+            webPreferences: { offscreen: true },
+          });
+          try {
+            const url = `${assetServer.baseUrl}/scenes/${sceneFile}?manual=1&w=${width}&h=${height}${
+              plate.transparent ? '&transparent=1' : ''
+            }&token=${assetServer.token}`;
+            await win.loadURL(url);
+            await win.webContents.executeJavaScript(`
+              (() => {
+                if (window.applyDesignTokens) window.applyDesignTokens(${JSON.stringify(tokens)});
+                if (window.setProps) window.setProps(${JSON.stringify(plate.props ?? {})});
+              })()
+            `);
+            const dur = Math.max(0.2, plate.end - plate.start);
+            const totalFrames = Math.ceil(dur * fps);
+            const ffArgs = plate.transparent
+              ? ['-y', '-f', 'image2pipe', '-vcodec', 'png', '-r', String(fps), '-i', '-', '-c:v', 'prores_ks', '-profile:v', '4444', '-pix_fmt', 'yuva444p10le', outVideoPath]
+              : ['-y', '-f', 'image2pipe', '-vcodec', 'png', '-r', String(fps), '-i', '-', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-crf', '16', outVideoPath];
+            const ff = spawn('ffmpeg', ffArgs, { stdio: ['pipe', 'ignore', 'ignore'] });
+            for (let f = 0; f < totalFrames; f++) {
+              const t = f / fps;
+              await win.webContents.executeJavaScript(`window.renderFrame && window.renderFrame(${t})`);
+              const png = (await win.webContents.capturePage()).toPNG();
+              if (!ff.stdin.write(png)) {
+                await new Promise<void>((r) => ff.stdin.once('drain', () => r()));
+              }
+            }
+            ff.stdin.end();
+            await new Promise<void>((resolve, reject) => {
+              ff.on('close', (code) => (code === 0 ? resolve() : reject(new Error(`ffmpeg exited ${code}`))));
+            });
+            return true;
+          } finally {
+            win.destroy();
+          }
+        },
         renderCaptionPng: async ({ text, highlightWord, tokens, width, height, outPngPath }) => {
           const win = new BrowserWindow({
             width,
@@ -350,7 +423,8 @@ function registerIpcHandlers(): void {
         onProgress: (pct, message) => {
           mainWindow?.webContents.send('export:progress', { slug, pct, message });
         },
-      })
+      });
+    }
   );
   ipcMain.handle('projects:inspectTimeline', async (_, slug: string, frameCount?: number) =>
     inspectTimelineContactSheet({

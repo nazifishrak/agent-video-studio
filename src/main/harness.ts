@@ -49,12 +49,24 @@ You are operating inside the **Agent Video Studio** runtime workspace.
 
 ## Critical Boundary: App Skills vs. User Vault
 
-1. **App-Shipped Skills & Playbooks (READ-ONLY — NEVER MODIFY):**
-   - \`./skills/\` (\`${path.join(opts.resourcesDir, 'skills')}\`):
-     - \`ai-video-editor/\` — declarative \`edit-plan.json\` craft rules, camera easing, LUTs, SFX, audio mastering
+1. **App-Shipped Skills & Playbooks (READ-ONLY — NEVER MODIFY OR COPY INTO PROJECTS):**
+   - \`./skills/\` (\`${path.join(opts.resourcesDir, 'skills')}\`, also linked at \`.agents/skills/\`, \`.claude/skills/\`, \`.gemini/skills/\`):
+     - \`ai-video-editor/\` — declarative \`edit-plan.json\` craft rules, zero-shake montage workflow, \`probe_clips.py\`, \`bootstrap_env.mjs\`
      - \`nazif-motion-scene-library/\` — 60 built-in HTML/CSS/JS motion scenes + \`motion-engine.js\`
      - \`b-roll-finder/\` — free B-roll sourcing, rights tagging (\`CLEARED\` vs \`UNCLEARED_REFERENCE\`), contact sheets
+     - \`hyperframes/\`, \`hyperframes-core/\`, \`hyperframes-animation/\`, \`hyperframes-cli/\`, \`faceless-explainer/\`, \`product-launch-video/\`, \`motion-graphics/\` — HTML-to-video motion engine
    - \`./playbooks/\` (\`${path.join(opts.resourcesDir, 'playbooks')}\`) — anti-slop scriptwriting, voice/engagement, filming guides
+
+## First-Time Environment Check
+- Before building or rendering, run \`check_environment\` via MCP (or \`node ./skills/ai-video-editor/scripts/bootstrap_env.mjs --check\`) to verify \`ffmpeg\`, \`ffprobe\`, \`hyperframes\`, and local filters (\`has_vidstab\`, \`has_deshake\`, \`has_videotoolbox\`).
+- If \`hyperframes\` is needed and not installed globally, run \`node ./skills/ai-video-editor/scripts/bootstrap_env.mjs --install-hyperframes\` (or \`npx -y hyperframes\`).
+
+## 2-Path Tool Routing Contract (Keep Studio Editable!)
+1. **Footage / Vlog / Montage / Talking-Head Edits:**
+   - Always build directly on the Studio Timeline via MCP: \`probe_media\` -> \`register_media\` -> \`begin_project_edit\` -> \`apply_timeline_ops\` (\`set_shots\`, \`add_motion_plate\`, \`add_caption\`, \`update_audio\`) -> \`commit_project_edit\` -> \`inspect_timeline\` -> \`export_video\` (\`preview-720p\`, \`master-1080p\`, \`master-4k\`, or \`custom\`).
+   - **NEVER copy \`./skills/nazif-motion-scene-library/\` into a project folder** or install Playwright per project — Studio's built-in exporter renders \`motionPlates[]\` natively!
+2. **HTML-First Motion Graphics / Launch Films / Explainers:**
+   - Read \`./skills/hyperframes/SKILL.md\` and \`./skills/hyperframes-core/SKILL.md\`, build inside \`./vault/projects/<slug>/hyperframes/\` with \`npx hyperframes init\` -> \`check\` -> \`snapshot\` -> \`render\`, and register the rendered MP4 into the Studio project via \`register_media\` + \`set_source_video\`.
 
 2. **User Vault (READ / WRITE TARGET FOR ALL USER DATA):**
    - \`./vault/\` -> \`${opts.vaultRoot}\`
