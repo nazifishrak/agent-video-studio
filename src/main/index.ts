@@ -34,7 +34,7 @@ import { AssetServer, startAssetServer } from './server.js';
 import { getAppResourcesDir, HarnessInfo, prepareAgentHarness } from './harness.js';
 import { TerminalManager } from './terminal.js';
 import type { BrandTokens } from '../shared/designTokens.js';
-import { getCaptionVisualSpec } from '../shared/designTokens.js';
+import { getCaptionVisualSpec, parseDesignMd } from '../shared/designTokens.js';
 import type { StudioLiveContext } from '../shared/liveContext.js';
 import {
   getUiCommandPath,
@@ -474,6 +474,22 @@ function registerIpcHandlers(): void {
   ipcMain.handle('brand:saveGlobal', async (_, name: string, tokens: BrandTokens) =>
     saveGlobalBrandKit(requireVault(), name, tokens)
   );
+  ipcMain.handle('brand:importDesignMdDialog', async () => {
+    const res = await dialog.showOpenDialog({
+      title: 'Import DESIGN.md Brand Kit',
+      properties: ['openFile'],
+      filters: [{ name: 'Design Markdown', extensions: ['md', 'markdown', 'txt'] }],
+    });
+    if (res.canceled || res.filePaths.length === 0) return null;
+    const filePath = res.filePaths[0];
+    const raw = await fs.readFile(filePath, 'utf8');
+    const mode = /\bmode\s*[:=]\s*dark\b|\bdark\b/i.test(raw.slice(0, 400)) ? 'dark' : 'light';
+    const tokens = parseDesignMd(raw, mode);
+    const headingMatch = raw.match(/^#\s+(.+?)(?:\s+—|\s+-|$)/m);
+    const fileName = path.basename(filePath);
+    const name = headingMatch?.[1]?.trim() || fileName.replace(/\.(design\.md|md|markdown|txt)$/i, '');
+    return { fileName, name, raw, tokens };
+  });
 
   ipcMain.handle('mcp:configInfo', async () => ({
     serverScript: getMcpEntryPath(),

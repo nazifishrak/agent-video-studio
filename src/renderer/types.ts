@@ -127,6 +127,12 @@ export interface StudioApi {
   listBrandKits: () => Promise<BrandKitEntry[]>;
   saveProjectBrandKit: (projectSlug: string, tokens: BrandTokens) => Promise<BrandTokens>;
   saveGlobalBrandKit: (name: string, tokens: BrandTokens) => Promise<BrandKitEntry>;
+  importDesignMdDialog: () => Promise<{
+    fileName: string;
+    name: string;
+    raw: string;
+    tokens: BrandTokens;
+  } | null>;
 
   getMcpConfigInfo: () => Promise<{ serverScript: string; vaultRoot: string; nodeBin: string }>;
   getHarnessInfo: () => Promise<HarnessInfo | null>;

@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check,
+  ChevronDown,
+  ChevronRight,
+  FileText,
   Film,
   MessageSquare,
   PanelLeftClose,
@@ -25,6 +28,7 @@ import {
   CAPTION_STYLE_LABELS,
   CaptionStyleVariant,
   DEFAULT_BRAND_TOKENS,
+  parseDesignMd,
 } from '../../shared/designTokens';
 import type { MotionSceneMeta } from '../../shared/schemas';
 
@@ -78,6 +82,10 @@ export const EditorView: React.FC = () => {
   const [brandDirty, setBrandDirty] = useState(false);
   const [presetName, setPresetName] = useState('');
   const [brandSavedMsg, setBrandSavedMsg] = useState<string | null>(null);
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [showPasteDesign, setShowPasteDesign] = useState(false);
+  const [pasteDesignText, setPasteDesignText] = useState('');
+  const [showCustomizeTokens, setShowCustomizeTokens] = useState(false);
 
   useEffect(() => {
     setMediaDurationSec(0);
@@ -873,70 +881,52 @@ export const EditorView: React.FC = () => {
 
               {editorLeftTab === 'brand' && (
                 <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <div className="caption-label">PRESETS (LIVE STAGE PREVIEW)</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {(brandKits.length > 0 ? brandKits : BUILTIN_BRAND_PRESETS).map((preset) => (
-                        <button
-                          key={preset.id}
-                          onClick={() => {
-                            setBrandDraft(preset.tokens);
-                            setBrandDirty(true);
-                            setPreviewTokensOverride(preset.tokens);
-                          }}
-                          className="btn-secondary px-2.5 py-1 text-[11px]"
-                        >
-                          {preset.name}
-                        </button>
-                      ))}
+                  {/* Tier 1: Curated Presets & Approved Caption Look */}
+                  <div className="space-y-2">
+                    <div className="caption-label">BRAND PRESETS (LIVE STAGE PREVIEW)</div>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {(brandKits.length > 0 ? brandKits : BUILTIN_BRAND_PRESETS).map((preset) => {
+                        const active = selectedPresetId === preset.id;
+                        return (
+                          <button
+                            key={preset.id}
+                            onClick={() => {
+                              setSelectedPresetId(preset.id);
+                              setBrandDraft(preset.tokens);
+                              setBrandDirty(true);
+                              setPreviewTokensOverride(preset.tokens);
+                              setBrandSavedMsg(`Previewing "${preset.name}" — save below to apply`);
+                            }}
+                            className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl border text-left cursor-pointer transition"
+                            style={{
+                              backgroundColor: active ? 'var(--bg-surface-alt)' : 'transparent',
+                              borderColor: active ? 'var(--accent-primary)' : 'var(--border-subtle)',
+                            }}
+                          >
+                            <span className="text-xs font-medium truncate">{preset.name}</span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {[preset.tokens.stage_bg, preset.tokens.surface_card, preset.tokens.accent_primary].map(
+                                (col, i) => (
+                                  <span
+                                    key={i}
+                                    className="w-3 h-3 rounded-full border"
+                                    style={{
+                                      backgroundColor: col,
+                                      borderColor: 'rgba(255,255,255,0.2)',
+                                    }}
+                                  />
+                                )
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    {(
-                      [
-                        ['stage_bg', 'Stage Bg'],
-                        ['surface_card', 'Card'],
-                        ['accent_primary', 'Accent'],
-                        ['caption_color', 'Caption Text'],
-                        ['caption_highlight_color', 'Highlight'],
-                      ] as Array<[keyof BrandTokens, string]>
-                    ).map(([k, label]) => (
-                      <label
-                        key={k}
-                        className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border"
-                        style={{ backgroundColor: 'var(--bg-surface-alt)', borderColor: 'var(--border-subtle)' }}
-                      >
-                        <span className="truncate">{label}</span>
-                        <input
-                          type="color"
-                          value={brandDraft[k].startsWith('#') ? brandDraft[k] : '#C4FF2E'}
-                          onChange={(e) => updateBrandToken(k, e.target.value)}
-                          className="w-5 h-4 rounded cursor-pointer bg-transparent border-0"
-                        />
-                      </label>
-                    ))}
-                  </div>
-
+                  {/* Caption Look */}
                   <div className="space-y-2">
-                    <div className="caption-label">TYPOGRAPHY & CAPTIONS</div>
-                    <select
-                      value={brandDraft.display_weight}
-                      onChange={(e) => updateBrandToken('display_weight', e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-lg border text-xs outline-none"
-                      style={{
-                        backgroundColor: 'var(--bg-surface-alt)',
-                        borderColor: 'var(--border-subtle)',
-                        color: 'var(--text-primary)',
-                      }}
-                    >
-                      {DISPLAY_WEIGHT_OPTIONS.map((w) => (
-                        <option key={w.value} value={w.value}>
-                          {w.label}
-                        </option>
-                      ))}
-                    </select>
-
+                    <div className="caption-label">CAPTION LOOK & POSITION</div>
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={brandDraft.caption_style}
@@ -974,6 +964,152 @@ export const EditorView: React.FC = () => {
                         <option value="center">Center</option>
                       </select>
                     </div>
+                  </div>
+
+                  {/* Tier 2: Bring Your Own DESIGN.md */}
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                    }}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files?.[0];
+                      if (!file) return;
+                      const raw = await file.text();
+                      const mode = /\bmode\s*[:=]\s*dark\b|\bdark\b/i.test(raw.slice(0, 400)) ? 'dark' : 'light';
+                      const parsed = parseDesignMd(raw, mode);
+                      const cleanName = file.name.replace(/\.(design\.md|md|markdown|txt)$/i, '');
+                      setSelectedPresetId(null);
+                      setBrandDraft(parsed);
+                      setBrandDirty(true);
+                      setPreviewTokensOverride(parsed);
+                      setPresetName(cleanName);
+                      setBrandSavedMsg(`Loaded "${file.name}" — save below to apply`);
+                    }}
+                    className="p-3 rounded-2xl border border-dashed space-y-2"
+                    style={{
+                      backgroundColor: 'var(--bg-surface-alt)',
+                      borderColor: 'var(--border-subtle)',
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="caption-label flex items-center gap-1">
+                        <FileText size={11} /> YOUR DESIGN.MD
+                      </div>
+                      <button
+                        onClick={() => setShowPasteDesign(!showPasteDesign)}
+                        className="text-[11px] underline cursor-pointer"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
+                        {showPasteDesign ? 'Hide paste' : 'Paste markdown'}
+                      </button>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const res = await window.studio.importDesignMdDialog();
+                        if (!res) return;
+                        setSelectedPresetId(null);
+                        setBrandDraft(res.tokens);
+                        setBrandDirty(true);
+                        setPreviewTokensOverride(res.tokens);
+                        setPresetName(res.name);
+                        setBrandSavedMsg(`Loaded "${res.fileName}" — save below to apply`);
+                      }}
+                      className="btn-secondary w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs"
+                    >
+                      <Upload size={12} /> Import DESIGN.md (or drop .md here)
+                    </button>
+                    {showPasteDesign && (
+                      <div className="space-y-1.5 pt-1">
+                        <textarea
+                          rows={4}
+                          value={pasteDesignText}
+                          onChange={(e) => setPasteDesignText(e.target.value)}
+                          placeholder="Paste DESIGN.md contents..."
+                          className="w-full p-2 rounded-lg border text-[11px] outline-none"
+                          style={{
+                            backgroundColor: 'var(--bg-canvas)',
+                            borderColor: 'var(--border-subtle)',
+                            color: 'var(--text-primary)',
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            if (!pasteDesignText.trim()) return;
+                            const mode = /\bmode\s*[:=]\s*dark\b|\bdark\b/i.test(pasteDesignText.slice(0, 400))
+                              ? 'dark'
+                              : 'light';
+                            const parsed = parseDesignMd(pasteDesignText, mode);
+                            setSelectedPresetId(null);
+                            setBrandDraft(parsed);
+                            setBrandDirty(true);
+                            setPreviewTokensOverride(parsed);
+                            setShowPasteDesign(false);
+                            setBrandSavedMsg('Parsed pasted DESIGN.md — save below to apply');
+                          }}
+                          className="btn-primary w-full py-1 text-[11px]"
+                        >
+                          Parse & Preview
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tier 3: Collapsible Customize Tokens */}
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => setShowCustomizeTokens(!showCustomizeTokens)}
+                      className="w-full flex items-center justify-between text-xs py-1 cursor-pointer"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      <span className="caption-label">CUSTOMIZE TOKENS</span>
+                      {showCustomizeTokens ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                    </button>
+                    {showCustomizeTokens && (
+                      <div className="space-y-2.5 pt-1">
+                        <select
+                          value={brandDraft.display_weight}
+                          onChange={(e) => updateBrandToken('display_weight', e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border text-xs outline-none"
+                          style={{
+                            backgroundColor: 'var(--bg-surface-alt)',
+                            borderColor: 'var(--border-subtle)',
+                            color: 'var(--text-primary)',
+                          }}
+                        >
+                          {DISPLAY_WEIGHT_OPTIONS.map((w) => (
+                            <option key={w.value} value={w.value}>
+                              {w.label}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="grid grid-cols-2 gap-2">
+                          {(
+                            [
+                              ['stage_bg', 'Stage Bg'],
+                              ['surface_card', 'Card'],
+                              ['accent_primary', 'Accent'],
+                              ['caption_color', 'Caption Text'],
+                            ] as Array<[keyof BrandTokens, string]>
+                          ).map(([k, label]) => (
+                            <label
+                              key={k}
+                              className="flex items-center justify-between gap-1.5 px-2.5 py-1.5 rounded-lg border"
+                              style={{ backgroundColor: 'var(--bg-surface-alt)', borderColor: 'var(--border-subtle)' }}
+                            >
+                              <span className="truncate">{label}</span>
+                              <input
+                                type="color"
+                                value={brandDraft[k].startsWith('#') ? brandDraft[k] : '#C4FF2E'}
+                                onChange={(e) => updateBrandToken(k, e.target.value)}
+                                className="w-5 h-4 rounded cursor-pointer bg-transparent border-0"
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2 pt-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}>

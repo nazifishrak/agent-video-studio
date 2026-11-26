@@ -72,6 +72,7 @@ export const studioApi = {
     ipcRenderer.invoke('brand:saveProject', projectSlug, tokens),
   saveGlobalBrandKit: (name: string, tokens: BrandTokens) =>
     ipcRenderer.invoke('brand:saveGlobal', name, tokens),
+  importDesignMdDialog: () => ipcRenderer.invoke('brand:importDesignMdDialog'),
 
   getMcpConfigInfo: () => ipcRenderer.invoke('mcp:configInfo'),
   getHarnessInfo: () => ipcRenderer.invoke('harness:info'),
