@@ -12,6 +12,7 @@ import {
   updateProjectManifest,
 } from './vault.js';
 import type { BrandTokens } from '../shared/designTokens.js';
+import { normalizeCaptionStyle } from '../shared/designTokens.js';
 import type { EditPlanV2, MotionPlate } from '../shared/schemas.js';
 
 const execFileAsync = promisify(execFile);
@@ -104,11 +105,17 @@ function buildAssSubtitles(
       : tokens.caption_position === 'lower-third'
         ? Math.round(height * 0.12)
         : Math.round(height * 0.06);
-  const fontSize = Math.max(26, Math.round(height * (width >= height ? 0.042 : 0.028)));
+  const style = normalizeCaptionStyle(tokens.caption_style);
+  const fontName = style === 'editorial-serif' ? 'Instrument Serif' : 'SF Pro Text';
+  const fontSize = Math.max(24, Math.round(height * (width >= height ? 0.034 : 0.025)));
   const primaryCol = hexToAssColor(tokens.caption_color, '00');
-  const backCol =
-    tokens.caption_style === 'editorial' ? '&H80000000' : hexToAssColor('#090B0A', '40');
-  const borderStyle = tokens.caption_style === 'editorial' ? 1 : 3;
+  const isGlass = style === 'editorial-glass';
+  const outlineCol = isGlass ? '&H680C0E12' : '&HB0000000';
+  const backCol = isGlass ? '&H680C0E12' : '&H90000000';
+  const borderStyle = isGlass ? 3 : 1;
+  const outlineWidth = isGlass ? 8 : 1.2;
+  const shadowDepth = isGlass ? 0 : 2;
+  const isBold = Number(tokens.caption_weight) >= 600 ? 1 : 0;
 
   const lines = [
     '[Script Info]',
@@ -118,7 +125,7 @@ function buildAssSubtitles(
     '',
     '[V4+ Styles]',
     'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
-    `Style: Default,Arial,${fontSize},${primaryCol},${primaryCol},${backCol},${backCol},1,0,0,0,100,100,0,0,${borderStyle},2,0,${alignment},40,40,${marginV},1`,
+    `Style: Default,${fontName},${fontSize},${primaryCol},${primaryCol},${outlineCol},${backCol},${isBold},0,0,0,100,100,0,0,${borderStyle},${outlineWidth},${shadowDepth},${alignment},40,40,${marginV},1`,
     '',
     '[Events]',
     'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',

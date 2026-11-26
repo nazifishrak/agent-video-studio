@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Maximize2, MessageSquarePlus, Pause, Play, Shield, SkipBack, Sparkles } from 'lucide-react';
 import { useStudioStore } from '../store/studioStore';
+import { getCaptionVisualSpec } from '../../shared/designTokens';
 
 export const PreviewCanvas: React.FC<{
   totalDuration: number;
@@ -19,12 +20,15 @@ export const PreviewCanvas: React.FC<{
     applyOps,
     pinContextChip,
     getActiveBrandTokens,
+    trackVisibility,
+    mediaRevision,
   } = useStudioStore();
 
   const [safeZones, setSafeZones] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
+  const brollVideoRef = useRef<HTMLVideoElement>(null);
   const plateIframeRef = useRef<HTMLIFrameElement>(null);
   const lastPropsKeyRef = useRef<string>('');
   const lastTokensKeyRef = useRef<string>('');
@@ -45,6 +49,21 @@ export const PreviewCanvas: React.FC<{
   const cutsRef = useRef(plan?.cuts ?? []);
   cutsRef.current = plan?.cuts ?? [];
 
+  const activeShot = useMemo(
+    () =>
+      plan?.shots.find((s) => currentTimeSec >= s.start && currentTimeSec < s.end) ??
+      (plan?.shots.length ? plan.shots[plan.shots.length - 1] : null),
+    [plan?.shots, currentTimeSec]
+  );
+
+  const hasTimelineVideo = Boolean(plan?.sourceVideo || (plan?.shots.length ?? 0) > 0);
+  const activeTimelineVideoRef = useRef(hasTimelineVideo);
+  activeTimelineVideoRef.current = hasTimelineVideo;
+  const activeShotRef = useRef(activeShot);
+  activeShotRef.current = activeShot;
+  const shotsCountRef = useRef(plan?.shots.length ?? 0);
+  shotsCountRef.current = plan?.shots.length ?? 0;
+
   // Smooth playback loop without 60Hz React effect teardown
   useEffect(() => {
     if (!isPlaying) return;
@@ -54,7 +73,13 @@ export const PreviewCanvas: React.FC<{
     const tick = (now: number) => {
       const v = videoRef.current;
       const dur = totalDurationRef.current;
-      if (activeSourceRef.current && v && Number.isFinite(v.duration) && v.duration > 0) {
+      if (
+        shotsCountRef.current === 0 &&
+        activeSourceRef.current &&
+        v &&
+        Number.isFinite(v.duration) &&
+        v.duration > 0
+      ) {
         if (v.ended) {
           setCurrentTimeSec(0);
           setIsPlaying(false);
@@ -98,10 +123,29 @@ export const PreviewCanvas: React.FC<{
     return () => cancelAnimationFrame(raf);
   }, [isPlaying, setCurrentTimeSec, setIsPlaying]);
 
-  // Seek <video> only when paused or externally scrubbed
+  // Seek <video> for either single sourceVideo or multi-shot montage
   useEffect(() => {
     const v = videoRef.current;
-    if (!v || !plan?.sourceVideo) return;
+    if (!v || !hasTimelineVideo) return;
+
+    if (activeShot) {
+      const targetSrcTime = Math.max(
+        0,
+        activeShot.srcIn + (currentTimeSec - activeShot.start) * (activeShot.speed || 1)
+      );
+      if (Math.abs(v.currentTime - targetSrcTime) > 0.25) {
+        v.currentTime = targetSrcTime;
+      }
+      v.playbackRate = activeShot.speed || 1;
+      if (isPlaying && v.paused) {
+        void v.play().catch(() => undefined);
+      } else if (!isPlaying && !v.paused) {
+        v.pause();
+      }
+      return;
+    }
+
+    if (!plan?.sourceVideo) return;
     if ((!isPlaying || Math.abs(v.currentTime - currentTimeSec) > 0.35) && Math.abs(v.currentTime - currentTimeSec) > 0.08) {
       v.currentTime = currentTimeSec;
     }
@@ -110,7 +154,7 @@ export const PreviewCanvas: React.FC<{
     } else if (!isPlaying && !v.paused) {
       v.pause();
     }
-  }, [currentTimeSec, isPlaying, plan?.sourceVideo]);
+  }, [currentTimeSec, isPlaying, plan?.sourceVideo, activeShot?.id, activeShot?.srcIn, hasTimelineVideo]);
 
   // Global transport hotkeys (registered once, guarding against inputs & xterm)
   useEffect(() => {
@@ -155,6 +199,26 @@ export const PreviewCanvas: React.FC<{
     () => plan?.captions.find((c) => currentTimeSec >= c.start && currentTimeSec <= c.end) ?? null,
     [plan?.captions, currentTimeSec]
   );
+
+  const activeCallout = useMemo(
+    () => plan?.callouts.find((c) => currentTimeSec >= c.start && currentTimeSec <= c.end) ?? null,
+    [plan?.callouts, currentTimeSec]
+  );
+
+  // Sync B-roll <video> playback with timeline playhead
+  useEffect(() => {
+    const bv = brollVideoRef.current;
+    if (!bv || !activeBroll || activeBroll.kind === 'image') return;
+    const targetBrollTime = Math.max(0, (activeBroll.srcIn ?? 0) + (currentTimeSec - activeBroll.start));
+    if (Math.abs(bv.currentTime - targetBrollTime) > 0.28) {
+      bv.currentTime = targetBrollTime;
+    }
+    if (isPlaying && bv.paused) {
+      void bv.play().catch(() => undefined);
+    } else if (!isPlaying && !bv.paused) {
+      bv.pause();
+    }
+  }, [activeBroll?.id, activeBroll?.start, activeBroll?.srcIn, activeBroll?.kind, currentTimeSec, isPlaying]);
 
   const cameraTransform = useMemo(() => {
     const moves = plan?.cameraMoves ?? [];
@@ -235,21 +299,31 @@ export const PreviewCanvas: React.FC<{
 
   const buildMediaUrl = (source: string) => {
     if (!source || !assetServerUrl) return '';
+    const revParam = `v=${mediaRevision}`;
+    const authPart = tokenParam ? `${tokenParam}&${revParam}` : revParam;
     const asset = plan.assets.find((a) => a.id === source || a.uri === source);
     if (asset) {
-      return `${assetServerUrl}/project-asset/${manifest.slug}/${asset.id}?${tokenParam}`;
+      return `${assetServerUrl}/project-asset/${manifest.slug}/${asset.id}?${authPart}`;
     }
-    return `${assetServerUrl}/project-media/${manifest.slug}/${source}?${tokenParam}`;
+    return `${assetServerUrl}/project-media/${manifest.slug}/${source}?${authPart}`;
   };
 
-  const videoUrl = buildMediaUrl(plan.sourceVideo);
+  const primarySource = activeShot ? activeShot.assetId || activeShot.source : plan.sourceVideo;
+  const videoUrl = buildMediaUrl(primarySource);
   const brollUrl = activeBroll ? buildMediaUrl(activeBroll.source) : '';
   const plateSrc =
     activePlate && activePlateMeta && assetServerUrl
       ? `${assetServerUrl}/scenes/${activePlateMeta.file}?manual=1&w=${stageW}&h=${stageH}${
           activePlate.transparent ? '&transparent=1' : ''
-        }${tokenParam ? `&${tokenParam}` : ''}`
+        }${tokenParam ? `&${tokenParam}` : ''}&v=${mediaRevision}`
       : '';
+  const captionSpec = getCaptionVisualSpec(tokens, { isVertical });
+  const activeLayerLabels = [
+    trackVisibility.video && (activeShot?.label || (plan.sourceVideo ? 'A-Roll' : null)),
+    trackVisibility.broll && activeBroll ? `B-Roll: ${activeBroll.label}` : null,
+    trackVisibility.motion && activePlate ? `Motion: ${activePlate.label || activePlate.sceneId}` : null,
+    trackVisibility.captions && activeCaption ? 'Caption' : null,
+  ].filter(Boolean) as string[];
 
   const toggleAspect = async () => {
     const nextAspect = isVertical ? '16:9' : '9:16';
@@ -317,19 +391,24 @@ export const PreviewCanvas: React.FC<{
           backgroundColor: tokens.stage_bg || '#090B0A',
         }}
       >
-        {videoUrl ? (
+        {trackVisibility.video && videoUrl ? (
           <video
             ref={videoRef}
             src={videoUrl}
             onLoadedMetadata={(e) => {
               const d = e.currentTarget.duration;
-              if (Number.isFinite(d) && d > 0) {
+              if (Number.isFinite(d) && d > 0 && plan.shots.length === 0) {
                 onMediaDuration?.(d);
               }
             }}
-            onEnded={() => setIsPlaying(false)}
+            onEnded={() => {
+              if (plan.shots.length === 0) setIsPlaying(false);
+            }}
             className="w-full h-full object-cover transition-transform duration-75"
-            style={{ transform: cameraTransform, filter: colorGradeFilter }}
+            style={{
+              transform: trackVisibility.camera ? cameraTransform : 'scale(1)',
+              filter: colorGradeFilter,
+            }}
             playsInline
           />
         ) : (
@@ -345,21 +424,21 @@ export const PreviewCanvas: React.FC<{
         )}
 
         {/* Active B-Roll Cutaway Overlay */}
-        {brollUrl && activeBroll && (
+        {trackVisibility.broll && brollUrl && activeBroll && (
           <div className="absolute inset-0 pointer-events-none">
             {activeBroll.kind === 'image' ? (
               <img src={brollUrl} alt={activeBroll.label} className="w-full h-full object-cover" />
             ) : (
-              <video src={brollUrl} className="w-full h-full object-cover" muted autoPlay loop playsInline />
+              <video ref={brollVideoRef} src={brollUrl} className="w-full h-full object-cover" muted playsInline />
             )}
           </div>
         )}
 
         {/* Active Motion Plate Overlay */}
-        {plateSrc && (
+        {trackVisibility.motion && plateSrc && (
           <iframe
             ref={plateIframeRef}
-            key={activePlate?.id}
+            key={`${activePlate?.id}-${mediaRevision}`}
             src={plateSrc}
             onLoad={() => pushTokensAndProps(true)}
             className="absolute inset-0 w-full h-full border-0 pointer-events-none"
@@ -367,8 +446,39 @@ export const PreviewCanvas: React.FC<{
           />
         )}
 
+        {/* Active Callout Overlay */}
+        {activeCallout && (
+          <div className="absolute top-4 right-4 max-w-[42%] px-3.5 py-2 rounded-xl border pointer-events-none backdrop-blur-md"
+            style={{
+              backgroundColor: 'rgba(12, 14, 18, 0.62)',
+              borderColor: 'rgba(255, 255, 255, 0.14)',
+              color: '#F8FAFC',
+              fontFamily: captionSpec.fontFamily,
+            }}
+          >
+            <div className="text-xs font-semibold">{activeCallout.title}</div>
+            {activeCallout.subtitle && (
+              <div className="text-[11px] opacity-80">{activeCallout.subtitle}</div>
+            )}
+          </div>
+        )}
+
+        {/* Active Layer HUD Pill */}
+        {activeLayerLabels.length > 0 && (
+          <div
+            className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-medium pointer-events-none backdrop-blur-md border"
+            style={{
+              backgroundColor: 'rgba(9, 11, 10, 0.56)',
+              borderColor: 'rgba(255, 255, 255, 0.12)',
+              color: '#E4E4E7',
+            }}
+          >
+            {activeLayerLabels.join(' · ')}
+          </div>
+        )}
+
         {/* Active Caption Overlay */}
-        {activeCaption && (
+        {trackVisibility.captions && activeCaption && (
           <div
             className={`absolute inset-x-0 flex justify-center pointer-events-none px-6 ${
               tokens.caption_position === 'center'
@@ -379,23 +489,32 @@ export const PreviewCanvas: React.FC<{
             }`}
           >
             <div
-              className="px-3.5 py-1.5 rounded-xl text-center max-w-[90%]"
+              className="text-center max-w-[88%]"
               style={{
-                fontFamily: tokens.caption_font || '"Google Sans Flex", sans-serif',
-                fontWeight: Number(tokens.caption_weight) || 700,
-                fontSize: isVertical ? '18px' : '22px',
-                color: tokens.caption_color,
-                backgroundColor:
-                  tokens.caption_style === 'editorial' ? 'transparent' : tokens.caption_bg,
-                borderRadius: tokens.caption_style === 'pill' ? '9999px' : '12px',
-                textShadow:
-                  tokens.caption_style === 'editorial' ? '0 2px 10px rgba(0,0,0,0.75)' : 'none',
+                fontFamily: captionSpec.fontFamily,
+                fontWeight: captionSpec.fontWeight,
+                fontSize: `${captionSpec.fontSizePx}px`,
+                letterSpacing: captionSpec.letterSpacing,
+                lineHeight: captionSpec.lineHeight,
+                color: captionSpec.color,
+                backgroundColor: captionSpec.backgroundColor,
+                border: captionSpec.border,
+                borderRadius: captionSpec.borderRadius,
+                backdropFilter: captionSpec.backdropFilter,
+                textShadow: captionSpec.textShadow,
+                padding: captionSpec.padding,
               }}
             >
               {activeCaption.highlightWord
                 ? activeCaption.text.split(new RegExp(`(${activeCaption.highlightWord})`, 'gi')).map((part, idx) =>
                     part.toLowerCase() === activeCaption.highlightWord?.toLowerCase() ? (
-                      <span key={idx} style={{ color: tokens.caption_highlight_color }}>
+                      <span
+                        key={idx}
+                        style={{
+                          fontWeight: Math.min(700, captionSpec.fontWeight + 150),
+                          color: captionSpec.emphasizeColor,
+                        }}
+                      >
                         {part}
                       </span>
                     ) : (

@@ -1,4 +1,5 @@
 import type { BrandTokens } from '../shared/designTokens';
+import type { StudioUiCommand } from '../shared/liveContext';
 import type {
   EditPlanV2,
   IdeaFrontmatter,
@@ -129,6 +130,7 @@ export interface StudioApi {
 
   getMcpConfigInfo: () => Promise<{ serverScript: string; vaultRoot: string; nodeBin: string }>;
   getHarnessInfo: () => Promise<HarnessInfo | null>;
+  syncStudioContext: (ctx: Record<string, unknown>) => Promise<{ synced: boolean }>;
   openExternalUrl: (url: string) => Promise<boolean>;
   openInExternalTerminal: () => Promise<{ opened: boolean; app: string; cwd: string }>;
   terminalStart: (opts: {
@@ -147,6 +149,7 @@ export interface StudioApi {
   terminalStop: (sessionId?: number) => Promise<void>;
 
   onVaultChanged: (cb: (payload: { event: string; path: string }) => void) => () => void;
+  onUiCommand: (cb: (cmd: StudioUiCommand) => void) => () => void;
   onExportProgress: (
     cb: (payload: { slug: string; pct: number; message: string }) => void
   ) => () => void;

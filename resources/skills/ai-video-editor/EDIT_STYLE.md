@@ -23,9 +23,11 @@
 - **Built-in `.cube` LUTs:** `"lut": "sarah_warm_film"` (warm daylight matte for outdoor/lifestyle vlogs) or `"lut": "mkbhd_matte_clean"` (crisp studio contrast for tech/AI desk builds) blended at `"lutIntensity": 0.60–0.70` so skin tones stay natural.
 - **Subtle Film Grain:** Optional `"filmGrain": 0.03–0.05` for organic vlog warmth.
 
-## Motion Graphics & Callouts
-- **Aesthetic:** Minimal dark frosted glass (`rgba(11, 15, 25, 0.84)`), clean `system-ui` typography, subtle accent stripe (`#38bdf8` cyan or `#22c55e` green).
-- **Zero Spam Captions:** Do NOT plaster flashing rainbow word-by-word captions on Long-Form YouTube. Use crisp `stat-card`, `counter`, `spotlight`, `chapter-tracker`, `editorial-title`, and `comparison` overlays only where they clarify math, code, or exact phrasing.
+## Motion Graphics, Captions & Approved Looks
+- **Mandatory Look Contract:** Always read `references/APPROVED_LOOKS.md` before adding captions or motion plates.
+- **Sleek Captions (Apple SF Pro / Figma Editorial):** Default to `cinema-clean` (cinematography/montage) or `vlog-minimal` (daily vlogs) using `-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", sans-serif` (`#FFFFFF`, transparent bg, crisp drop shadow). Use `editorial-glass` for SaaS/product videos and `editorial-serif` (`Instrument Serif`) for essays.
+- **Zero AI-Slop:** NEVER use `#60A5FA` blue highlight words, heavy dark-navy caption boxes, flashing rainbow word-by-word spam, or `Google Sans Flex`.
+- **Approved Motion Scenes Only:** Only drop in scenes from the `APPROVED_LOOKS.md` whitelist that match the active Brand Kit (`cinema-daily-vlog`, `apple-keynote-clean`, `figma-lime`, `editorial-warm`, `electric-lime-dark`).
 
 ## Audio Mastering & Sound Design
 - **Voice Loudness:** `-14 LUFS` (YouTube standard) with gentle 75Hz highpass + subtle 3.2kHz presence clarity.

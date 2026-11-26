@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { BrandTokens } from '../shared/designTokens.js';
+import type { StudioUiCommand } from '../shared/liveContext.js';
 import type {
   EditPlanV2,
   IdeaFrontmatter,
@@ -74,6 +75,7 @@ export const studioApi = {
 
   getMcpConfigInfo: () => ipcRenderer.invoke('mcp:configInfo'),
   getHarnessInfo: () => ipcRenderer.invoke('harness:info'),
+  syncStudioContext: (ctx: Record<string, unknown>) => ipcRenderer.invoke('studio:syncContext', ctx),
   openExternalUrl: (url: string) => ipcRenderer.invoke('studio:openExternalUrl', url),
   openInExternalTerminal: () => ipcRenderer.invoke('terminal:openExternal'),
   terminalStart: (opts: { sessionId: number; cols: number; rows: number; initialCommand?: string }) =>
@@ -86,6 +88,11 @@ export const studioApi = {
     const listener = (_: unknown, payload: { event: string; path: string }) => cb(payload);
     ipcRenderer.on('vault:changed', listener);
     return () => ipcRenderer.removeListener('vault:changed', listener);
+  },
+  onUiCommand: (cb: (cmd: StudioUiCommand) => void) => {
+    const listener = (_: unknown, cmd: StudioUiCommand) => cb(cmd);
+    ipcRenderer.on('studio:uiCommand', listener);
+    return () => ipcRenderer.removeListener('studio:uiCommand', listener);
   },
   onExportProgress: (cb: (payload: { slug: string; pct: number; message: string }) => void) => {
     const listener = (_: unknown, payload: { slug: string; pct: number; message: string }) => cb(payload);

@@ -9,10 +9,11 @@ A modular motion-graphics system for AI video agents (Claude Code, Hyperframes, 
 
 ## Strict Aesthetic Rules (Never Violate)
 
-1. **Zero Monospace on UI**: Never use monospace fonts (`JetBrains Mono`, `Fira Code`, `Space Grotesk`, `Courier`) on headlines, cards, labels, filenames, or badges. Default to `-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif` (or the fonts specified in the active `DESIGN.md`).
-2. **Zero Middot Separators**: Never use `•` separators. Use clean whitespace or hairline `/` dividers.
-3. **Zero Glowing Status Dots**: Never add emerald/neon pulsing status circles or glowing pill chips.
-4. **Tabular Numbers**: Always use `font-variant-numeric: tabular-nums` (`.t-num`) on animated counters and metrics.
+1. **Follow `../ai-video-editor/references/APPROVED_LOOKS.md`**: Only pick approved motion scenes and caption variants (`cinema-clean`, `vlog-minimal`, `editorial-glass`, `editorial-serif`) that match the active Brand Kit. Never use `#60A5FA` blue caption highlights or heavy AI-slop boxes.
+2. **Zero Monospace on UI**: Never use monospace fonts (`JetBrains Mono`, `Fira Code`, `Space Grotesk`, `Courier`) on headlines, cards, labels, filenames, or badges. Default to `-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif` (or the fonts specified in the active `DESIGN.md`).
+3. **Zero Middot Separators**: Never use `•` separators. Use clean whitespace or hairline `/` dividers.
+4. **Zero Glowing Status Dots**: Never add emerald/neon pulsing status circles or glowing pill chips.
+5. **Tabular Numbers**: Always use `font-variant-numeric: tabular-nums` (`.t-num`) on animated counters and metrics.
 
 ## Workflow for Video Agents
 

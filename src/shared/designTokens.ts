@@ -30,17 +30,155 @@ export interface BrandTokens {
   caption_font: string;
   caption_weight: string;
   caption_size: string;
-  caption_style: 'editorial' | 'word-highlight' | 'pill';
+  caption_style: 'cinema-clean' | 'vlog-minimal' | 'editorial-glass' | 'editorial-serif';
   caption_color: string;
   caption_highlight_color: string;
   caption_bg: string;
   caption_position: 'bottom' | 'lower-third' | 'center';
 }
 
+export type CaptionStyleVariant = BrandTokens['caption_style'];
+
+export interface CaptionVisualSpec {
+  fontFamily: string;
+  fontWeight: number;
+  fontSizePx: number;
+  letterSpacing: string;
+  lineHeight: number;
+  color: string;
+  backgroundColor: string;
+  border: string;
+  borderRadius: string;
+  backdropFilter: string;
+  textShadow: string;
+  padding: string;
+  emphasizeColor: string;
+}
+
+export const CAPTION_STYLE_LABELS: Record<CaptionStyleVariant, string> = {
+  'cinema-clean': 'Cinema Clean (SF Pro)',
+  'vlog-minimal': 'Daily Vlog Minimal (SF Pro)',
+  'editorial-glass': 'Editorial Glass (Figma)',
+  'editorial-serif': 'Editorial Serif (Instrument)',
+};
+
+export function normalizeCaptionStyle(raw?: string): CaptionStyleVariant {
+  const v = (raw || '').trim().toLowerCase();
+  if (
+    v === 'cinema-clean' ||
+    v === 'vlog-minimal' ||
+    v === 'editorial-glass' ||
+    v === 'editorial-serif'
+  ) {
+    return v;
+  }
+  if (v === 'pill') return 'editorial-glass';
+  return 'cinema-clean';
+}
+
+export function getCaptionVisualSpec(
+  tokens: BrandTokens,
+  opts: { isVertical?: boolean; renderHeight?: number } = {}
+): CaptionVisualSpec {
+  const style = normalizeCaptionStyle(tokens.caption_style);
+  const baseFont =
+    tokens.caption_font && !tokens.caption_font.includes('Google Sans Flex')
+      ? tokens.caption_font
+      : '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", sans-serif';
+
+  const renderHeight = opts.renderHeight;
+  const isVertical = Boolean(opts.isVertical);
+  const basePx = renderHeight
+    ? Math.round(renderHeight * (isVertical ? 0.025 : 0.034))
+    : isVertical
+      ? 16
+      : 19;
+
+  // Avoid legacy AI-slop #60A5FA blue highlights; keep emphasis subtle and editorial.
+  const safeAccent =
+    tokens.caption_highlight_color &&
+    tokens.caption_highlight_color.toUpperCase() !== '#60A5FA'
+      ? tokens.caption_highlight_color
+      : tokens.caption_color || '#FFFFFF';
+
+  switch (style) {
+    case 'vlog-minimal':
+      return {
+        fontFamily: baseFont,
+        fontWeight: Number(tokens.caption_weight) || 600,
+        fontSizePx: Math.round(basePx * 0.96),
+        letterSpacing: '-0.015em',
+        lineHeight: 1.32,
+        color: tokens.caption_color || '#FFFFFF',
+        backgroundColor: 'transparent',
+        border: 'none',
+        borderRadius: '0px',
+        backdropFilter: 'none',
+        textShadow: '0 2px 10px rgba(0, 0, 0, 0.78), 0 1px 2px rgba(0, 0, 0, 0.9)',
+        padding: renderHeight ? '8px 18px' : '4px 10px',
+        emphasizeColor: safeAccent,
+      };
+    case 'editorial-glass':
+      return {
+        fontFamily: baseFont,
+        fontWeight: Number(tokens.caption_weight) || 500,
+        fontSizePx: Math.round(basePx * 0.94),
+        letterSpacing: '-0.01em',
+        lineHeight: 1.35,
+        color: tokens.caption_color || '#F8FAFC',
+        backgroundColor:
+          tokens.caption_bg &&
+          tokens.caption_bg !== 'transparent' &&
+          !tokens.caption_bg.includes('15, 23, 42')
+            ? tokens.caption_bg
+            : 'rgba(12, 14, 18, 0.56)',
+        border: '1px solid rgba(255, 255, 255, 0.14)',
+        borderRadius: '10px',
+        backdropFilter: 'blur(14px)',
+        textShadow: '0 1px 4px rgba(0, 0, 0, 0.45)',
+        padding: renderHeight ? '10px 22px' : '6px 14px',
+        emphasizeColor: safeAccent,
+      };
+    case 'editorial-serif':
+      return {
+        fontFamily: '"Instrument Serif", "New York", Georgia, serif',
+        fontWeight: 400,
+        fontSizePx: Math.round(basePx * 1.18),
+        letterSpacing: '0em',
+        lineHeight: 1.25,
+        color: tokens.caption_color || '#FAF7F2',
+        backgroundColor: 'transparent',
+        border: 'none',
+        borderRadius: '0px',
+        backdropFilter: 'none',
+        textShadow: '0 2px 14px rgba(0, 0, 0, 0.85), 0 1px 3px rgba(0, 0, 0, 0.92)',
+        padding: renderHeight ? '8px 18px' : '4px 10px',
+        emphasizeColor: safeAccent,
+      };
+    case 'cinema-clean':
+    default:
+      return {
+        fontFamily: baseFont,
+        fontWeight: Number(tokens.caption_weight) || 500,
+        fontSizePx: basePx,
+        letterSpacing: '-0.01em',
+        lineHeight: 1.34,
+        color: tokens.caption_color || '#FFFFFF',
+        backgroundColor: 'transparent',
+        border: 'none',
+        borderRadius: '0px',
+        backdropFilter: 'none',
+        textShadow: '0 2px 12px rgba(0, 0, 0, 0.86), 0 1px 3px rgba(0, 0, 0, 0.95)',
+        padding: renderHeight ? '8px 18px' : '4px 10px',
+        emphasizeColor: safeAccent,
+      };
+  }
+}
+
 export const DEFAULT_BRAND_TOKENS: BrandTokens = {
-  display_font: '"Google Sans Flex", sans-serif',
-  body_font: '"Google Sans Flex", sans-serif',
-  display_weight: '700',
+  display_font: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
+  body_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
+  display_weight: '600',
   display_tracking: '-0.03em',
   body_tracking: '-0.01em',
   stage_bg: '#FFFFFF',
@@ -66,13 +204,13 @@ export const DEFAULT_BRAND_TOKENS: BrandTokens = {
   aurora_opacity: '0.95',
   aurora_gradient:
     'linear-gradient(90deg, rgba(254, 215, 170, 0.50) 0%, rgba(233, 213, 255, 0.54) 50%, rgba(191, 219, 254, 0.52) 100%)',
-  caption_font: '"Google Sans Flex", sans-serif',
-  caption_weight: '700',
-  caption_size: '32px',
-  caption_style: 'word-highlight',
+  caption_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", sans-serif',
+  caption_weight: '500',
+  caption_size: '28px',
+  caption_style: 'cinema-clean',
   caption_color: '#FFFFFF',
-  caption_highlight_color: '#60A5FA',
-  caption_bg: 'rgba(15, 23, 42, 0.78)',
+  caption_highlight_color: '#FFFFFF',
+  caption_bg: 'transparent',
   caption_position: 'bottom',
 };
 
@@ -147,11 +285,13 @@ export function parseDesignMd(mdText: string, mode: 'light' | 'dark' = 'light'):
         }
       : {};
 
-  return {
+  const merged = {
     ...DEFAULT_BRAND_TOKENS,
     ...darkFallbacks,
     ...(partial as Partial<BrandTokens>),
   };
+  merged.caption_style = normalizeCaptionStyle(merged.caption_style);
+  return merged;
 }
 
 export function serializeDesignMd(name: string, tokens: BrandTokens): string {
@@ -211,13 +351,67 @@ export interface BrandPreset {
 
 export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
   {
+    id: 'cinema-daily-vlog',
+    name: 'Cinema & Daily Vlog',
+    mode: 'dark',
+    tokens: {
+      ...DEFAULT_BRAND_TOKENS,
+      display_font: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
+      body_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
+      display_weight: '600',
+      stage_bg: '#090B0A',
+      surface_card: '#141816',
+      surface_well: '#1E2421',
+      border_subtle: '#28302C',
+      text_primary: '#F8FAFC',
+      text_muted: '#A1A1AA',
+      accent_primary: '#F8FAFC',
+      accent_soft: 'rgba(255, 255, 255, 0.12)',
+      shadow_card: 'none',
+      aurora_opacity: '0',
+      caption_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", sans-serif',
+      caption_weight: '500',
+      caption_style: 'cinema-clean',
+      caption_color: '#FFFFFF',
+      caption_highlight_color: '#FFFFFF',
+      caption_bg: 'transparent',
+    },
+  },
+  {
+    id: 'apple-keynote-clean',
+    name: 'Apple Keynote Clean',
+    mode: 'light',
+    tokens: {
+      ...DEFAULT_BRAND_TOKENS,
+      display_font: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
+      body_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
+      display_weight: '600',
+      stage_bg: '#FFFFFF',
+      surface_card: '#F5F5F7',
+      surface_well: '#E8E8ED',
+      border_subtle: '#D2D2D7',
+      text_primary: '#1D1D1F',
+      text_muted: '#6E6E73',
+      accent_primary: '#1D1D1F',
+      accent_soft: 'rgba(29, 29, 31, 0.08)',
+      shadow_card: '0 20px 48px rgba(0, 0, 0, 0.08)',
+      aurora_opacity: '0',
+      caption_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
+      caption_weight: '500',
+      caption_style: 'vlog-minimal',
+      caption_color: '#FFFFFF',
+      caption_highlight_color: '#FFFFFF',
+      caption_bg: 'transparent',
+    },
+  },
+  {
     id: 'electric-lime-dark',
     name: 'Electric Lime Dark',
     mode: 'dark',
     tokens: {
       ...DEFAULT_BRAND_TOKENS,
-      display_font: '"Google Sans Flex", sans-serif',
-      body_font: '"Google Sans Flex", sans-serif',
+      display_font: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
+      body_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
       display_weight: '600',
       stage_bg: '#090B0A',
       surface_card: '#141816',
@@ -234,10 +428,11 @@ export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
       shadow_card: 'none',
       aurora_opacity: '0.26',
       aurora_gradient: 'linear-gradient(125deg, #C4FF2E 0%, #00D4AA 52%, #2E6BFF 100%)',
-      caption_font: '"Google Sans Flex", sans-serif',
+      caption_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
+      caption_style: 'editorial-glass',
       caption_color: '#F4F7F5',
       caption_highlight_color: '#C4FF2E',
-      caption_bg: 'rgba(20, 24, 22, 0.88)',
+      caption_bg: 'rgba(12, 15, 14, 0.58)',
     },
   },
   {
@@ -246,8 +441,8 @@ export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
     mode: 'light',
     tokens: {
       ...DEFAULT_BRAND_TOKENS,
-      display_font: '"Google Sans Flex", sans-serif',
-      body_font: '"Google Sans Flex", sans-serif',
+      display_font: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
+      body_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
       display_weight: '600',
       stage_bg: '#F6F9F4',
       surface_card: '#FFFFFF',
@@ -263,10 +458,11 @@ export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
       aurora_opacity: '0.85',
       aurora_gradient:
         'linear-gradient(125deg, rgba(196, 255, 46, 0.34) 0%, rgba(0, 212, 170, 0.22) 52%, rgba(46, 107, 255, 0.16) 100%)',
-      caption_font: '"Google Sans Flex", sans-serif',
+      caption_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
+      caption_style: 'cinema-clean',
       caption_color: '#FFFFFF',
-      caption_highlight_color: '#C4FF2E',
-      caption_bg: 'rgba(20, 26, 19, 0.90)',
+      caption_highlight_color: '#FFFFFF',
+      caption_bg: 'transparent',
     },
   },
   {
@@ -302,9 +498,10 @@ export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
       radius_control: '12px',
       shadow_card: '0 28px 70px -18px rgba(0, 0, 0, 0.55)',
       aurora_opacity: '0.22',
+      caption_style: 'editorial-glass',
       caption_color: '#F8FAFC',
-      caption_highlight_color: '#3B82F6',
-      caption_bg: 'rgba(17, 19, 24, 0.85)',
+      caption_highlight_color: '#F8FAFC',
+      caption_bg: 'rgba(17, 19, 24, 0.56)',
     },
   },
   {
@@ -313,6 +510,9 @@ export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
     mode: 'light',
     tokens: {
       ...DEFAULT_BRAND_TOKENS,
+      display_font: '"Instrument Serif", "New York", Georgia, serif',
+      body_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
+      display_weight: '400',
       stage_bg: '#FAF7F2',
       surface_card: '#FFFFFF',
       surface_well: '#F3EFE8',
@@ -322,9 +522,12 @@ export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
       accent_primary: '#C2410C',
       accent_soft: '#FFEDD5',
       aurora_opacity: '0.65',
+      caption_font: '"Instrument Serif", "New York", Georgia, serif',
+      caption_weight: '400',
+      caption_style: 'editorial-serif',
       caption_color: '#FAF7F2',
-      caption_highlight_color: '#FDBA74',
-      caption_bg: 'rgba(28, 25, 23, 0.82)',
+      caption_highlight_color: '#FAF7F2',
+      caption_bg: 'transparent',
     },
   },
   {
@@ -333,8 +536,8 @@ export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
     mode: 'dark',
     tokens: {
       ...DEFAULT_BRAND_TOKENS,
-      display_font: '"Google Sans Flex", sans-serif',
-      body_font: '"Google Sans Flex", sans-serif',
+      display_font: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
+      body_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
       display_weight: '500',
       stage_bg: '#020202',
       surface_card: '#111729',
@@ -346,9 +549,10 @@ export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
       accent_soft: 'rgba(38, 100, 236, 0.22)',
       shadow_card: 'none',
       aurora_opacity: '0',
+      caption_style: 'cinema-clean',
       caption_color: '#FFFFFF',
-      caption_highlight_color: '#61A6FA',
-      caption_bg: 'rgba(17, 23, 41, 0.88)',
+      caption_highlight_color: '#FFFFFF',
+      caption_bg: 'transparent',
     },
   },
   {
@@ -357,8 +561,8 @@ export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
     mode: 'light',
     tokens: {
       ...DEFAULT_BRAND_TOKENS,
-      display_font: '"Google Sans Flex", sans-serif',
-      body_font: '"Google Sans Flex", sans-serif',
+      display_font: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif',
+      body_font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif',
       display_weight: '400',
       stage_bg: '#FFFFFF',
       surface_card: '#C4FA6F',
@@ -370,9 +574,10 @@ export const BUILTIN_BRAND_PRESETS: BrandPreset[] = [
       accent_soft: '#D8C7FF',
       shadow_card: 'none',
       aurora_opacity: '0',
-      caption_color: '#000000',
-      caption_highlight_color: '#7C3AED',
-      caption_bg: 'rgba(196, 250, 111, 0.94)',
+      caption_style: 'editorial-glass',
+      caption_color: '#FFFFFF',
+      caption_highlight_color: '#C4FA6F',
+      caption_bg: 'rgba(12, 14, 18, 0.62)',
     },
   },
 ];

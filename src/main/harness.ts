@@ -76,8 +76,14 @@ You are operating inside the **Agent Video Studio** runtime workspace.
      - User Custom Brand Kits: \`./vault/brand-kits/\`
      - User/Agent Custom Motion Scenes: \`./vault/custom-scenes/\`
 
-## Mandatory Video Craft Guardrails (Read Before Editing/Rendering)
-- **Read \`./skills/ai-video-editor/SKILL.md\` and \`./skills/ai-video-editor/EDIT_STYLE.md\` BEFORE writing any video build or render script.**
+## Live Viewer Context Sync (In-App & External Terminals)
+- **Always inspect what the user is currently viewing first:** Call \`get_active_studio_context\` via MCP (or read \`./studio-context.json\` / \`./vault/.studio-live-context.json\`) to get the active project slug, open tab (\`planner\`/\`editor\`), live playhead timestamp (\`playheadSec\`), selected timeline item, and pinned context chips.
+- **Automatic Live Preview Sync:** Every \`commit_project_edit\`, \`update_brand_tokens\`, \`register_media\`, and \`set_transcript\` automatically notifies the open desktop Studio UI so the stage preview, timeline tracks, and brand tokens hot-reload immediately.
+- **Focus & Seek the Viewer:** When creating a new project or editing a specific moment, call \`focus_studio_view\` (\`projectSlug\`, \`tab: 'editor'\`, \`playheadSec\`) so the user's preview jumps straight to your update.
+
+## Mandatory Video Craft & Approved Looks Guardrails (Read Before Editing/Rendering)
+- **Read \`./skills/ai-video-editor/SKILL.md\`, \`./skills/ai-video-editor/EDIT_STYLE.md\`, and \`./skills/ai-video-editor/references/APPROVED_LOOKS.md\` BEFORE writing any video build or render script.**
+- **Approved Looks & Sleek Typography Only:** Use the 4 approved caption variants (\`cinema-clean\`, \`vlog-minimal\`, \`editorial-glass\`, \`editorial-serif\`) with Apple SF Pro / Inter / Instrument Serif typography and approved motion scenes matching the active Brand Kit. **NEVER** use \`#60A5FA\` blue caption highlights, heavy dark-navy caption boxes, or \`Google Sans Flex\`.
 - **NEVER use \`ffmpeg zoompan\`** on video clips (whole-pixel rounding causes 1px shake/wobble).
 - **NEVER add fake zoom/pan to moving, handheld, gimbal, or drone footage** (DJI/Sony/iPhone) — use single-pass Lanczos \`scale+crop\` (\`flags=lanczos,setsar=1\`) and trim \`>= 0.4s\` off clip heads/tails (\`safe_in\`/\`safe_out\`).
 - **ALWAYS probe source clips first** with \`python3 ./skills/ai-video-editor/scripts/probe_clips.py <dir>\` to match \`recommended_fps\` (never blindly force \`-r 30\` onto 24/25fps clips) and check whether \`vidstab\` or \`deshake\` is supported locally.

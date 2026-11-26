@@ -12,6 +12,13 @@ import type { BrandKitEntry, ProjectState } from '../types';
 
 export type StudioTab = 'planner' | 'editor';
 export type EditorLeftTab = 'transcript' | 'script' | 'media' | 'motion' | 'brand';
+export type TrackKey = 'video' | 'camera' | 'broll' | 'motion' | 'captions' | 'audio';
+
+export interface LiveSyncNotice {
+  id: string;
+  message: string;
+  projectSlug?: string;
+}
 
 export type SelectedTimelineItem =
   | { kind: 'motionPlate'; id: string }
@@ -46,6 +53,9 @@ interface StudioStore {
   currentTimeSec: number;
   isPlaying: boolean;
   selectedItem: SelectedTimelineItem;
+  trackVisibility: Record<TrackKey, boolean>;
+  mediaRevision: number;
+  liveSyncNotice: LiveSyncNotice | null;
 
   contextChips: ContextChip[];
   agentDrawerOpen: boolean;
@@ -65,6 +75,9 @@ interface StudioStore {
   setIsPlaying: (playing: boolean) => void;
   setSelectedItem: (item: SelectedTimelineItem) => void;
   setPreviewTokensOverride: (tokens: BrandTokens | null) => void;
+  toggleTrackVisibility: (key: TrackKey) => void;
+  bumpMediaRevision: () => void;
+  setLiveSyncNotice: (notice: LiveSyncNotice | null) => void;
 
   pinContextChip: (chip: Omit<ContextChip, 'id'>) => void;
   removeContextChip: (id: string) => void;
@@ -107,6 +120,16 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   currentTimeSec: 0,
   isPlaying: false,
   selectedItem: null,
+  trackVisibility: {
+    video: true,
+    camera: true,
+    broll: true,
+    motion: true,
+    captions: true,
+    audio: true,
+  },
+  mediaRevision: 1,
+  liveSyncNotice: null,
 
   contextChips: [],
   agentDrawerOpen: false,
@@ -195,6 +218,12 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   setIsPlaying: (playing) => set({ isPlaying: playing }),
   setSelectedItem: (item) => set({ selectedItem: item }),
   setPreviewTokensOverride: (tokens) => set({ previewTokensOverride: tokens }),
+  toggleTrackVisibility: (key) =>
+    set((s) => ({
+      trackVisibility: { ...s.trackVisibility, [key]: !s.trackVisibility[key] },
+    })),
+  bumpMediaRevision: () => set((s) => ({ mediaRevision: s.mediaRevision + 1 })),
+  setLiveSyncNotice: (notice) => set({ liveSyncNotice: notice }),
 
   pinContextChip: (chip) =>
     set((s) => ({

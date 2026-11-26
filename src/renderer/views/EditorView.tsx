@@ -19,15 +19,21 @@ import { useStudioStore } from '../store/studioStore';
 import { PreviewCanvas } from '../components/PreviewCanvas';
 import { Timeline } from '../components/Timeline';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
-import { BrandTokens, BUILTIN_BRAND_PRESETS, DEFAULT_BRAND_TOKENS } from '../../shared/designTokens';
+import {
+  BrandTokens,
+  BUILTIN_BRAND_PRESETS,
+  CAPTION_STYLE_LABELS,
+  CaptionStyleVariant,
+  DEFAULT_BRAND_TOKENS,
+} from '../../shared/designTokens';
 import type { MotionSceneMeta } from '../../shared/schemas';
 
 const DISPLAY_WEIGHT_OPTIONS = [
-  { value: '400', label: 'Google Sans Flex 400' },
-  { value: '500', label: 'Google Sans Flex 500' },
-  { value: '600', label: 'Google Sans Flex 600' },
-  { value: '700', label: 'Google Sans Flex 700' },
-  { value: '800', label: 'Google Sans Flex 800' },
+  { value: '400', label: 'Weight 400 (Regular)' },
+  { value: '500', label: 'Weight 500 (Medium)' },
+  { value: '600', label: 'Weight 600 (Semibold)' },
+  { value: '700', label: 'Weight 700 (Bold)' },
+  { value: '800', label: 'Weight 800 (Extra Bold)' },
 ];
 
 export const EditorView: React.FC = () => {
@@ -661,9 +667,11 @@ export const EditorView: React.FC = () => {
                           color: 'var(--text-primary)',
                         }}
                       >
-                        <option value="word-highlight">Word Highlight</option>
-                        <option value="editorial">Editorial Clean</option>
-                        <option value="pill">Pill</option>
+                        {(Object.keys(CAPTION_STYLE_LABELS) as CaptionStyleVariant[]).map((styleKey) => (
+                          <option key={styleKey} value={styleKey}>
+                            {CAPTION_STYLE_LABELS[styleKey]}
+                          </option>
+                        ))}
                       </select>
 
                       <select

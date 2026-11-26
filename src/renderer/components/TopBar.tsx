@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  Check,
+  Copy,
   Download,
   Film,
   FolderOpen,
@@ -8,6 +10,7 @@ import {
   Plug,
   Sun,
   Terminal,
+  X,
 } from 'lucide-react';
 import { StudioTab, useStudioStore } from '../store/studioStore';
 
@@ -33,9 +36,23 @@ export const TopBar: React.FC = () => {
     setMcpModalOpen,
     setOnboardingOpen,
     setExportModalOpen,
+    liveSyncNotice,
+    setLiveSyncNotice,
+    currentTimeSec,
   } = useStudioStore();
 
+  const [copiedCtx, setCopiedCtx] = useState(false);
+
   const vaultName = activeVault ? activeVault.split('/').filter(Boolean).pop() : 'No Vault';
+
+  const handleCopyContext = () => {
+    const text = activeProjectSlug
+      ? `Active Studio Project: "${activeProjectSlug}" @ ${currentTimeSec.toFixed(1)}s (Vault: ${activeVault ?? ''})`
+      : `Active Studio Vault: ${activeVault ?? ''}`;
+    void navigator.clipboard.writeText(text);
+    setCopiedCtx(true);
+    setTimeout(() => setCopiedCtx(false), 1800);
+  };
 
   return (
     <header
@@ -94,6 +111,46 @@ export const TopBar: React.FC = () => {
               </option>
             ))}
           </select>
+        )}
+
+        {activeProjectSlug && (
+          <button
+            onClick={handleCopyContext}
+            className="btn-secondary flex items-center gap-1 px-2.5 py-1.5 text-[11px] shrink-0"
+            title="Live context synced to terminal agents — click to copy active project reference"
+          >
+            {copiedCtx ? <Check size={12} style={{ color: 'var(--accent-mint)' }} /> : <Copy size={12} />}
+            <span>{copiedCtx ? 'Copied' : 'Live Sync'}</span>
+          </button>
+        )}
+
+        {liveSyncNotice && (
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border max-w-[260px] shrink-0"
+            style={{
+              backgroundColor: 'var(--bg-surface-alt)',
+              borderColor: 'var(--accent-mint)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <span className="truncate">{liveSyncNotice.message}</span>
+            {liveSyncNotice.projectSlug && liveSyncNotice.projectSlug !== activeProjectSlug && (
+              <button
+                onClick={() => {
+                  void selectProject(liveSyncNotice.projectSlug!);
+                  setActiveTab('editor');
+                  setLiveSyncNotice(null);
+                }}
+                className="underline font-semibold shrink-0"
+                style={{ color: 'var(--accent-mint)' }}
+              >
+                Open
+              </button>
+            )}
+            <button onClick={() => setLiveSyncNotice(null)} className="opacity-70 hover:opacity-100 shrink-0">
+              <X size={11} />
+            </button>
+          </div>
         )}
 
         {activeProjectSlug && (

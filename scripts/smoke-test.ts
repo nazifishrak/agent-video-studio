@@ -21,7 +21,18 @@ import {
   undoLastTransaction,
 } from '../src/main/vault.js';
 import { exportProjectVideo, inspectTimelineContactSheet } from '../src/main/exporter.js';
-import { DEFAULT_BRAND_TOKENS, parseDesignMd, serializeDesignMd } from '../src/shared/designTokens.js';
+import {
+  DEFAULT_BRAND_TOKENS,
+  getCaptionVisualSpec,
+  parseDesignMd,
+  serializeDesignMd,
+} from '../src/shared/designTokens.js';
+import {
+  readLiveContext,
+  readUiCommand,
+  writeLiveContext,
+  writeUiCommand,
+} from '../src/main/liveContextStore.js';
 import { startAssetServer } from '../src/main/server.js';
 import { prepareAgentHarness } from '../src/main/harness.js';
 
@@ -308,6 +319,51 @@ async function testStarterVaultAndHarness() {
     assert.ok(claudeMd.includes('READ-ONLY'), 'CLAUDE.md should mark bundled skills as read-only');
     assert.ok(claudeMd.includes('zoompan'), 'CLAUDE.md should enforce zoompan ban');
     assert.ok(claudeMd.includes('probe_clips.py'), 'CLAUDE.md should reference probe_clips.py');
+    assert.ok(claudeMd.includes('get_active_studio_context'), 'CLAUDE.md should reference get_active_studio_context');
+    assert.ok(claudeMd.includes('focus_studio_view'), 'CLAUDE.md should reference focus_studio_view');
+    assert.ok(claudeMd.includes('APPROVED_LOOKS.md'), 'CLAUDE.md should reference APPROVED_LOOKS.md');
+
+    // Verify sleek caption defaults, legacy mapping, and live context bridge
+    assert.equal(DEFAULT_BRAND_TOKENS.caption_style, 'cinema-clean');
+    assert.ok(!DEFAULT_BRAND_TOKENS.caption_font.includes('Google Sans Flex'));
+    assert.notEqual(DEFAULT_BRAND_TOKENS.caption_highlight_color.toUpperCase(), '#60A5FA');
+    assert.equal(parseDesignMd('- caption_style: word-highlight').caption_style, 'cinema-clean');
+    assert.equal(parseDesignMd('- caption_style: pill').caption_style, 'editorial-glass');
+    const glassSpec = getCaptionVisualSpec({ ...DEFAULT_BRAND_TOKENS, caption_style: 'editorial-glass' });
+    assert.ok(glassSpec.backdropFilter.includes('blur'));
+
+    await writeLiveContext(
+      tmpVault,
+      {
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        vaultRoot: tmpVault,
+        activeTab: 'editor',
+        activeProjectSlug: 'day-in-the-life-test',
+        playheadSec: 4.5,
+        selectedItem: { kind: 'caption', id: 'cap_1' },
+        selectedIdeaSlug: null,
+      },
+      harness.harnessDir
+    );
+    const liveRead = readLiveContext(tmpVault);
+    assert.equal(liveRead?.activeProjectSlug, 'day-in-the-life-test');
+    assert.equal(liveRead?.playheadSec, 4.5);
+    const harnessCtxMirror = JSON.parse(
+      await fs.readFile(path.join(harness.harnessDir, 'studio-context.json'), 'utf8')
+    );
+    assert.equal(harnessCtxMirror.activeProjectSlug, 'day-in-the-life-test');
+
+    const cmdWritten = await writeUiCommand(tmpVault, {
+      kind: 'focus_view',
+      projectSlug: 'day-in-the-life-test',
+      tab: 'editor',
+      playheadSec: 6.2,
+      summary: 'Smoke focus',
+    });
+    const cmdRead = readUiCommand(tmpVault);
+    assert.equal(cmdRead?.id, cmdWritten.id);
+    assert.equal(cmdRead?.playheadSec, 6.2);
 
     for (const relSkillLink of ['.agents/skills', '.claude/skills', '.gemini/skills']) {
       const target = await fs.realpath(path.join(harness.harnessDir, relSkillLink));
@@ -367,7 +423,8 @@ async function testStarterVaultAndHarness() {
       'utf8'
     );
     assert.ok(tokensCss.includes('html:has(body.transparent)'), 'tokens.css should fix transparent html');
-    assert.ok(tokensCss.includes('Google Sans Flex'), 'tokens.css should use Google Sans Flex');
+    assert.ok(tokensCss.includes('SF Pro Display'), 'tokens.css should use Apple SF Pro / Inter');
+    await fs.access(path.join(RESOURCES_DIR, 'skills', 'ai-video-editor', 'references', 'APPROVED_LOOKS.md'));
     await fs.access(path.join(RESOURCES_DIR, 'skills', 'hyperframes', 'SKILL.md'));
     await fs.access(path.join(RESOURCES_DIR, 'skills', 'hyperframes-core', 'SKILL.md'));
     const sheetRes = await inspectTimelineContactSheet({

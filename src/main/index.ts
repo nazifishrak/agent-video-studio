@@ -34,6 +34,13 @@ import { AssetServer, startAssetServer } from './server.js';
 import { getAppResourcesDir, HarnessInfo, prepareAgentHarness } from './harness.js';
 import { TerminalManager } from './terminal.js';
 import type { BrandTokens } from '../shared/designTokens.js';
+import { getCaptionVisualSpec } from '../shared/designTokens.js';
+import type { StudioLiveContext } from '../shared/liveContext.js';
+import {
+  getUiCommandPath,
+  readUiCommand,
+  writeLiveContext,
+} from './liveContextStore.js';
 import type { EditPlanV2, IdeaFrontmatter, ProjectManifest, TimelineOp, TranscriptDoc } from '../shared/schemas.js';
 
 interface AppConfig {
@@ -44,8 +51,11 @@ interface AppConfig {
 let mainWindow: BrowserWindow | null = null;
 let assetServer: AssetServer | null = null;
 let watcher: FSWatcher | null = null;
+let commandWatcher: FSWatcher | null = null;
 let activeVaultRoot: string | null = null;
 let activeHarness: HarnessInfo | null = null;
+let latestLiveContext: StudioLiveContext | null = null;
+let lastCommandId = '';
 const terminalManager = new TerminalManager();
 
 function getConfigPath(): string {
@@ -95,36 +105,58 @@ async function startVaultWatcher(vaultRoot: string): Promise<void> {
     await watcher.close();
     watcher = null;
   }
+  if (commandWatcher) {
+    await commandWatcher.close();
+    commandWatcher = null;
+  }
   const paths = resolveVaultPaths(vaultRoot, getAppResourcesDir());
+  if (fsSync.existsSync(vaultRoot)) {
+    fsSync.mkdirSync(paths.projectsDir, { recursive: true });
+  }
   const watchTargets = [
     paths.ideasDir,
     paths.projectsDir,
     paths.userCustomScenesDir,
     paths.brandKitsDir,
   ].filter((p) => fsSync.existsSync(p));
-  if (watchTargets.length === 0) return;
+  if (watchTargets.length > 0) {
+    let debounceTimer: NodeJS.Timeout | null = null;
+    let lastPayload = { event: 'change', path: '' };
 
-  let debounceTimer: NodeJS.Timeout | null = null;
-  let lastPayload = { event: 'change', path: '' };
+    watcher = chokidar.watch(watchTargets, {
+      ignoreInitial: true,
+      ignored: /(^|[/\\])\..*|node_modules|\.history[/\\]active-tx|[/\\]segs([/\\]|$)|\.log$|\.tmp-|inspect-.*\.png$/,
+      depth: 5,
+    });
 
-  watcher = chokidar.watch(watchTargets, {
+    const emitDebounced = (event: string, filePath: string) => {
+      lastPayload = { event, path: filePath };
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        mainWindow?.webContents.send('vault:changed', lastPayload);
+      }, 150);
+    };
+
+    watcher.on('add', (p) => emitDebounced('add', p));
+    watcher.on('addDir', (p) => emitDebounced('addDir', p));
+    watcher.on('change', (p) => emitDebounced('change', p));
+    watcher.on('unlink', (p) => emitDebounced('unlink', p));
+  }
+
+  const cmdPath = getUiCommandPath(vaultRoot);
+  commandWatcher = chokidar.watch(cmdPath, {
     ignoreInitial: true,
-    ignored: /(^|[/\\])\..*|node_modules|\.history[/\\]active-tx|[/\\]segs([/\\]|$)|\.log$|\.tmp-|inspect-.*\.png$/,
-    depth: 3,
+    awaitWriteFinish: { stabilityThreshold: 60, pollInterval: 20 },
   });
-
-  const emitDebounced = (event: string, filePath: string) => {
-    lastPayload = { event, path: filePath };
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      mainWindow?.webContents.send('vault:changed', lastPayload);
-    }, 150);
+  const emitCommand = () => {
+    const cmd = readUiCommand(vaultRoot);
+    if (cmd && cmd.id !== lastCommandId) {
+      lastCommandId = cmd.id;
+      mainWindow?.webContents.send('studio:uiCommand', cmd);
+    }
   };
-
-  watcher.on('add', (p) => emitDebounced('add', p));
-  watcher.on('addDir', (p) => emitDebounced('addDir', p));
-  watcher.on('change', (p) => emitDebounced('change', p));
-  watcher.on('unlink', (p) => emitDebounced('unlink', p));
+  commandWatcher.on('add', emitCommand);
+  commandWatcher.on('change', emitCommand);
 }
 
 async function setActiveVault(vaultRoot: string): Promise<AppConfig> {
@@ -388,6 +420,10 @@ function registerIpcHandlers(): void {
             webPreferences: { offscreen: true },
           });
           try {
+            const spec = getCaptionVisualSpec(tokens, {
+              isVertical: height > width,
+              renderHeight: height,
+            });
             const esc = (s: string) =>
               s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const bodyText = highlightWord
@@ -395,7 +431,7 @@ function registerIpcHandlers(): void {
                   .split(new RegExp(`(${highlightWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'))
                   .map((p) =>
                     p.toLowerCase() === highlightWord.toLowerCase()
-                      ? `<span style="color:${tokens.caption_highlight_color}">${esc(p)}</span>`
+                      ? `<span style="font-weight:${Math.min(700, spec.fontWeight + 150)};color:${spec.emphasizeColor};">${esc(p)}</span>`
                       : esc(p)
                   )
                   .join('')
@@ -406,11 +442,7 @@ function registerIpcHandlers(): void {
                 : tokens.caption_position === 'lower-third'
                   ? 'bottom:12%;'
                   : 'bottom:6%;';
-            const bgCss =
-              tokens.caption_style === 'editorial'
-                ? 'background:transparent;text-shadow:0 4px 18px rgba(0,0,0,0.85);'
-                : `background:${tokens.caption_bg};border-radius:${tokens.caption_style === 'pill' ? '9999px' : '18px'};`;
-            const html = `<!doctype html><html><body style="margin:0;width:${width}px;height:${height}px;background:transparent;position:relative;overflow:hidden;font-family:-apple-system,sans-serif;"><div style="position:absolute;left:6%;right:6%;${posCss}display:flex;justify-content:center;"><div style="padding:14px 28px;font-weight:${Number(tokens.caption_weight) || 700};font-size:${Math.round(height * (width >= height ? 0.042 : 0.028))}px;color:${tokens.caption_color};text-align:center;${bgCss}">${bodyText}</div></div></body></html>`;
+            const html = `<!doctype html><html><body style="margin:0;width:${width}px;height:${height}px;background:transparent;position:relative;overflow:hidden;font-family:${spec.fontFamily};"><div style="position:absolute;left:6%;right:6%;${posCss}display:flex;justify-content:center;"><div style="padding:${spec.padding};font-weight:${spec.fontWeight};font-size:${spec.fontSizePx}px;letter-spacing:${spec.letterSpacing};line-height:${spec.lineHeight};color:${spec.color};background:${spec.backgroundColor};border:${spec.border};border-radius:${spec.borderRadius};backdrop-filter:${spec.backdropFilter};text-shadow:${spec.textShadow};text-align:center;max-width:86%;">${bodyText}</div></div></body></html>`;
             await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
             await new Promise((r) => setTimeout(r, 40));
             const img = await win.webContents.capturePage();
@@ -457,6 +489,25 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(
+    'studio:syncContext',
+    async (
+      _,
+      ctx: Omit<StudioLiveContext, 'version' | 'updatedAt' | 'vaultRoot'>
+    ) => {
+      const vaultRoot = requireVault();
+      const fullCtx: StudioLiveContext = {
+        ...ctx,
+        version: 1,
+        vaultRoot,
+        updatedAt: new Date().toISOString(),
+      };
+      latestLiveContext = fullCtx;
+      await writeLiveContext(vaultRoot, fullCtx, activeHarness?.harnessDir);
+      return { synced: true };
+    }
+  );
+
+  ipcMain.handle(
     'terminal:start',
     async (_, opts: { sessionId: number; cols: number; rows: number; initialCommand?: string }) => {
       const vaultRoot = requireVault();
@@ -471,6 +522,8 @@ function registerIpcHandlers(): void {
           STUDIO_VAULT_PATH: vaultRoot,
           STUDIO_APP_RESOURCES: resourcesDir,
           STUDIO_MCP_SERVER: getMcpEntryPath(),
+          STUDIO_CONTEXT_FILE: path.join(harness.harnessDir, 'studio-context.json'),
+          STUDIO_ACTIVE_PROJECT: latestLiveContext?.activeProjectSlug ?? '',
         },
         onData: (data) => mainWindow?.webContents.send('terminal:data', data),
         onExit: (code) => mainWindow?.webContents.send('terminal:exit', code),
@@ -568,6 +621,7 @@ app.on('before-quit', () => {
 app.on('window-all-closed', async () => {
   terminalManager.stop();
   if (watcher) await watcher.close();
+  if (commandWatcher) await commandWatcher.close();
   if (assetServer) await assetServer.close();
   if (process.platform !== 'darwin') {
     app.quit();

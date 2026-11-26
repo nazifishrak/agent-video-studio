@@ -1,15 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Check, Save, Sparkles } from 'lucide-react';
 import { useStudioStore } from '../store/studioStore';
-import { BrandTokens, BUILTIN_BRAND_PRESETS, DEFAULT_BRAND_TOKENS } from '../../shared/designTokens';
+import {
+  BrandTokens,
+  BUILTIN_BRAND_PRESETS,
+  DEFAULT_BRAND_TOKENS,
+  getCaptionVisualSpec,
+} from '../../shared/designTokens';
 
 const DISPLAY_WEIGHT_OPTIONS = [
-  { value: '300', label: 'Google Sans Flex — 300 Light' },
-  { value: '400', label: 'Google Sans Flex — 400 Regular' },
-  { value: '500', label: 'Google Sans Flex — 500 Medium' },
-  { value: '600', label: 'Google Sans Flex — 600 SemiBold' },
-  { value: '700', label: 'Google Sans Flex — 700 Bold' },
-  { value: '800', label: 'Google Sans Flex — 800 ExtraBold' },
+  { value: '300', label: 'Weight 300 (Light)' },
+  { value: '400', label: 'Weight 400 (Regular)' },
+  { value: '500', label: 'Weight 500 (Medium)' },
+  { value: '600', label: 'Weight 600 (Semibold)' },
+  { value: '700', label: 'Weight 700 (Bold)' },
+  { value: '800', label: 'Weight 800 (ExtraBold)' },
 ];
 
 export const BrandKitView: React.FC = () => {
@@ -219,9 +224,10 @@ export const BrandKitView: React.FC = () => {
                 color: 'var(--text-primary)',
               }}
             >
-              <option value="word-highlight">Word Highlight</option>
-              <option value="editorial">Editorial Clean</option>
-              <option value="pill">Pill Background</option>
+              <option value="cinema-clean">Cinema Clean (SF Pro)</option>
+              <option value="vlog-minimal">Daily Vlog Minimal (SF Pro)</option>
+              <option value="editorial-glass">Editorial Glass (Figma)</option>
+              <option value="editorial-serif">Editorial Serif (Instrument)</option>
             </select>
 
             <select
@@ -316,25 +322,32 @@ export const BrandKitView: React.FC = () => {
           )}
 
           {/* Live Caption Sample Overlay */}
-          <div className="absolute inset-x-0 bottom-6 flex justify-center pointer-events-none px-8">
-            <div
-              className="px-4 py-2 rounded-xl text-center"
-              style={{
-                fontFamily: '"Google Sans Flex", sans-serif',
-                fontWeight: Number(tokens.caption_weight) || 700,
-                fontSize: '20px',
-                color: tokens.caption_color,
-                backgroundColor:
-                  tokens.caption_style === 'editorial' ? 'transparent' : tokens.caption_bg,
-                textShadow:
-                  tokens.caption_style === 'editorial' ? '0 2px 12px rgba(0,0,0,0.65)' : 'none',
-              }}
-            >
-              Your brand tokens update{' '}
-              <span style={{ color: tokens.caption_highlight_color }}>every caption</span> and motion
-              plate.
-            </div>
-          </div>
+          {(() => {
+            const spec = getCaptionVisualSpec(tokens);
+            return (
+              <div className="absolute inset-x-0 bottom-6 flex justify-center pointer-events-none px-8">
+                <div
+                  className="text-center max-w-[88%]"
+                  style={{
+                    fontFamily: spec.fontFamily,
+                    fontWeight: spec.fontWeight,
+                    fontSize: `${spec.fontSizePx}px`,
+                    letterSpacing: spec.letterSpacing,
+                    lineHeight: spec.lineHeight,
+                    color: spec.color,
+                    backgroundColor: spec.backgroundColor,
+                    border: spec.border,
+                    borderRadius: spec.borderRadius,
+                    backdropFilter: spec.backdropFilter,
+                    textShadow: spec.textShadow,
+                    padding: spec.padding,
+                  }}
+                >
+                  Your brand tokens update every caption and motion plate.
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>

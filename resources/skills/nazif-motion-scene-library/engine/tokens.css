@@ -1,8 +1,8 @@
-/* Auto-generated from linear-dark.design.md (mode=dark) by scripts/parse_design_md.py */
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght@6..144,1..1000&display=swap');
+/* Apple SF Pro / Figma Editorial default tokens */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
 :root {
-  --font-display: "Google Sans Flex", sans-serif;
-  --font-body: "Google Sans Flex", sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
   --display-weight: 600;
   --display-tracking: -0.03em;
   --body-tracking: -0.01em;
