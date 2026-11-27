@@ -21,12 +21,14 @@ import {
   listProjects,
   probeMediaPaths,
   readIdea,
+  readProjectPlan,
   registerMediaInProject,
   resolveProjectDirPath,
   resolveVaultPaths,
   saveGlobalBrandKit,
   saveProjectBrandKit,
   saveProjectEditPlanDirect,
+  saveProjectPlan,
   saveProjectTranscriptDirect,
   undoLastTransaction,
   updateIdea,
@@ -420,6 +422,15 @@ function registerIpcHandlers(): void {
     ) => createProjectFromIdea(requireVault(), options)
   );
   ipcMain.handle('projects:getState', async (_, slug: string) => getProjectState(requireVault(), slug));
+  ipcMain.handle('projects:readPlan', async (_, slug: string) => readProjectPlan(requireVault(), slug));
+  ipcMain.handle(
+    'projects:savePlan',
+    async (
+      _,
+      slug: string,
+      patch: { frontmatter?: Partial<IdeaFrontmatter>; body?: string; toggleChecklistIndex?: number }
+    ) => saveProjectPlan(requireVault(), slug, patch)
+  );
   ipcMain.handle('projects:updateManifest', async (_, slug: string, patch: Partial<ProjectManifest>) =>
     updateProjectManifest(requireVault(), slug, patch)
   );

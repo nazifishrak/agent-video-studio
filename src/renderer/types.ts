@@ -85,6 +85,11 @@ export interface StudioApi {
   deleteProject: (slug: string) => Promise<{ deletedSlug: string; dirPath: string }>;
   openProjectInFinder: (slug: string) => Promise<boolean>;
   getProjectState: (slug: string) => Promise<ProjectState>;
+  readProjectPlan: (slug: string) => Promise<IdeaRecord>;
+  saveProjectPlan: (
+    slug: string,
+    patch: { frontmatter?: Partial<IdeaFrontmatter>; body?: string; toggleChecklistIndex?: number }
+  ) => Promise<IdeaRecord>;
   updateProjectManifest: (slug: string, patch: Partial<ProjectManifest>) => Promise<ProjectManifest>;
   saveProjectEditPlan: (slug: string, editPlan: EditPlanV2, summary?: string) => Promise<ProjectState>;
   saveProjectTranscript: (slug: string, transcript: TranscriptDoc, summary?: string) => Promise<ProjectState>;

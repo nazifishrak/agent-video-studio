@@ -143,6 +143,23 @@ async function main() {
             activeIdea = null;
           }
         }
+        if (!activeIdea && ctx?.activeProjectSlug) {
+          try {
+            const st = await getProjectState(vaultRoot, ctx.activeProjectSlug);
+            if (st.linkedIdea) {
+              activeIdea = {
+                slug: st.linkedIdea.slug,
+                title: st.linkedIdea.frontmatter.title,
+                status: st.linkedIdea.frontmatter.status,
+                filePath: st.linkedIdea.filePath,
+                mediaPoolCount: st.linkedIdea.frontmatter.media_pool?.length ?? 0,
+                mediaPool: st.linkedIdea.frontmatter.media_pool ?? [],
+              };
+            }
+          } catch {
+            // Ignore missing project plan
+          }
+        }
         return ok({ context: ctx, activeProject, activeIdea });
       } catch (err) {
         return fail(err);

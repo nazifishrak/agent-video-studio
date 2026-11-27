@@ -9,6 +9,7 @@ import type {
   TimelineOp,
 } from '../../shared/schemas';
 import type { BrandKitEntry, ProjectState } from '../types';
+import { buildUnifiedVideos, findActiveUnifiedVideo } from '../utils/unifiedVideos';
 
 export type StudioTab = 'planner' | 'editor';
 export type EditorLeftTab = 'transcript' | 'script' | 'media' | 'motion' | 'brand';
@@ -51,6 +52,7 @@ interface StudioStore {
   projects: ProjectManifest[];
   activeProjectSlug: string | null;
   projectState: ProjectState | null;
+  activeVideoKey: string | null;
 
   motionScenes: MotionSceneMeta[];
   brandKits: BrandKitEntry[];
@@ -78,6 +80,11 @@ interface StudioStore {
   setEditorLeftTab: (tab: EditorLeftTab) => void;
   setSelectedIdeaSlug: (slug: string | null) => void;
   selectProject: (slug: string) => Promise<void>;
+  selectVideo: (target: { projectSlug?: string | null; ideaSlug?: string | null }) => Promise<void>;
+  openActiveVideoInEdit: (overrideTarget?: {
+    projectSlug?: string | null;
+    ideaSlug?: string | null;
+  }) => Promise<void>;
   setCurrentTimeSec: (t: number) => void;
   setIsPlaying: (playing: boolean) => void;
   setSelectedItem: (item: SelectedTimelineItem) => void;
@@ -120,6 +127,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
   projects: [],
   activeProjectSlug: null,
   projectState: null,
+  activeVideoKey: null,
 
   motionScenes: [],
   brandKits: [],
@@ -175,15 +183,17 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
     if (seq !== refreshSeqCounter) return;
 
     const latest = get();
-    const nextIdeaSlug =
-      latest.selectedIdeaSlug && ideas.some((i) => i.slug === latest.selectedIdeaSlug)
-        ? latest.selectedIdeaSlug
-        : ideas[0]?.slug ?? null;
+    const unified = buildUnifiedVideos(ideas, projects);
+    const activeUnified = findActiveUnifiedVideo(
+      unified,
+      latest.activeVideoKey,
+      latest.activeProjectSlug,
+      latest.selectedIdeaSlug
+    );
 
-    const nextProjSlug =
-      latest.activeProjectSlug && projects.some((p) => p.slug === latest.activeProjectSlug)
-        ? latest.activeProjectSlug
-        : projects[0]?.slug ?? null;
+    const nextVideoKey = activeUnified?.key ?? null;
+    const nextProjSlug = activeUnified?.projectSlug ?? null;
+    const nextIdeaSlug = activeUnified?.ideaSlug ?? null;
 
     let projectState: ProjectState | null = null;
     if (nextProjSlug) {
@@ -196,6 +206,7 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
       projects,
       motionScenes,
       brandKits,
+      activeVideoKey: nextVideoKey,
       selectedIdeaSlug: nextIdeaSlug,
       activeProjectSlug: nextProjSlug,
       projectState,
@@ -209,19 +220,103 @@ export const useStudioStore = create<StudioStore>((set, get) => ({
 
   setActiveTab: (tab) => set({ activeTab: tab }),
   setEditorLeftTab: (tab) => set({ editorLeftTab: tab }),
-  setSelectedIdeaSlug: (slug) => set({ selectedIdeaSlug: slug }),
+  setSelectedIdeaSlug: (slug) =>
+    set({
+      selectedIdeaSlug: slug,
+      activeVideoKey: slug ? `idea:${slug}` : null,
+    }),
 
   selectProject: async (slug) => {
     const projectState = await window.studio.getProjectState(slug);
     set({
+      activeVideoKey: `proj:${slug}`,
       activeProjectSlug: slug,
       projectState,
+      selectedIdeaSlug: projectState.manifest.ideaId ?? null,
       previewTokensOverride: null,
       auditionMotionScene: null,
       currentTimeSec: 0,
       isPlaying: false,
       selectedItem: null,
     });
+  },
+
+  selectVideo: async ({ projectSlug, ideaSlug }) => {
+    if (projectSlug) {
+      await get().selectProject(projectSlug);
+      return;
+    }
+    if (ideaSlug) {
+      const linked = get().projects.find((p) => p.ideaId === ideaSlug);
+      if (linked) {
+        await get().selectProject(linked.slug);
+        return;
+      }
+      set({
+        activeVideoKey: `idea:${ideaSlug}`,
+        selectedIdeaSlug: ideaSlug,
+        activeProjectSlug: null,
+        projectState: null,
+        previewTokensOverride: null,
+        auditionMotionScene: null,
+        currentTimeSec: 0,
+        isPlaying: false,
+        selectedItem: null,
+      });
+    }
+  },
+
+  openActiveVideoInEdit: async (overrideTarget) => {
+    const state = get();
+    const unified = buildUnifiedVideos(state.ideas, state.projects);
+    const target = overrideTarget
+      ? unified.find(
+          (v) =>
+            (overrideTarget.projectSlug && v.projectSlug === overrideTarget.projectSlug) ||
+            (overrideTarget.ideaSlug && v.ideaSlug === overrideTarget.ideaSlug)
+        ) ?? null
+      : findActiveUnifiedVideo(
+          unified,
+          state.activeVideoKey,
+          state.activeProjectSlug,
+          state.selectedIdeaSlug
+        );
+
+    if (!target) {
+      set({ activeTab: 'editor' });
+      return;
+    }
+
+    if (target.projectSlug) {
+      if (state.activeProjectSlug !== target.projectSlug || !state.projectState) {
+        await get().selectProject(target.projectSlug);
+      }
+      set({ activeTab: 'editor' });
+      return;
+    }
+
+    if (target.ideaSlug) {
+      const idea = state.ideas.find((i) => i.slug === target.ideaSlug) ?? target.idea;
+      if (idea) {
+        const isShort = idea.frontmatter.format.toLowerCase().includes('short');
+        const created = await window.studio.createProjectFromIdea({
+          ideaSlug: idea.slug,
+          title: idea.frontmatter.title,
+          aspectRatio: isShort ? '9:16' : '16:9',
+        });
+        await get().refreshVaultData();
+        set({
+          activeVideoKey: `proj:${created.manifest.slug}`,
+          activeProjectSlug: created.manifest.slug,
+          projectState: created,
+          selectedIdeaSlug: idea.slug,
+          activeTab: 'editor',
+        });
+        return;
+      }
+    }
+
+    set({ activeTab: 'editor' });
   },
 
   setCurrentTimeSec: (t) => set({ currentTimeSec: Math.max(0, t) }),

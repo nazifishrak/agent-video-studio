@@ -20,8 +20,10 @@ import {
   listProjects,
   probeMediaPaths,
   readIdea,
+  readProjectPlan,
   resolveVaultPaths,
   saveProjectBrandKit,
+  saveProjectPlan,
   undoLastTransaction,
   updateIdea,
 } from '../src/main/vault.js';
@@ -511,6 +513,40 @@ async function testStarterVaultAndHarness() {
     const rereadIdea = await readIdea(tmpVault, tempIdea.slug);
     assert.equal(rereadIdea.frontmatter.media_pool?.[0]?.role, 'B-Roll');
 
+    // Verify createProjectFromIdea seeds editPlan.assets from idea.media_pool (link-only)
+    const promotedFromIdea = await createProjectFromIdea(tmpVault, {
+      ideaSlug: tempIdea.slug,
+      title: 'Promoted Media Pool Test',
+    });
+    assert.equal(promotedFromIdea.editPlan.assets.length, 1);
+    assert.ok(promotedFromIdea.editPlan.assets[0].uri.startsWith('file://'));
+
+    // Verify standalone project plan.md + link-only media_pool sync
+    const standalonePlan = await readProjectPlan(tmpVault, 'day-in-the-life-test');
+    assert.equal(standalonePlan.frontmatter.title, 'Day In The Life Test');
+    const savedStandalonePlan = await saveProjectPlan(tmpVault, 'day-in-the-life-test', {
+      frontmatter: {
+        media_pool: [
+          {
+            id: 'm_standalone_1',
+            label: 'broll-test.png',
+            path: path.join(brollMediaDir, 'broll-test.png'),
+            kind: 'image',
+            role: 'B-Roll',
+          },
+        ],
+      },
+      body: '# Day In The Life Test\n- `[MEDIA:m_standalone_1 | B-Roll | broll-test.png]`\n',
+    });
+    assert.equal(savedStandalonePlan.frontmatter.media_pool?.[0]?.id, 'm_standalone_1');
+    const afterPlanSave = await getProjectState(tmpVault, 'day-in-the-life-test');
+    assert.ok(afterPlanSave.linkedIdea, 'Standalone project should surface plan.md as linkedIdea');
+    assert.ok(
+      afterPlanSave.editPlan.assets.some((a) => a.uri.startsWith('file://') && a.label === 'broll-test.png'),
+      'media_pool should sync link-only into edit-plan.json assets[]'
+    );
+
+    await deleteProject(tmpVault, promotedFromIdea.manifest.slug);
     const tempProj = await createProjectFromIdea(tmpVault, { title: 'Disposable Project' });
     await deleteIdea(tmpVault, tempIdea.slug);
     await deleteProject(tmpVault, tempProj.manifest.slug);

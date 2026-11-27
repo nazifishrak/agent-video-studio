@@ -3,8 +3,10 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ExternalLink,
   FileText,
   Film,
+  FolderPlus,
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
@@ -17,11 +19,13 @@ import {
   Sparkles,
   Trash2,
   Upload,
+  X,
 } from 'lucide-react';
 import { useStudioStore } from '../store/studioStore';
 import { PreviewCanvas } from '../components/PreviewCanvas';
 import { Timeline } from '../components/Timeline';
 import { MarkdownRenderer } from '../components/MarkdownRenderer';
+import { MediaThumbCard } from '../components/MediaThumbCard';
 import {
   BrandTokens,
   BUILTIN_BRAND_PRESETS,
@@ -67,6 +71,13 @@ export const EditorView: React.FC = () => {
   const [mediaDurationSec, setMediaDurationSec] = useState(0);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [linkingMedia, setLinkingMedia] = useState(false);
+  const [lightboxMedia, setLightboxMedia] = useState<{
+    label: string;
+    kind: 'video' | 'audio' | 'image';
+    url: string;
+    durationSec?: number;
+  } | null>(null);
 
   // Motion panel state
   const [motionQuery, setMotionQuery] = useState('');
@@ -158,6 +169,98 @@ export const EditorView: React.FC = () => {
     });
   }, [motionScenes, motionQuery, motionAlphaOnly]);
 
+  const unifiedMediaItems = useMemo(() => {
+    if (!projectState || !activeProjectSlug) return [];
+    const tokenQ = assetServerToken ? `token=${assetServerToken}` : '';
+    const items: Array<{
+      key: string;
+      source: string;
+      assetId?: string;
+      label: string;
+      kind: 'video' | 'audio' | 'image';
+      url: string;
+      durationSec?: number;
+      badge?: string;
+      dragSource: string;
+      shotSource: string;
+    }> = [];
+    const seenPaths = new Set<string>();
+    const seenLabels = new Set<string>();
+
+    const normUri = (u: string) =>
+      u.startsWith('file://') ? decodeURIComponent(u.slice('file://'.length)) : u;
+
+    for (const asset of projectState.editPlan.assets) {
+      const resolved = normUri(asset.uri);
+      const label = asset.label || resolved.split('/').pop() || asset.id;
+      seenPaths.add(resolved);
+      seenLabels.add(label);
+      const url = assetServerUrl
+        ? `${assetServerUrl}/project-asset/${encodeURIComponent(activeProjectSlug)}/${encodeURIComponent(asset.id)}${tokenQ ? `?${tokenQ}` : ''}`
+        : '';
+      items.push({
+        key: `asset:${asset.id}`,
+        source: asset.id,
+        assetId: asset.id,
+        label,
+        kind: asset.kind,
+        url,
+        durationSec: asset.durationSec,
+        badge: asset.kind.toUpperCase(),
+        dragSource: asset.id,
+        shotSource: asset.uri,
+      });
+    }
+
+    for (const file of projectState.mediaFiles) {
+      const label = file.split('/').pop() || file;
+      if (seenPaths.has(file) || seenLabels.has(label)) continue;
+      seenLabels.add(label);
+      const isAudio = /\.(mp3|wav|m4a|aac|flac|ogg)$/i.test(file);
+      const isImage = /\.(png|jpe?g|webp)$/i.test(file);
+      const kind: 'video' | 'audio' | 'image' = isAudio ? 'audio' : isImage ? 'image' : 'video';
+      const encodedRel = file
+        .split('/')
+        .map((seg) => encodeURIComponent(seg))
+        .join('/');
+      const url = assetServerUrl
+        ? `${assetServerUrl}/project-media/${encodeURIComponent(activeProjectSlug)}/${encodedRel}${tokenQ ? `?${tokenQ}` : ''}`
+        : '';
+      items.push({
+        key: `file:${file}`,
+        source: file,
+        label: file,
+        kind,
+        url,
+        badge: kind.toUpperCase(),
+        dragSource: file,
+        shotSource: file,
+      });
+    }
+
+    for (const item of projectState.linkedIdea?.frontmatter.media_pool ?? []) {
+      if (seenPaths.has(item.path) || seenLabels.has(item.label)) continue;
+      seenPaths.add(item.path);
+      seenLabels.add(item.label);
+      const url = assetServerUrl
+        ? `${assetServerUrl}/local-media?path=${encodeURIComponent(item.path)}${tokenQ ? `&${tokenQ}` : ''}`
+        : '';
+      items.push({
+        key: `pool:${item.id}`,
+        source: item.id,
+        label: item.label,
+        kind: item.kind,
+        url,
+        durationSec: item.durationSec,
+        badge: item.role,
+        dragSource: item.id,
+        shotSource: `file://${item.path}`,
+      });
+    }
+
+    return items;
+  }, [projectState, activeProjectSlug, assetServerUrl, assetServerToken]);
+
   if (!projectState || !activeProjectSlug) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center">
@@ -167,12 +270,12 @@ export const EditorView: React.FC = () => {
         >
           <div className="space-y-3">
             <Film size={28} className="mx-auto" />
-            <div className="text-lg font-semibold">No Video Project Selected</div>
+            <div className="text-lg font-semibold">No Video Selected</div>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              Open the Planner tab and promote an idea or select a project to start editing.
+              Open the Plan tab to create a video or select one to start editing.
             </p>
             <button onClick={() => setActiveTab('planner')} className="btn-primary px-5 py-2 text-xs">
-              Go to Planner
+              Go to Plan
             </button>
           </div>
         </div>
@@ -202,10 +305,32 @@ export const EditorView: React.FC = () => {
       ? plan.reviewNotes.find((n) => n.id === selectedItem.id) ?? null
       : null;
 
-  const handleImportMedia = async () => {
-    const res = await window.studio.importMediaDialog(activeProjectSlug);
-    if (res) {
-      await refreshVaultData();
+  const handleLinkMedia = async (mode: 'files' | 'folder') => {
+    setLinkingMedia(true);
+    try {
+      const picked = await window.studio.pickPlannerMedia(mode);
+      const paths = picked.map((p) => p.path).filter(Boolean);
+      if (paths.length > 0) {
+        await window.studio.registerMedia(activeProjectSlug, paths, 'link');
+        await refreshVaultData();
+      }
+    } finally {
+      setLinkingMedia(false);
+    }
+  };
+
+  const handleLinkMediaPaths = async (rawPaths: string[]) => {
+    if (rawPaths.length === 0) return;
+    setLinkingMedia(true);
+    try {
+      const inspected = await window.studio.inspectPlannerMediaPaths(rawPaths);
+      const paths = inspected.map((p) => p.path).filter(Boolean);
+      if (paths.length > 0) {
+        await window.studio.registerMedia(activeProjectSlug, paths, 'link');
+        await refreshVaultData();
+      }
+    } finally {
+      setLinkingMedia(false);
     }
   };
 
@@ -338,7 +463,7 @@ export const EditorView: React.FC = () => {
                     [
                       ['transcript', 'Transcript'],
                       ['script', 'Script'],
-                      ['media', `Media${projectState.mediaFiles.length ? ` (${projectState.mediaFiles.length})` : ''}`],
+                      ['media', `Media${unifiedMediaItems.length ? ` (${unifiedMediaItems.length})` : ''}`],
                       ['motion', 'Motion'],
                       ['brand', 'Brand'],
                     ] as const
@@ -369,10 +494,11 @@ export const EditorView: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex justify-end">
                     <button
-                      onClick={handleImportMedia}
+                      onClick={() => void handleLinkMedia('files')}
+                      disabled={linkingMedia}
                       className="btn-secondary flex items-center gap-1 px-2.5 py-1 text-[11px]"
                     >
-                      <Upload size={11} /> Import Footage
+                      <Upload size={11} /> Link Footage
                     </button>
                   </div>
                   {projectState.transcript.words.length > 0 ? (
@@ -412,63 +538,99 @@ export const EditorView: React.FC = () => {
                 projectState.linkedIdea ? (
                   <MarkdownRenderer content={projectState.linkedIdea.body} />
                 ) : (
-                  <div style={{ color: 'var(--text-secondary)' }}>
-                    No linked idea markdown for this project.
+                  <div className="space-y-2.5" style={{ color: 'var(--text-secondary)' }}>
+                    <p>No plan script written for this video yet.</p>
+                    <button
+                      onClick={() => setActiveTab('planner')}
+                      className="btn-secondary px-3 py-1.5 text-xs"
+                    >
+                      Write Plan
+                    </button>
                   </div>
                 )
               )}
 
               {editorLeftTab === 'media' && (
-                <div className="space-y-2.5">
-                  <button
-                    onClick={handleImportMedia}
-                    className="btn-secondary w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs"
-                  >
-                    <Upload size={12} /> Import Video / Audio / Image
-                  </button>
-                  <div className="text-[11px] px-1" style={{ color: 'var(--text-secondary)' }}>
-                    Drag files onto Timeline tracks or drop from Finder
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'copy';
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const files = Array.from(e.dataTransfer.files ?? []);
+                    const paths = files.map((f) => window.studio.getPathForFile(f)).filter(Boolean);
+                    if (paths.length > 0) {
+                      void handleLinkMediaPaths(paths);
+                    }
+                  }}
+                  className="space-y-2.5"
+                >
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => void handleLinkMedia('files')}
+                      disabled={linkingMedia}
+                      className="btn-secondary flex items-center justify-center gap-1 px-2 py-1.5 text-xs disabled:opacity-40"
+                    >
+                      <Upload size={12} /> + Link Media
+                    </button>
+                    <button
+                      onClick={() => void handleLinkMedia('folder')}
+                      disabled={linkingMedia}
+                      className="btn-secondary flex items-center justify-center gap-1 px-2 py-1.5 text-xs disabled:opacity-40"
+                    >
+                      <FolderPlus size={12} /> + Folder
+                    </button>
                   </div>
-                  {projectState.mediaFiles.length === 0 && plan.assets.length === 0 ? (
+                  <div className="text-[11px] px-1" style={{ color: 'var(--text-secondary)' }}>
+                    {linkingMedia
+                      ? 'Linking media...'
+                      : 'Hover clips to preview, drag onto Timeline tracks, or drop from Finder (link-only)'}
+                  </div>
+                  {unifiedMediaItems.length === 0 ? (
                     <div style={{ color: 'var(--text-secondary)' }}>
-                      No video or audio files found in this project yet.
+                      No video, audio, or image files linked to this video yet.
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {projectState.mediaFiles.map((file) => {
-                        const isActive = plan.sourceVideo === file;
-                        const isAudio = /\.(mp3|wav|m4a|aac|flac|ogg)$/i.test(file);
-                        const isImage = /\.(png|jpe?g|webp)$/i.test(file);
-                        const mediaKind = isAudio ? 'audio' : isImage ? 'image' : 'video';
+                    <div className="space-y-2.5">
+                      {unifiedMediaItems.map((item) => {
+                        const isActive =
+                          plan.sourceVideo === item.source ||
+                          plan.sourceVideo === item.shotSource ||
+                          plan.sourceVideo === item.label;
                         return (
-                          <div
-                            key={file}
+                          <MediaThumbCard
+                            key={item.key}
+                            label={item.label}
+                            kind={item.kind}
+                            mediaUrl={item.url}
+                            durationSec={item.durationSec}
+                            badge={item.badge}
+                            active={isActive}
                             draggable
                             onDragStart={(e) =>
                               e.dataTransfer.setData(
                                 'application/x-studio-item',
                                 JSON.stringify({
                                   kind: 'studio-media',
-                                  source: file,
-                                  label: file,
-                                  mediaKind,
+                                  source: item.dragSource,
+                                  label: item.label,
+                                  mediaKind: item.kind,
                                 })
                               )
                             }
-                            className="p-2.5 rounded-xl border space-y-2 cursor-grab active:cursor-grabbing"
-                            style={{
-                              backgroundColor: isActive ? 'var(--bg-surface-alt)' : 'var(--bg-canvas)',
-                              borderColor: isActive ? 'var(--accent-primary)' : 'var(--border-subtle)',
-                            }}
+                            onPreview={() =>
+                              setLightboxMedia({
+                                label: item.label,
+                                kind: item.kind,
+                                url: item.url,
+                                durationSec: item.durationSec,
+                              })
+                            }
+                            titlePath={item.shotSource}
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="truncate font-medium" title={file}>
-                                {file}
-                              </span>
-                              <span className="caption-label uppercase shrink-0">{mediaKind}</span>
-                            </div>
                             <div className="flex flex-wrap gap-1.5">
-                              {isAudio ? (
+                              {item.kind === 'audio' ? (
                                 <>
                                   <button
                                     onClick={() =>
@@ -478,13 +640,13 @@ export const EditorView: React.FC = () => {
                                             op: 'update_audio',
                                             audio: {
                                               ...(plan.audio ?? {}),
-                                              musicTrack: file,
+                                              musicTrack: item.source,
                                               musicDb: plan.audio?.musicDb ?? -18,
                                               sidechainDuck: plan.audio?.sidechainDuck ?? true,
                                             },
                                           },
                                         ],
-                                        `Set ${file} as music bed`
+                                        `Set ${item.label} as music bed`
                                       )
                                     }
                                     className="btn-secondary px-2 py-1 text-[10px]"
@@ -504,13 +666,13 @@ export const EditorView: React.FC = () => {
                                                 {
                                                   id: `sfx_${Date.now()}`,
                                                   at: Number(currentTimeSec.toFixed(2)),
-                                                  sound: file,
+                                                  sound: item.source,
                                                 },
                                               ],
                                             },
                                           },
                                         ],
-                                        `Added SFX ${file} at ${currentTimeSec.toFixed(1)}s`
+                                        `Added SFX ${item.label} at ${currentTimeSec.toFixed(1)}s`
                                       )
                                     }
                                     className="btn-secondary px-2 py-1 text-[10px]"
@@ -520,12 +682,12 @@ export const EditorView: React.FC = () => {
                                 </>
                               ) : (
                                 <>
-                                  {!isImage && (
+                                  {item.kind === 'video' && (
                                     <button
                                       onClick={() =>
                                         void applyOps(
-                                          [{ op: 'set_source_video', sourceVideo: file }],
-                                          `Loaded ${file} on stage`
+                                          [{ op: 'set_source_video', sourceVideo: item.source }],
+                                          `Loaded ${item.label} on stage`
                                         )
                                       }
                                       className={
@@ -537,180 +699,20 @@ export const EditorView: React.FC = () => {
                                       {isActive ? 'On A-Roll' : 'A-Roll'}
                                     </button>
                                   )}
-                                  {!isImage && (
+                                  {item.kind === 'video' && (
                                     <button
                                       onClick={() => {
                                         const start = Number(currentTimeSec.toFixed(2));
+                                        const dur = item.durationSec ? Math.min(5, item.durationSec) : 5;
                                         void applyOps(
                                           [
                                             {
                                               op: 'add_shot',
                                               shot: {
                                                 id: `shot_${Date.now()}`,
-                                                source: file,
-                                                label: file,
-                                                start,
-                                                end: Number((start + 5).toFixed(2)),
-                                                srcIn: 0,
-                                                speed: 1,
-                                                volume: 1,
-                                                transitionIn: 'cut',
-                                                stabilize: false,
-                                              },
-                                            },
-                                          ],
-                                          `Added shot ${file} at ${start}s`
-                                        );
-                                      }}
-                                      className="btn-secondary px-2 py-1 text-[10px]"
-                                    >
-                                      + Shot
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => {
-                                      const start = Number(currentTimeSec.toFixed(2));
-                                      void applyOps(
-                                        [
-                                          {
-                                            op: 'add_broll',
-                                            broll: {
-                                              id: `br_${Date.now()}`,
-                                              label: file,
-                                              source: file,
-                                              kind: isImage ? 'image' : 'video',
-                                              start,
-                                              end: Number((start + 4).toFixed(2)),
-                                            },
-                                          },
-                                        ],
-                                        `Added B-roll ${file} at ${start}s`
-                                      );
-                                    }}
-                                    className="btn-secondary px-2 py-1 text-[10px]"
-                                  >
-                                    + B-Roll
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {plan.assets.map((asset) => {
-                        const isActive = plan.sourceVideo === asset.id || plan.sourceVideo === asset.uri;
-                        const label = asset.label || asset.id;
-                        return (
-                          <div
-                            key={asset.id}
-                            draggable
-                            onDragStart={(e) =>
-                              e.dataTransfer.setData(
-                                'application/x-studio-item',
-                                JSON.stringify({
-                                  kind: 'studio-media',
-                                  source: asset.id,
-                                  label,
-                                  mediaKind: asset.kind,
-                                })
-                              )
-                            }
-                            className="p-2.5 rounded-xl border space-y-2 cursor-grab active:cursor-grabbing"
-                            style={{
-                              backgroundColor: isActive ? 'var(--bg-surface-alt)' : 'var(--bg-canvas)',
-                              borderColor: isActive ? 'var(--accent-primary)' : 'var(--border-subtle)',
-                            }}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="min-w-0">
-                                <div className="truncate font-medium">{label}</div>
-                                <div className="caption-label truncate">{asset.kind}</div>
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                              {asset.kind === 'audio' ? (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      void applyOps(
-                                        [
-                                          {
-                                            op: 'update_audio',
-                                            audio: {
-                                              ...(plan.audio ?? {}),
-                                              musicTrack: asset.id,
-                                              musicDb: plan.audio?.musicDb ?? -18,
-                                              sidechainDuck: plan.audio?.sidechainDuck ?? true,
-                                            },
-                                          },
-                                        ],
-                                        `Set ${label} as music bed`
-                                      )
-                                    }
-                                    className="btn-secondary px-2 py-1 text-[10px]"
-                                  >
-                                    Music Bed
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      void applyOps(
-                                        [
-                                          {
-                                            op: 'update_audio',
-                                            audio: {
-                                              ...(plan.audio ?? {}),
-                                              sfx: [
-                                                ...(plan.audio?.sfx ?? []),
-                                                {
-                                                  id: `sfx_${Date.now()}`,
-                                                  at: Number(currentTimeSec.toFixed(2)),
-                                                  sound: asset.id,
-                                                },
-                                              ],
-                                            },
-                                          },
-                                        ],
-                                        `Added SFX ${label} at ${currentTimeSec.toFixed(1)}s`
-                                      )
-                                    }
-                                    className="btn-secondary px-2 py-1 text-[10px]"
-                                  >
-                                    + SFX @ {currentTimeSec.toFixed(1)}s
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  {asset.kind === 'video' && (
-                                    <button
-                                      onClick={() =>
-                                        void applyOps(
-                                          [{ op: 'set_source_video', sourceVideo: asset.id }],
-                                          `Loaded ${label} on stage`
-                                        )
-                                      }
-                                      className={
-                                        isActive
-                                          ? 'btn-primary px-2 py-1 text-[10px]'
-                                          : 'btn-secondary px-2 py-1 text-[10px]'
-                                      }
-                                    >
-                                      {isActive ? 'On A-Roll' : 'A-Roll'}
-                                    </button>
-                                  )}
-                                  {asset.kind === 'video' && (
-                                    <button
-                                      onClick={() => {
-                                        const start = Number(currentTimeSec.toFixed(2));
-                                        const dur = asset.durationSec ? Math.min(5, asset.durationSec) : 5;
-                                        void applyOps(
-                                          [
-                                            {
-                                              op: 'add_shot',
-                                              shot: {
-                                                id: `shot_${Date.now()}`,
-                                                assetId: asset.id,
-                                                source: asset.uri,
-                                                label,
+                                                assetId: item.assetId,
+                                                source: item.shotSource,
+                                                label: item.label,
                                                 start,
                                                 end: Number((start + dur).toFixed(2)),
                                                 srcIn: 0,
@@ -721,7 +723,7 @@ export const EditorView: React.FC = () => {
                                               },
                                             },
                                           ],
-                                          `Added shot ${label} at ${start}s`
+                                          `Added shot ${item.label} at ${start}s`
                                         );
                                       }}
                                       className="btn-secondary px-2 py-1 text-[10px]"
@@ -738,15 +740,15 @@ export const EditorView: React.FC = () => {
                                             op: 'add_broll',
                                             broll: {
                                               id: `br_${Date.now()}`,
-                                              label,
-                                              source: asset.id,
-                                              kind: asset.kind === 'image' ? 'image' : 'video',
+                                              label: item.label,
+                                              source: item.source,
+                                              kind: item.kind === 'image' ? 'image' : 'video',
                                               start,
                                               end: Number((start + 4).toFixed(2)),
                                             },
                                           },
                                         ],
-                                        `Added B-roll ${label} at ${start}s`
+                                        `Added B-roll ${item.label} at ${start}s`
                                       );
                                     }}
                                     className="btn-secondary px-2 py-1 text-[10px]"
@@ -756,7 +758,7 @@ export const EditorView: React.FC = () => {
                                 </>
                               )}
                             </div>
-                          </div>
+                          </MediaThumbCard>
                         );
                       })}
                     </div>
@@ -1824,6 +1826,55 @@ export const EditorView: React.FC = () => {
 
       {/* Bottom Timeline */}
       <Timeline totalDuration={totalDuration} />
+
+      {/* Quick Media Preview Lightbox */}
+      {lightboxMedia && (
+        <div
+          onClick={() => setLightboxMedia(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          style={{ backgroundColor: 'var(--overlay-scrim)' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-3xl rounded-3xl border overflow-hidden"
+            style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+          >
+            <div
+              className="px-5 py-3.5 border-b flex items-center justify-between gap-3"
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
+              <div className="min-w-0">
+                <div className="text-sm font-semibold truncate">{lightboxMedia.label}</div>
+                {lightboxMedia.durationSec !== undefined && (
+                  <div className="caption-label">{lightboxMedia.durationSec.toFixed(1)}s</div>
+                )}
+              </div>
+              <button onClick={() => setLightboxMedia(null)} className="btn-icon w-8 h-8">
+                <X size={15} />
+              </button>
+            </div>
+            <div className="bg-black flex items-center justify-center p-4 max-h-[65vh]">
+              {lightboxMedia.kind === 'audio' ? (
+                <audio src={lightboxMedia.url} controls autoPlay className="w-full max-w-md my-8" />
+              ) : lightboxMedia.kind === 'image' ? (
+                <img
+                  src={lightboxMedia.url}
+                  alt={lightboxMedia.label}
+                  className="max-h-[58vh] object-contain rounded-xl"
+                />
+              ) : (
+                <video
+                  src={lightboxMedia.url}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="max-h-[58vh] w-full object-contain rounded-xl"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

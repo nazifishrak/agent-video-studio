@@ -39,6 +39,11 @@ export const studioApi = {
   deleteProject: (slug: string) => ipcRenderer.invoke('projects:delete', slug),
   openProjectInFinder: (slug: string) => ipcRenderer.invoke('projects:openInFinder', slug),
   getProjectState: (slug: string) => ipcRenderer.invoke('projects:getState', slug),
+  readProjectPlan: (slug: string) => ipcRenderer.invoke('projects:readPlan', slug),
+  saveProjectPlan: (
+    slug: string,
+    patch: { frontmatter?: Partial<IdeaFrontmatter>; body?: string; toggleChecklistIndex?: number }
+  ) => ipcRenderer.invoke('projects:savePlan', slug, patch),
   updateProjectManifest: (slug: string, patch: Partial<ProjectManifest>) =>
     ipcRenderer.invoke('projects:updateManifest', slug, patch),
   saveProjectEditPlan: (slug: string, editPlan: EditPlanV2, summary?: string) =>

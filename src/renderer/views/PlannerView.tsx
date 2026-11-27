@@ -2,17 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   CheckSquare,
-  Clapperboard,
   Columns,
   Edit3,
   ExternalLink,
   Eye,
-  Film,
   FolderPlus,
-  Image as ImageIcon,
   List,
-  Music,
-  Play,
   Plus,
   Save,
   Search,
@@ -25,7 +20,18 @@ import {
 } from 'lucide-react';
 import { useStudioStore } from '../store/studioStore';
 import { InlineMarkdown, MarkdownRenderer } from '../components/MarkdownRenderer';
-import type { IdeaMediaItem, IdeaMediaRole } from '../../shared/schemas';
+import { MediaThumbCard } from '../components/MediaThumbCard';
+import {
+  buildUnifiedVideos,
+  findActiveUnifiedVideo,
+  UnifiedVideoItem,
+} from '../utils/unifiedVideos';
+import type {
+  IdeaFrontmatter,
+  IdeaMediaItem,
+  IdeaMediaRole,
+  IdeaRecord,
+} from '../../shared/schemas';
 
 const STATUS_COLUMNS = ['Idea', 'Outlined', 'Scripted', 'Ready to Film', 'Filmed', 'Published'];
 const MEDIA_ROLES: IdeaMediaRole[] = ['A-Roll', 'B-Roll', 'Music', 'SFX', 'Reference', 'Asset'];
@@ -34,11 +40,13 @@ export const PlannerView: React.FC = () => {
   const {
     ideas,
     projects,
+    activeVideoKey,
+    activeProjectSlug,
     selectedIdeaSlug,
-    setSelectedIdeaSlug,
+    projectState,
+    selectVideo,
+    openActiveVideoInEdit,
     refreshVaultData,
-    setActiveTab,
-    selectProject,
     pinContextChip,
     agentDrawerOpen,
     setAgentDrawerOpen,
@@ -47,17 +55,54 @@ export const PlannerView: React.FC = () => {
   } = useStudioStore();
 
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
-  const [leftPaneTab, setLeftPaneTab] = useState<'ideas' | 'media'>('ideas');
+  const [leftPaneTab, setLeftPaneTab] = useState<'videos' | 'media'>('videos');
   const [scriptMode, setScriptMode] = useState<'preview' | 'split' | 'edit'>('preview');
   const [query, setQuery] = useState('');
   const [pillarFilter, setPillarFilter] = useState('');
   const [newTitle, setNewTitle] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const selectedIdea = useMemo(
-    () => ideas.find((i) => i.slug === selectedIdeaSlug) ?? ideas[0] ?? null,
-    [ideas, selectedIdeaSlug]
+  const unifiedVideos = useMemo(() => buildUnifiedVideos(ideas, projects), [ideas, projects]);
+  const activeVideo = useMemo(
+    () => findActiveUnifiedVideo(unifiedVideos, activeVideoKey, activeProjectSlug, selectedIdeaSlug),
+    [unifiedVideos, activeVideoKey, activeProjectSlug, selectedIdeaSlug]
   );
+
+  const [loadedProjectPlan, setLoadedProjectPlan] = useState<{
+    key: string;
+    record: IdeaRecord;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!activeVideo?.projectSlug) {
+      setLoadedProjectPlan(null);
+      return;
+    }
+    const videoKey = activeVideo.key;
+    const projSlug = activeVideo.projectSlug;
+    void window.studio
+      .readProjectPlan(projSlug)
+      .then((record) => {
+        if (!cancelled) {
+          setLoadedProjectPlan({ key: videoKey, record });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLoadedProjectPlan(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeVideo?.key, activeVideo?.projectSlug, ideas, projectState?.manifest.updatedAt]);
+
+  const activePlan: IdeaRecord | null = useMemo(() => {
+    if (!activeVideo) return null;
+    if (activeVideo.projectSlug && loadedProjectPlan?.key === activeVideo.key) {
+      return loadedProjectPlan.record;
+    }
+    return activeVideo.idea;
+  }, [activeVideo, loadedProjectPlan]);
 
   const [draftTitle, setDraftTitle] = useState('');
   const [draftStatus, setDraftStatus] = useState('Idea');
@@ -66,46 +111,40 @@ export const PlannerView: React.FC = () => {
   const [draftBody, setDraftBody] = useState('');
   const [draftMediaPool, setDraftMediaPool] = useState<IdeaMediaItem[]>([]);
   const [saving, setSaving] = useState(false);
-  const [promoting, setPromoting] = useState(false);
   const [importingMedia, setImportingMedia] = useState(false);
   const [planDropActive, setPlanDropActive] = useState(false);
   const [textareaDropLine, setTextareaDropLine] = useState<number | null>(null);
   const [lightboxMedia, setLightboxMedia] = useState<IdeaMediaItem | null>(null);
-  const [confirmDeleteIdeaSlug, setConfirmDeleteIdeaSlug] = useState<string | null>(null);
-  const [confirmDeleteProjectSlug, setConfirmDeleteProjectSlug] = useState<string | null>(null);
+  const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (!selectedIdea) return;
-    setDraftTitle(selectedIdea.frontmatter.title);
-    setDraftStatus(selectedIdea.frontmatter.status);
-    setDraftPillar(selectedIdea.frontmatter.pillar);
-    setDraftFormat(selectedIdea.frontmatter.format);
-    setDraftBody(selectedIdea.body);
-    setDraftMediaPool(selectedIdea.frontmatter.media_pool ?? []);
+    if (!activePlan) return;
+    setDraftTitle(activePlan.frontmatter.title);
+    setDraftStatus(activePlan.frontmatter.status);
+    setDraftPillar(activePlan.frontmatter.pillar);
+    setDraftFormat(activePlan.frontmatter.format);
+    setDraftBody(activePlan.body);
+    setDraftMediaPool(activePlan.frontmatter.media_pool ?? []);
   }, [
-    selectedIdea?.slug,
-    selectedIdea?.body,
-    selectedIdea?.frontmatter.status,
-    selectedIdea?.frontmatter.media_pool,
+    activeVideo?.key,
+    activePlan?.slug,
+    activePlan?.body,
+    activePlan?.frontmatter.status,
+    activePlan?.frontmatter.media_pool,
   ]);
 
   const isDirty = useMemo(() => {
-    if (!selectedIdea) return false;
+    if (!activePlan) return false;
     return (
-      draftTitle !== selectedIdea.frontmatter.title ||
-      draftStatus !== selectedIdea.frontmatter.status ||
-      draftPillar !== selectedIdea.frontmatter.pillar ||
-      draftFormat !== selectedIdea.frontmatter.format ||
-      draftBody !== selectedIdea.body ||
-      JSON.stringify(draftMediaPool) !== JSON.stringify(selectedIdea.frontmatter.media_pool ?? [])
+      draftTitle !== activePlan.frontmatter.title ||
+      draftStatus !== activePlan.frontmatter.status ||
+      draftPillar !== activePlan.frontmatter.pillar ||
+      draftFormat !== activePlan.frontmatter.format ||
+      draftBody !== activePlan.body ||
+      JSON.stringify(draftMediaPool) !== JSON.stringify(activePlan.frontmatter.media_pool ?? [])
     );
-  }, [selectedIdea, draftTitle, draftStatus, draftPillar, draftFormat, draftBody, draftMediaPool]);
-
-  const linkedProject = useMemo(
-    () => (selectedIdea ? projects.find((p) => p.ideaId === selectedIdea.slug) ?? null : null),
-    [projects, selectedIdea]
-  );
+  }, [activePlan, draftTitle, draftStatus, draftPillar, draftFormat, draftBody, draftMediaPool]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -119,38 +158,55 @@ export const PlannerView: React.FC = () => {
   });
 
   const pillars = useMemo(
-    () => [...new Set(ideas.map((i) => i.frontmatter.pillar).filter(Boolean))],
-    [ideas]
+    () => [...new Set(unifiedVideos.map((v) => v.pillar).filter(Boolean))],
+    [unifiedVideos]
   );
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    return ideas.filter((i) => {
-      if (pillarFilter && i.frontmatter.pillar !== pillarFilter) return false;
+    return unifiedVideos.filter((v) => {
+      if (pillarFilter && v.pillar !== pillarFilter) return false;
       if (!q) return true;
       return (
-        i.frontmatter.title.toLowerCase().includes(q) ||
-        i.body.toLowerCase().includes(q) ||
-        i.frontmatter.pillar.toLowerCase().includes(q)
+        v.title.toLowerCase().includes(q) ||
+        v.pillar.toLowerCase().includes(q) ||
+        (v.idea?.body.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [ideas, query, pillarFilter]);
+  }, [unifiedVideos, query, pillarFilter]);
 
-  const handleCreateIdea = async (e: React.FormEvent) => {
+  const savePlanPatch = async (patch: {
+    frontmatter?: Partial<IdeaFrontmatter>;
+    body?: string;
+    toggleChecklistIndex?: number;
+  }): Promise<IdeaRecord | null> => {
+    if (!activeVideo) return null;
+    if (activeVideo.projectSlug) {
+      const updated = await window.studio.saveProjectPlan(activeVideo.projectSlug, patch);
+      setLoadedProjectPlan({ key: activeVideo.key, record: updated });
+      return updated;
+    }
+    if (activeVideo.ideaSlug) {
+      return window.studio.updateIdea(activeVideo.ideaSlug, patch);
+    }
+    return null;
+  };
+
+  const handleCreateVideo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
     const created = await window.studio.createIdea({ title: newTitle.trim() });
     setNewTitle('');
     setCreating(false);
     await refreshVaultData();
-    setSelectedIdeaSlug(created.slug);
+    await selectVideo({ ideaSlug: created.slug });
   };
 
   const handleSave = async () => {
-    if (!selectedIdea) return;
+    if (!activePlan) return;
     setSaving(true);
     try {
-      await window.studio.updateIdea(selectedIdea.slug, {
+      await savePlanPatch({
         frontmatter: {
           title: draftTitle,
           status: draftStatus,
@@ -169,8 +225,8 @@ export const PlannerView: React.FC = () => {
   const persistMediaUpdate = async (nextPool: IdeaMediaItem[], nextBody?: string) => {
     setDraftMediaPool(nextPool);
     if (nextBody !== undefined) setDraftBody(nextBody);
-    if (!selectedIdea) return;
-    await window.studio.updateIdea(selectedIdea.slug, {
+    if (!activePlan) return;
+    await savePlanPatch({
       frontmatter: {
         title: draftTitle,
         status: draftStatus,
@@ -303,7 +359,7 @@ export const PlannerView: React.FC = () => {
   };
 
   const handleBuildWithAgent = async () => {
-    if (!selectedIdea) return;
+    if (!activePlan || !activeVideo) return;
     if (isDirty) {
       await handleSave();
     }
@@ -311,9 +367,10 @@ export const PlannerView: React.FC = () => {
       kind: 'project',
       label: `Plan: ${draftTitle} (${draftMediaPool.length} media)`,
       payload: {
-        ideaSlug: selectedIdea.slug,
+        projectSlug: activeVideo.projectSlug ?? undefined,
+        ideaSlug: activeVideo.ideaSlug ?? undefined,
         title: draftTitle,
-        filePath: selectedIdea.filePath,
+        filePath: activePlan.filePath,
         mediaPoolCount: draftMediaPool.length,
       },
     });
@@ -328,29 +385,30 @@ export const PlannerView: React.FC = () => {
       : '';
 
   const handleToggleChecklist = async (index: number) => {
-    if (!selectedIdea) return;
-    const updated = await window.studio.updateIdea(selectedIdea.slug, {
-      toggleChecklistIndex: index,
-    });
-    setDraftBody(updated.body);
+    if (!activePlan) return;
+    const updated = await savePlanPatch({ toggleChecklistIndex: index });
+    if (updated) setDraftBody(updated.body);
     await refreshVaultData();
   };
 
-  const handlePromoteToProject = async () => {
-    if (!selectedIdea) return;
-    setPromoting(true);
-    try {
-      const isShort = selectedIdea.frontmatter.format.toLowerCase().includes('short');
-      const created = await window.studio.createProjectFromIdea({
-        ideaSlug: selectedIdea.slug,
-        title: selectedIdea.frontmatter.title,
-        aspectRatio: isShort ? '9:16' : '16:9',
-      });
-      await refreshVaultData();
-      await selectProject(created.manifest.slug);
-      setActiveTab('editor');
-    } finally {
-      setPromoting(false);
+  const handleDeleteVideo = async (v: UnifiedVideoItem) => {
+    if (v.projectSlug) {
+      await window.studio.deleteProject(v.projectSlug);
+    }
+    if (v.ideaSlug) {
+      await window.studio.deleteIdea(v.ideaSlug);
+    }
+    setConfirmDeleteKey(null);
+    await refreshVaultData();
+  };
+
+  const handleOpenVideoInFinder = (v: UnifiedVideoItem) => {
+    if (v.projectSlug) {
+      void window.studio.openProjectInFinder(v.projectSlug);
+    } else if (v.idea?.filePath) {
+      void window.studio.openInFinder(v.idea.filePath);
+    } else if (activePlan?.filePath) {
+      void window.studio.openInFinder(activePlan.filePath);
     }
   };
 
@@ -370,7 +428,7 @@ export const PlannerView: React.FC = () => {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search ideas & scripts..."
+              placeholder="Search videos & scripts..."
               className="bg-transparent text-xs outline-none w-48"
               style={{ color: 'var(--text-primary)' }}
             />
@@ -414,12 +472,12 @@ export const PlannerView: React.FC = () => {
 
         <div className="flex items-center gap-2">
           {creating ? (
-            <form onSubmit={handleCreateIdea} className="flex items-center gap-2">
+            <form onSubmit={handleCreateVideo} className="flex items-center gap-2">
               <input
                 autoFocus
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="New video idea title..."
+                placeholder="New video title..."
                 className="px-3 py-1.5 rounded-lg border text-xs outline-none w-56"
                 style={{
                   backgroundColor: 'var(--bg-surface-alt)',
@@ -444,91 +502,20 @@ export const PlannerView: React.FC = () => {
               className="btn-secondary flex items-center gap-1.5 px-4 py-1.5 text-xs"
             >
               <Plus size={14} />
-              <span>New Idea</span>
+              <span>New Video</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Active Production Projects Strip */}
-      {projects.length > 0 && (
-        <div
-          className="px-4 py-2 border-b flex items-center gap-2 overflow-x-auto shrink-0"
-          style={{ backgroundColor: 'var(--bg-canvas)', borderColor: 'var(--border-subtle)' }}
-        >
-          <span className="caption-label shrink-0 mr-1">PROJECTS</span>
-          {projects.map((p) => {
-            const confirming = confirmDeleteProjectSlug === p.slug;
-            return (
-              <div
-                key={p.slug}
-                className="flex items-center gap-1 rounded-full border pl-3 pr-1.5 py-1 text-xs shrink-0"
-                style={{
-                  backgroundColor: 'var(--bg-surface)',
-                  borderColor: confirming ? '#EF4444' : 'var(--border-subtle)',
-                }}
-              >
-                <button
-                  onClick={() => {
-                    void selectProject(p.slug);
-                    setActiveTab('editor');
-                  }}
-                  className="flex items-center gap-1.5 cursor-pointer hover:opacity-80"
-                >
-                  <Film size={12} />
-                  <span className="max-w-[160px] truncate font-medium">{p.title}</span>
-                  <span className="caption-label opacity-70">{p.status}</span>
-                </button>
-                <button
-                  onClick={() => void window.studio.openProjectInFinder(p.slug)}
-                  className="p-1 rounded-full opacity-65 hover:opacity-100 cursor-pointer"
-                  title="Open project folder in Finder"
-                >
-                  <ExternalLink size={11} />
-                </button>
-                {confirming ? (
-                  <>
-                    <button
-                      onClick={async () => {
-                        await window.studio.deleteProject(p.slug);
-                        setConfirmDeleteProjectSlug(null);
-                        await refreshVaultData();
-                      }}
-                      className="px-2 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer"
-                      style={{ backgroundColor: '#EF4444', color: '#FFFFFF' }}
-                    >
-                      Trash?
-                    </button>
-                    <button
-                      onClick={() => setConfirmDeleteProjectSlug(null)}
-                      className="p-0.5 rounded-full opacity-75 hover:opacity-100 cursor-pointer"
-                      title="Cancel"
-                    >
-                      <X size={11} />
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setConfirmDeleteProjectSlug(p.slug)}
-                    className="p-1 rounded-full opacity-65 hover:opacity-100 cursor-pointer"
-                    title="Move project to Trash"
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {/* Body */}
       {viewMode === 'kanban' ? (
         <div className="flex-1 overflow-x-auto p-5 flex gap-4">
           {STATUS_COLUMNS.map((col) => {
-            const colIdeas = filtered.filter(
-              (i) => i.frontmatter.status.toLowerCase() === col.toLowerCase()
-            );
+            const colVideos = filtered.filter((v) => {
+              const norm = v.status.toLowerCase() === 'draft' ? 'idea' : v.status.toLowerCase();
+              return norm === col.toLowerCase();
+            });
             return (
               <div
                 key={col}
@@ -540,28 +527,28 @@ export const PlannerView: React.FC = () => {
                   style={{ borderColor: 'var(--border-subtle)' }}
                 >
                   <span className="eyebrow-label">{col}</span>
-                  <span className="caption-label t-num">{colIdeas.length}</span>
+                  <span className="caption-label t-num">{colVideos.length}</span>
                 </div>
                 <div className="p-3 space-y-2.5 overflow-y-auto">
-                  {colIdeas.map((idea) => (
+                  {colVideos.map((v) => (
                     <button
-                      key={idea.slug}
+                      key={v.key}
                       onClick={() => {
-                        setSelectedIdeaSlug(idea.slug);
+                        void selectVideo({ projectSlug: v.projectSlug, ideaSlug: v.ideaSlug });
                         setViewMode('list');
                       }}
                       className="w-full text-left p-3.5 rounded-xl border cursor-pointer transition hover:opacity-90"
                       style={{
                         backgroundColor: 'var(--bg-surface-alt)',
                         borderColor:
-                          selectedIdea?.slug === idea.slug
+                          activeVideo?.key === v.key
                             ? 'var(--accent-primary)'
                             : 'var(--border-subtle)',
                       }}
                     >
-                      <div className="text-xs font-semibold line-clamp-2">{idea.frontmatter.title}</div>
+                      <div className="text-xs font-semibold line-clamp-2">{v.title}</div>
                       <div className="caption-label mt-2.5">
-                        {idea.frontmatter.pillar} / {idea.frontmatter.format}
+                        {v.pillar} / {v.format}
                       </div>
                     </button>
                   ))}
@@ -572,7 +559,7 @@ export const PlannerView: React.FC = () => {
         </div>
       ) : (
         <div className="flex-1 flex min-h-0">
-          {/* Left Sidebar: Ideas | Media Bin */}
+          {/* Left Sidebar: Videos | Media Bin */}
           <div
             className="w-80 shrink-0 border-r flex flex-col min-h-0"
             style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
@@ -582,12 +569,12 @@ export const PlannerView: React.FC = () => {
               style={{ borderColor: 'var(--border-subtle)' }}
             >
               <button
-                onClick={() => setLeftPaneTab('ideas')}
+                onClick={() => setLeftPaneTab('videos')}
                 className={`py-1.5 px-2 text-xs font-medium ${
-                  leftPaneTab === 'ideas' ? 'pill-tab-active' : 'pill-tab'
+                  leftPaneTab === 'videos' ? 'pill-tab-active' : 'pill-tab'
                 }`}
               >
-                Ideas ({filtered.length})
+                Videos ({filtered.length})
               </button>
               <button
                 onClick={() => setLeftPaneTab('media')}
@@ -599,15 +586,17 @@ export const PlannerView: React.FC = () => {
               </button>
             </div>
 
-            {leftPaneTab === 'ideas' ? (
+            {leftPaneTab === 'videos' ? (
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {filtered.map((idea) => {
-                  const active = selectedIdea?.slug === idea.slug;
-                  const confirmingRow = confirmDeleteIdeaSlug === idea.slug;
+                {filtered.map((v) => {
+                  const active = activeVideo?.key === v.key;
+                  const confirmingRow = confirmDeleteKey === v.key;
                   return (
                     <div
-                      key={idea.slug}
-                      onClick={() => setSelectedIdeaSlug(idea.slug)}
+                      key={v.key}
+                      onClick={() =>
+                        void selectVideo({ projectSlug: v.projectSlug, ideaSlug: v.ideaSlug })
+                      }
                       className="group w-full text-left p-3.5 rounded-2xl border cursor-pointer transition"
                       style={{
                         backgroundColor: active ? 'var(--bg-surface-alt)' : 'transparent',
@@ -619,24 +608,45 @@ export const PlannerView: React.FC = () => {
                       }}
                     >
                       <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span
-                          className="caption-label px-2 py-0.5 rounded-full"
-                          style={{
-                            backgroundColor: active ? 'var(--accent-primary)' : 'var(--bg-surface-alt)',
-                            color: active ? 'var(--accent-primary-ink)' : 'var(--text-secondary)',
-                          }}
-                        >
-                          {idea.frontmatter.status}
-                        </span>
                         <div className="flex items-center gap-1.5">
-                          <span className="caption-label">{idea.frontmatter.pillar}</span>
+                          <span
+                            className="caption-label px-2 py-0.5 rounded-full"
+                            style={{
+                              backgroundColor: active ? 'var(--accent-primary)' : 'var(--bg-surface-alt)',
+                              color: active ? 'var(--accent-primary-ink)' : 'var(--text-secondary)',
+                            }}
+                          >
+                            {v.status}
+                          </span>
+                          {v.projectSlug && (
+                            <span
+                              className="caption-label px-1.5 py-0.5 rounded-full"
+                              style={{
+                                backgroundColor: 'var(--bg-surface-alt)',
+                                color: 'var(--accent-mint)',
+                              }}
+                            >
+                              EDIT
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="caption-label truncate max-w-[90px]">{v.pillar}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenVideoInFinder(v);
+                            }}
+                            className="opacity-0 group-hover:opacity-75 hover:!opacity-100 p-0.5 rounded cursor-pointer"
+                            title="Reveal in Finder"
+                          >
+                            <ExternalLink size={12} />
+                          </button>
                           {confirmingRow ? (
                             <button
-                              onClick={async (e) => {
+                              onClick={(e) => {
                                 e.stopPropagation();
-                                await window.studio.deleteIdea(idea.slug);
-                                setConfirmDeleteIdeaSlug(null);
-                                await refreshVaultData();
+                                void handleDeleteVideo(v);
                               }}
                               className="px-1.5 py-0.5 rounded text-[10px] font-semibold cursor-pointer"
                               style={{ backgroundColor: '#EF4444', color: '#FFFFFF' }}
@@ -647,25 +657,23 @@ export const PlannerView: React.FC = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setConfirmDeleteIdeaSlug(idea.slug);
+                                setConfirmDeleteKey(v.key);
                               }}
                               className="opacity-0 group-hover:opacity-75 hover:!opacity-100 p-0.5 rounded cursor-pointer"
-                              title="Move idea to Trash"
+                              title="Move video to Trash"
                             >
                               <Trash2 size={12} />
                             </button>
                           )}
                         </div>
                       </div>
-                      <div className="text-xs font-semibold leading-snug">{idea.frontmatter.title}</div>
+                      <div className="text-xs font-semibold leading-snug">{v.title}</div>
                       <div className="caption-label mt-2 flex items-center gap-2">
-                        <span>{idea.frontmatter.format}</span>
-                        {(idea.frontmatter.media_pool?.length ?? 0) > 0 && (
-                          <span className="t-num">· {idea.frontmatter.media_pool?.length} MEDIA</span>
-                        )}
-                        {idea.checklistItems.length > 0 && (
+                        <span>{v.format}</span>
+                        {v.mediaCount > 0 && <span className="t-num">· {v.mediaCount} MEDIA</span>}
+                        {v.checklistTotal > 0 && (
                           <span className="t-num">
-                            · {idea.checklistItems.filter((c) => c.checked).length}/{idea.checklistItems.length} SHOTS
+                            · {v.checklistDone}/{v.checklistTotal} SHOTS
                           </span>
                         )}
                       </div>
@@ -698,14 +706,14 @@ export const PlannerView: React.FC = () => {
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => void handlePickPlannerMedia('files')}
-                    disabled={!selectedIdea || importingMedia}
+                    disabled={!activePlan || importingMedia}
                     className="btn-secondary flex items-center justify-center gap-1 py-1.5 px-2 text-xs disabled:opacity-40"
                   >
                     <Upload size={12} /> + Files
                   </button>
                   <button
                     onClick={() => void handlePickPlannerMedia('folder')}
-                    disabled={!selectedIdea || importingMedia}
+                    disabled={!activePlan || importingMedia}
                     className="btn-secondary flex items-center justify-center gap-1 py-1.5 px-2 text-xs disabled:opacity-40"
                   >
                     <FolderPlus size={12} /> + Folder
@@ -726,41 +734,23 @@ export const PlannerView: React.FC = () => {
                     No media attached to this plan yet.
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {draftMediaPool.map((item) => (
-                      <div
+                      <MediaThumbCard
                         key={item.id}
+                        label={item.label}
+                        kind={item.kind}
+                        mediaUrl={buildLocalMediaUrl(item.path)}
+                        durationSec={item.durationSec}
+                        badge={item.role}
                         draggable
                         onDragStart={(e) =>
                           e.dataTransfer.setData('application/x-planner-media', JSON.stringify(item))
                         }
-                        className="p-2.5 rounded-xl border space-y-2 cursor-grab active:cursor-grabbing"
-                        style={{
-                          backgroundColor: 'var(--bg-canvas)',
-                          borderColor: 'var(--border-subtle)',
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-1.5">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            {item.kind === 'audio' ? (
-                              <Music size={12} className="shrink-0" style={{ color: 'var(--accent-mint)' }} />
-                            ) : item.kind === 'image' ? (
-                              <ImageIcon size={12} className="shrink-0" style={{ color: '#DDD6FE' }} />
-                            ) : (
-                              <Film size={12} className="shrink-0" style={{ color: 'var(--accent-primary)' }} />
-                            )}
-                            <span className="text-xs font-medium truncate" title={item.path}>
-                              {item.label}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-0.5 shrink-0">
-                            <button
-                              onClick={() => setLightboxMedia(item)}
-                              className="btn-icon w-6 h-6"
-                              title="Preview media"
-                            >
-                              <Play size={11} />
-                            </button>
+                        onPreview={() => setLightboxMedia(item)}
+                        titlePath={item.path}
+                        headerActions={
+                          <>
                             <button
                               onClick={() => void window.studio.openInFinder(item.path)}
                               className="btn-icon w-6 h-6"
@@ -777,9 +767,9 @@ export const PlannerView: React.FC = () => {
                             >
                               <Trash2 size={11} />
                             </button>
-                          </div>
-                        </div>
-
+                          </>
+                        }
+                      >
                         <div className="flex items-center justify-between gap-1.5">
                           <select
                             value={item.role}
@@ -803,20 +793,13 @@ export const PlannerView: React.FC = () => {
                             ))}
                           </select>
 
-                          <div className="flex items-center gap-1.5">
-                            {item.durationSec !== undefined && (
-                              <span className="text-[10px] t-num" style={{ color: 'var(--text-secondary)' }}>
-                                {item.durationSec.toFixed(1)}s
-                              </span>
-                            )}
-                            <button
-                              onClick={() => void insertMediaTag(item)}
-                              className="btn-secondary px-2 py-1 text-[10px]"
-                              title="Tag this clip in your script"
-                            >
-                              + Tag
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => void insertMediaTag(item)}
+                            className="btn-secondary px-2 py-1 text-[10px]"
+                            title="Tag this clip in your script"
+                          >
+                            + Tag
+                          </button>
                         </div>
 
                         <input
@@ -838,7 +821,7 @@ export const PlannerView: React.FC = () => {
                             color: 'var(--text-primary)',
                           }}
                         />
-                      </div>
+                      </MediaThumbCard>
                     ))}
                   </div>
                 )}
@@ -847,17 +830,17 @@ export const PlannerView: React.FC = () => {
           </div>
 
           {/* Center Script Preview / Editor & Right Shot/Cue Inspector */}
-          {selectedIdea ? (
+          {activePlan && activeVideo ? (
             <div className="flex-1 flex min-w-0 min-h-0">
               <div className="flex-1 flex flex-col min-w-0 p-5 gap-4">
-                {/* Clean Matte Idea Header Card */}
+                {/* Clean Matte Video Plan Header Card */}
                 <div
                   className="rounded-2xl border p-5 space-y-3"
                   style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="caption-label">
-                      {selectedIdea.frontmatter.pillar} · {selectedIdea.frontmatter.format}
+                      {activePlan.frontmatter.pillar} · {activePlan.frontmatter.format}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
@@ -877,11 +860,12 @@ export const PlannerView: React.FC = () => {
                         onClick={() =>
                           pinContextChip({
                             kind: 'project',
-                            label: `Idea: ${selectedIdea.slug}`,
+                            label: `Video: ${draftTitle}`,
                             payload: {
-                              ideaSlug: selectedIdea.slug,
-                              title: selectedIdea.frontmatter.title,
-                              filePath: selectedIdea.filePath,
+                              projectSlug: activeVideo.projectSlug ?? undefined,
+                              ideaSlug: activeVideo.ideaSlug ?? undefined,
+                              title: draftTitle,
+                              filePath: activePlan.filePath,
                             },
                           })
                         }
@@ -891,28 +875,24 @@ export const PlannerView: React.FC = () => {
                       </button>
 
                       <button
-                        onClick={() => void window.studio.openInFinder(selectedIdea.filePath)}
+                        onClick={() => handleOpenVideoInFinder(activeVideo)}
                         className="btn-secondary flex items-center gap-1.5 px-3 py-1.5 text-xs"
-                        title="Reveal markdown file in Finder"
+                        title="Reveal in Finder"
                       >
                         <ExternalLink size={13} /> Finder
                       </button>
 
-                      {confirmDeleteIdeaSlug === selectedIdea.slug ? (
+                      {confirmDeleteKey === activeVideo.key ? (
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={async () => {
-                              await window.studio.deleteIdea(selectedIdea.slug);
-                              setConfirmDeleteIdeaSlug(null);
-                              await refreshVaultData();
-                            }}
+                            onClick={() => void handleDeleteVideo(activeVideo)}
                             className="px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer"
                             style={{ backgroundColor: '#EF4444', color: '#FFFFFF' }}
                           >
                             Move to Trash
                           </button>
                           <button
-                            onClick={() => setConfirmDeleteIdeaSlug(null)}
+                            onClick={() => setConfirmDeleteKey(null)}
                             className="btn-secondary px-2.5 py-1.5 text-xs"
                           >
                             Cancel
@@ -920,9 +900,9 @@ export const PlannerView: React.FC = () => {
                         </div>
                       ) : (
                         <button
-                          onClick={() => setConfirmDeleteIdeaSlug(selectedIdea.slug)}
+                          onClick={() => setConfirmDeleteKey(activeVideo.key)}
                           className="btn-secondary flex items-center gap-1 px-2.5 py-1.5 text-xs"
-                          title="Move idea to Trash"
+                          title="Move video to Trash"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -945,27 +925,18 @@ export const PlannerView: React.FC = () => {
                         <span>{saving ? 'Saving...' : isDirty ? 'Save*' : 'Save'}</span>
                       </button>
 
-                      {linkedProject ? (
-                        <button
-                          onClick={() => {
-                            void selectProject(linkedProject.slug);
-                            setActiveTab('editor');
-                          }}
-                          className="btn-primary flex items-center gap-1.5 px-4 py-1.5 text-xs"
-                        >
-                          <ArrowRight size={13} />
-                          <span>Open in Editor</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={handlePromoteToProject}
-                          disabled={promoting}
-                          className="btn-primary flex items-center gap-1.5 px-4 py-1.5 text-xs"
-                        >
-                          <Clapperboard size={13} />
-                          <span>{promoting ? 'Creating...' : 'Promote to Project'}</span>
-                        </button>
-                      )}
+                      <button
+                        onClick={() =>
+                          void openActiveVideoInEdit({
+                            projectSlug: activeVideo.projectSlug,
+                            ideaSlug: activeVideo.ideaSlug,
+                          })
+                        }
+                        className="btn-primary flex items-center gap-1.5 px-4 py-1.5 text-xs"
+                      >
+                        <ArrowRight size={13} />
+                        <span>Edit Video</span>
+                      </button>
                     </div>
                   </div>
 
@@ -1005,7 +976,9 @@ export const PlannerView: React.FC = () => {
                       <Edit3 size={12} /> Edit Markdown
                     </button>
                   </div>
-                  <span className="caption-label">{selectedIdea.slug}.md</span>
+                  <span className="caption-label">
+                    {activeVideo.projectSlug ? `${activeVideo.projectSlug}/plan.md` : `${activePlan.slug}.md`}
+                  </span>
                 </div>
 
                 {/* Script Content Area (supports dragging from Media Bin or Finder) */}
@@ -1135,16 +1108,16 @@ export const PlannerView: React.FC = () => {
                 >
                 <div>
                   <div className="eyebrow-label mb-3">
-                    SHOT LIST ({selectedIdea.checklistItems.filter((c) => c.checked).length}/
-                    {selectedIdea.checklistItems.length})
+                    SHOT LIST ({activePlan.checklistItems.filter((c) => c.checked).length}/
+                    {activePlan.checklistItems.length})
                   </div>
-                  {selectedIdea.checklistItems.length === 0 ? (
+                  {activePlan.checklistItems.length === 0 ? (
                     <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                       Add `- [ ] Shot description` lines to your script to track filming shots here.
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {selectedIdea.checklistItems.map((item) => (
+                      {activePlan.checklistItems.map((item) => (
                         <button
                           key={item.index}
                           onClick={() => handleToggleChecklist(item.index)}
@@ -1178,9 +1151,9 @@ export const PlannerView: React.FC = () => {
                 </div>
 
                 <div>
-                  <div className="eyebrow-label mb-3">PRODUCTION CUES ({selectedIdea.cues.length})</div>
+                  <div className="eyebrow-label mb-3">PRODUCTION CUES ({activePlan.cues.length})</div>
                   <div className="space-y-2.5">
-                    {selectedIdea.cues.map((cue, idx) => (
+                    {activePlan.cues.map((cue, idx) => (
                       <div
                         key={idx}
                         className="p-3 rounded-xl border text-xs space-y-1.5"

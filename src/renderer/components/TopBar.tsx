@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Check,
   Copy,
   Download,
+  FileText,
   Film,
   FolderOpen,
-  Lightbulb,
   Moon,
   Plug,
   Sun,
@@ -13,10 +13,11 @@ import {
   X,
 } from 'lucide-react';
 import { StudioTab, useStudioStore } from '../store/studioStore';
+import { buildUnifiedVideos, findActiveUnifiedVideo } from '../utils/unifiedVideos';
 
 const TABS: Array<{ id: StudioTab; label: string; icon: React.ReactNode }> = [
-  { id: 'planner', label: 'Planner', icon: <Lightbulb size={14} /> },
-  { id: 'editor', label: 'Editor', icon: <Film size={14} /> },
+  { id: 'planner', label: 'Plan', icon: <FileText size={14} /> },
+  { id: 'editor', label: 'Edit', icon: <Film size={14} /> },
 ];
 
 export const TopBar: React.FC = () => {
@@ -26,9 +27,14 @@ export const TopBar: React.FC = () => {
     setActiveTab,
     uiTheme,
     setUiTheme,
+    ideas,
     projects,
+    activeVideoKey,
     activeProjectSlug,
+    selectedIdeaSlug,
     selectProject,
+    selectVideo,
+    openActiveVideoInEdit,
     contextChips,
     agentDrawerOpen,
     setAgentDrawerOpen,
@@ -45,10 +51,18 @@ export const TopBar: React.FC = () => {
 
   const vaultName = activeVault ? activeVault.split('/').filter(Boolean).pop() : 'No Vault';
 
+  const unifiedVideos = useMemo(() => buildUnifiedVideos(ideas, projects), [ideas, projects]);
+  const activeVideo = useMemo(
+    () => findActiveUnifiedVideo(unifiedVideos, activeVideoKey, activeProjectSlug, selectedIdeaSlug),
+    [unifiedVideos, activeVideoKey, activeProjectSlug, selectedIdeaSlug]
+  );
+
   const handleCopyContext = () => {
     const text = activeProjectSlug
-      ? `Active Studio Project: "${activeProjectSlug}" @ ${currentTimeSec.toFixed(1)}s (Vault: ${activeVault ?? ''})`
-      : `Active Studio Vault: ${activeVault ?? ''}`;
+      ? `Active Studio Video: "${activeProjectSlug}" @ ${currentTimeSec.toFixed(1)}s (Vault: ${activeVault ?? ''})`
+      : activeVideo
+        ? `Active Studio Video Plan: "${activeVideo.title}" (Vault: ${activeVault ?? ''})`
+        : `Active Studio Vault: ${activeVault ?? ''}`;
     void navigator.clipboard.writeText(text);
     setCopiedCtx(true);
     setTimeout(() => setCopiedCtx(false), 1800);
@@ -79,7 +93,13 @@ export const TopBar: React.FC = () => {
             return (
               <button
                 key={t.id}
-                onClick={() => setActiveTab(t.id)}
+                onClick={() => {
+                  if (t.id === 'editor') {
+                    void openActiveVideoInEdit();
+                  } else {
+                    setActiveTab(t.id);
+                  }
+                }}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs ${
                   active ? 'pill-tab-active' : 'pill-tab'
                 }`}
@@ -93,31 +113,40 @@ export const TopBar: React.FC = () => {
       </div>
 
       <div className="no-drag flex items-center gap-1.5 min-w-0 shrink">
-        {projects.length > 0 && (
+        {unifiedVideos.length > 0 && (
           <select
-            value={activeProjectSlug ?? ''}
+            value={activeVideo?.key ?? ''}
             onChange={(e) => {
-              if (e.target.value) {
-                void selectProject(e.target.value);
-                setActiveTab('editor');
+              const chosen = unifiedVideos.find((v) => v.key === e.target.value);
+              if (!chosen) return;
+              if (activeTab === 'editor') {
+                void openActiveVideoInEdit({
+                  projectSlug: chosen.projectSlug,
+                  ideaSlug: chosen.ideaSlug,
+                });
+              } else {
+                void selectVideo({
+                  projectSlug: chosen.projectSlug,
+                  ideaSlug: chosen.ideaSlug,
+                });
               }
             }}
-            className="btn-secondary px-2.5 py-1.5 text-xs outline-none min-w-[90px] max-w-[180px] truncate"
-            title="Switch Active Project"
+            className="btn-secondary px-2.5 py-1.5 text-xs outline-none min-w-[100px] max-w-[200px] truncate"
+            title="Switch Active Video"
           >
-            {projects.map((p) => (
-              <option key={p.slug} value={p.slug}>
-                {p.title}
+            {unifiedVideos.map((v) => (
+              <option key={v.key} value={v.key}>
+                {v.title}
               </option>
             ))}
           </select>
         )}
 
-        {activeProjectSlug && (
+        {(activeProjectSlug || activeVideo) && (
           <button
             onClick={handleCopyContext}
             className="btn-secondary flex items-center gap-1 px-2.5 py-1.5 text-[11px] shrink-0"
-            title="Live context synced to terminal agents — click to copy active project reference"
+            title="Live context synced to terminal agents — click to copy active video reference"
           >
             {copiedCtx ? <Check size={12} style={{ color: 'var(--accent-mint)' }} /> : <Copy size={12} />}
             <span className="hidden xl:inline">{copiedCtx ? 'Copied' : 'Live Sync'}</span>

@@ -12,6 +12,7 @@ import {
   IdeaCue,
   IdeaFrontmatter,
   IdeaFrontmatterSchema,
+  IdeaMediaItem,
   IdeaRecord,
   MediaAsset,
   MotionSceneMeta,
@@ -385,6 +386,14 @@ export async function updateIdea(
   const cleanFm = JSON.parse(JSON.stringify(nextFm));
   const fullText = matter.stringify(nextBody.trimEnd() + '\n', cleanFm);
   await fs.writeFile(current.filePath, fullText, 'utf8');
+  if (patch.frontmatter?.media_pool) {
+    const projects = await listProjects(vaultRoot);
+    for (const p of projects) {
+      if (p.ideaId === slug) {
+        await syncMediaPoolToProjectAssets(vaultRoot, p.slug, nextFm.media_pool ?? []);
+      }
+    }
+  }
   return parseIdeaContent(fullText, current.filePath);
 }
 
@@ -639,6 +648,17 @@ function cleanSeedCaptionText(raw: string): string {
         },
       ];
 
+  const seededAssets: MediaAsset[] = (linkedIdea?.frontmatter.media_pool ?? []).map((item) => ({
+    id: item.id,
+    kind: item.kind,
+    uri: `file://${path.resolve(item.path)}`,
+    label: item.label,
+    durationSec: item.durationSec,
+    fps: item.fps,
+    width: item.width,
+    height: item.height,
+  }));
+
   const editPlan: EditPlanV2 = EditPlanV2Schema.parse({
     version: 2,
     project: slug,
@@ -646,6 +666,7 @@ function cleanSeedCaptionText(raw: string): string {
     width: aspectRatio === '9:16' ? 1080 : 1920,
     height: aspectRatio === '9:16' ? 1920 : 1080,
     fps: 30,
+    assets: seededAssets,
     cuts: [],
     cameraMoves: [],
     broll: [],
@@ -730,6 +751,17 @@ export async function getProjectState(vaultRoot: string, slug: string): Promise<
       linkedIdea = undefined;
     }
   }
+  if (!linkedIdea) {
+    const localPlanPath = path.join(projectDir, 'plan.md');
+    if (existsSync(localPlanPath)) {
+      try {
+        const rawPlan = await fs.readFile(localPlanPath, 'utf8');
+        linkedIdea = parseIdeaContent(rawPlan, localPlanPath);
+      } catch {
+        linkedIdea = undefined;
+      }
+    }
+  }
 
   return {
     manifest,
@@ -740,6 +772,179 @@ export async function getProjectState(vaultRoot: string, slug: string): Promise<
     transactions,
     linkedIdea,
   };
+}
+
+function resolveLocalAssetPath(projectDir: string, uri: string): string {
+  if (uri.startsWith('file://')) {
+    return path.resolve(decodeURIComponent(uri.slice('file://'.length)));
+  }
+  if (path.isAbsolute(uri)) {
+    return path.resolve(uri);
+  }
+  return path.resolve(projectDir, uri);
+}
+
+export async function syncMediaPoolToProjectAssets(
+  vaultRoot: string,
+  projectSlug: string,
+  mediaPool: IdeaMediaItem[]
+): Promise<void> {
+  if (mediaPool.length === 0) return;
+  await ensureProjectFilesExist(vaultRoot, projectSlug);
+  const projectDir = getProjectDir(vaultRoot, projectSlug);
+  const planPath = path.join(projectDir, 'edit-plan.json');
+  const currentPlan = EditPlanV2Schema.parse(JSON.parse(await fs.readFile(planPath, 'utf8')));
+
+  const existingPaths = new Set(
+    currentPlan.assets.map((a) => resolveLocalAssetPath(projectDir, a.uri))
+  );
+  const existingIds = new Set(currentPlan.assets.map((a) => a.id));
+  const additions: MediaAsset[] = [];
+
+  for (const item of mediaPool) {
+    const abs = path.resolve(item.path);
+    if (existingPaths.has(abs)) continue;
+    existingPaths.add(abs);
+    let assetId = item.id;
+    if (existingIds.has(assetId)) {
+      assetId = `${item.id}_${Math.random().toString(36).slice(2, 6)}`;
+    }
+    existingIds.add(assetId);
+    additions.push({
+      id: assetId,
+      kind: item.kind,
+      uri: `file://${abs}`,
+      label: item.label,
+      durationSec: item.durationSec,
+      fps: item.fps,
+      width: item.width,
+      height: item.height,
+    });
+  }
+
+  if (additions.length === 0) return;
+  const nextPlan = EditPlanV2Schema.parse({
+    ...currentPlan,
+    assets: [...currentPlan.assets, ...additions],
+  });
+  await atomicWriteFile(planPath, JSON.stringify(nextPlan, null, 2));
+}
+
+export async function readProjectPlan(vaultRoot: string, projectSlug: string): Promise<IdeaRecord> {
+  const state = await getProjectState(vaultRoot, projectSlug);
+  if (state.linkedIdea) {
+    return state.linkedIdea;
+  }
+
+  const projectDir = getProjectDir(vaultRoot, projectSlug);
+  const planMdPath = path.join(projectDir, 'plan.md');
+
+  // Synthesize an in-memory starter plan pre-seeded with any existing project media (without writing to disk)
+  const seenPaths = new Set<string>();
+  const seededPool: IdeaMediaItem[] = [];
+
+  for (const asset of state.editPlan.assets) {
+    const abs = resolveLocalAssetPath(projectDir, asset.uri);
+    if (seenPaths.has(abs)) continue;
+    seenPaths.add(abs);
+    seededPool.push({
+      id: asset.id,
+      label: asset.label || path.basename(abs),
+      path: abs,
+      kind: asset.kind,
+      role: asset.kind === 'audio' ? 'Music' : asset.kind === 'image' ? 'Asset' : 'B-Roll',
+      durationSec: asset.durationSec,
+      width: asset.width,
+      height: asset.height,
+      fps: asset.fps,
+    });
+  }
+
+  for (const rel of state.mediaFiles) {
+    const abs = path.resolve(projectDir, rel);
+    if (seenPaths.has(abs)) continue;
+    seenPaths.add(abs);
+    const ext = path.extname(rel).toLowerCase();
+    const kind: IdeaMediaItem['kind'] = ['.mp3', '.wav', '.m4a'].includes(ext)
+      ? 'audio'
+      : ['.png', '.jpg', '.jpeg', '.webp'].includes(ext)
+        ? 'image'
+        : 'video';
+    seededPool.push({
+      id: `m_${slugify(path.basename(rel, ext)).slice(0, 20)}`,
+      label: path.basename(rel),
+      path: abs,
+      kind,
+      role: kind === 'audio' ? 'Music' : rel === state.editPlan.sourceVideo ? 'A-Roll' : 'B-Roll',
+    });
+  }
+
+  const frontmatter = IdeaFrontmatterSchema.parse({
+    title: state.manifest.title,
+    pillar: 'Video Project',
+    format: state.manifest.aspectRatio === '9:16' ? 'Short (9:16)' : 'Long-Form (16:9)',
+    status: state.manifest.status || 'Draft',
+    media_pool: seededPool,
+  });
+
+  const body = `# ${state.manifest.title}\n\n## 1. Hook & Beats\n- [VISUAL]: \n- [SAY]: ""\n\n## 2. Shot List\n- [ ] Review footage & beats\n`;
+  const cleanFm = JSON.parse(JSON.stringify(frontmatter));
+  return parseIdeaContent(matter.stringify(body, cleanFm), planMdPath);
+}
+
+export async function saveProjectPlan(
+  vaultRoot: string,
+  projectSlug: string,
+  patch: { frontmatter?: Partial<IdeaFrontmatter>; body?: string; toggleChecklistIndex?: number }
+): Promise<IdeaRecord> {
+  const state = await getProjectState(vaultRoot, projectSlug);
+  if (state.manifest.ideaId) {
+    try {
+      const updated = await updateIdea(vaultRoot, state.manifest.ideaId, patch);
+      if (patch.frontmatter?.title && patch.frontmatter.title !== state.manifest.title) {
+        await updateProjectManifest(vaultRoot, projectSlug, { title: patch.frontmatter.title });
+      }
+      return updated;
+    } catch {
+      // Fall through to project-local plan.md if idea file was removed
+    }
+  }
+
+  const current = await readProjectPlan(vaultRoot, projectSlug);
+  const nextFm = IdeaFrontmatterSchema.parse({
+    ...current.frontmatter,
+    ...(patch.frontmatter ?? {}),
+  });
+
+  let nextBody = patch.body !== undefined ? patch.body : current.body;
+  if (patch.toggleChecklistIndex !== undefined) {
+    const item = current.checklistItems.find((c) => c.index === patch.toggleChecklistIndex);
+    if (item) {
+      const lines = nextBody.split(/\r?\n/);
+      const targetLine = lines[item.line];
+      if (targetLine !== undefined) {
+        lines[item.line] = item.checked
+          ? targetLine.replace(/\[[xX]\]/, '[ ]')
+          : targetLine.replace(/\[ \]/, '[x]');
+        nextBody = lines.join('\n');
+      }
+    }
+  }
+
+  const projectDir = getProjectDir(vaultRoot, projectSlug);
+  const planMdPath = path.join(projectDir, 'plan.md');
+  const cleanFm = JSON.parse(JSON.stringify(nextFm));
+  const fullText = matter.stringify(nextBody.trimEnd() + '\n', cleanFm);
+  await atomicWriteFile(planMdPath, fullText);
+
+  if (patch.frontmatter?.title && patch.frontmatter.title !== state.manifest.title) {
+    await updateProjectManifest(vaultRoot, projectSlug, { title: patch.frontmatter.title });
+  }
+  if (nextFm.media_pool && nextFm.media_pool.length > 0) {
+    await syncMediaPoolToProjectAssets(vaultRoot, projectSlug, nextFm.media_pool);
+  }
+
+  return parseIdeaContent(fullText, planMdPath);
 }
 
 export async function updateProjectManifest(
@@ -1700,6 +1905,35 @@ export async function registerMediaInProject(
   if (ops.length > 0) {
     await applyTimelineOps(vaultRoot, txId, ops, projectSlug);
     await commitProjectEdit(vaultRoot, txId, `Registered ${registered.length} media asset(s)`, projectSlug);
+
+    // Mirror newly registered assets into linked idea or project plan.md if present on disk
+    const latestState = await getProjectState(vaultRoot, projectSlug);
+    if (latestState.linkedIdea) {
+      const existingPool = latestState.linkedIdea.frontmatter.media_pool ?? [];
+      const seenPaths = new Set(existingPool.map((m) => path.resolve(m.path)));
+      const additions: IdeaMediaItem[] = [];
+      for (const asset of registered) {
+        const abs = resolveLocalAssetPath(projectDir, asset.uri);
+        if (seenPaths.has(abs)) continue;
+        seenPaths.add(abs);
+        additions.push({
+          id: asset.id,
+          label: asset.label || path.basename(abs),
+          path: abs,
+          kind: asset.kind,
+          role: asset.kind === 'audio' ? 'Music' : asset.kind === 'image' ? 'Asset' : 'B-Roll',
+          durationSec: asset.durationSec,
+          width: asset.width,
+          height: asset.height,
+          fps: asset.fps,
+        });
+      }
+      if (additions.length > 0) {
+        await saveProjectPlan(vaultRoot, projectSlug, {
+          frontmatter: { media_pool: [...existingPool, ...additions] },
+        });
+      }
+    }
   } else {
     await abortProjectEdit(vaultRoot, txId, projectSlug);
   }
