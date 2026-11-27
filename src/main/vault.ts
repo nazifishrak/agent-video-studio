@@ -382,7 +382,8 @@ export async function updateIdea(
     }
   }
 
-  const fullText = matter.stringify(nextBody.trimEnd() + '\n', nextFm);
+  const cleanFm = JSON.parse(JSON.stringify(nextFm));
+  const fullText = matter.stringify(nextBody.trimEnd() + '\n', cleanFm);
   await fs.writeFile(current.filePath, fullText, 'utf8');
   return parseIdeaContent(fullText, current.filePath);
 }

@@ -24,6 +24,9 @@ export const studioApi = {
     patch: { frontmatter?: Partial<IdeaFrontmatter>; body?: string; toggleChecklistIndex?: number }
   ) => ipcRenderer.invoke('ideas:update', slug, patch),
   deleteIdea: (slug: string) => ipcRenderer.invoke('ideas:delete', slug),
+  pickPlannerMedia: (mode?: 'files' | 'folder') => ipcRenderer.invoke('planner:pickMedia', mode),
+  inspectPlannerMediaPaths: (paths: string[]) =>
+    ipcRenderer.invoke('planner:inspectMediaPaths', paths),
 
   listProjects: () => ipcRenderer.invoke('projects:list'),
   createProjectFromIdea: (options: {

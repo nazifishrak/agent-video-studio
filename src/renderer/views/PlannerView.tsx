@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   CheckSquare,
@@ -8,19 +8,27 @@ import {
   ExternalLink,
   Eye,
   Film,
+  FolderPlus,
+  Image as ImageIcon,
   List,
+  Music,
+  Play,
   Plus,
   Save,
   Search,
   Sparkles,
   Square,
   Trash2,
+  Upload,
+  Wand2,
   X,
 } from 'lucide-react';
 import { useStudioStore } from '../store/studioStore';
 import { InlineMarkdown, MarkdownRenderer } from '../components/MarkdownRenderer';
+import type { IdeaMediaItem, IdeaMediaRole } from '../../shared/schemas';
 
 const STATUS_COLUMNS = ['Idea', 'Outlined', 'Scripted', 'Ready to Film', 'Filmed', 'Published'];
+const MEDIA_ROLES: IdeaMediaRole[] = ['A-Roll', 'B-Roll', 'Music', 'SFX', 'Reference', 'Asset'];
 
 export const PlannerView: React.FC = () => {
   const {
@@ -33,9 +41,13 @@ export const PlannerView: React.FC = () => {
     selectProject,
     pinContextChip,
     agentDrawerOpen,
+    setAgentDrawerOpen,
+    assetServerUrl,
+    assetServerToken,
   } = useStudioStore();
 
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [leftPaneTab, setLeftPaneTab] = useState<'ideas' | 'media'>('ideas');
   const [scriptMode, setScriptMode] = useState<'preview' | 'split' | 'edit'>('preview');
   const [query, setQuery] = useState('');
   const [pillarFilter, setPillarFilter] = useState('');
@@ -52,10 +64,15 @@ export const PlannerView: React.FC = () => {
   const [draftPillar, setDraftPillar] = useState('AI & Build');
   const [draftFormat, setDraftFormat] = useState('Long-Form');
   const [draftBody, setDraftBody] = useState('');
+  const [draftMediaPool, setDraftMediaPool] = useState<IdeaMediaItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [promoting, setPromoting] = useState(false);
+  const [importingMedia, setImportingMedia] = useState(false);
+  const [planDropActive, setPlanDropActive] = useState(false);
+  const [lightboxMedia, setLightboxMedia] = useState<IdeaMediaItem | null>(null);
   const [confirmDeleteIdeaSlug, setConfirmDeleteIdeaSlug] = useState<string | null>(null);
   const [confirmDeleteProjectSlug, setConfirmDeleteProjectSlug] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!selectedIdea) return;
@@ -64,7 +81,13 @@ export const PlannerView: React.FC = () => {
     setDraftPillar(selectedIdea.frontmatter.pillar);
     setDraftFormat(selectedIdea.frontmatter.format);
     setDraftBody(selectedIdea.body);
-  }, [selectedIdea?.slug, selectedIdea?.body, selectedIdea?.frontmatter.status]);
+    setDraftMediaPool(selectedIdea.frontmatter.media_pool ?? []);
+  }, [
+    selectedIdea?.slug,
+    selectedIdea?.body,
+    selectedIdea?.frontmatter.status,
+    selectedIdea?.frontmatter.media_pool,
+  ]);
 
   const isDirty = useMemo(() => {
     if (!selectedIdea) return false;
@@ -73,9 +96,10 @@ export const PlannerView: React.FC = () => {
       draftStatus !== selectedIdea.frontmatter.status ||
       draftPillar !== selectedIdea.frontmatter.pillar ||
       draftFormat !== selectedIdea.frontmatter.format ||
-      draftBody !== selectedIdea.body
+      draftBody !== selectedIdea.body ||
+      JSON.stringify(draftMediaPool) !== JSON.stringify(selectedIdea.frontmatter.media_pool ?? [])
     );
-  }, [selectedIdea, draftTitle, draftStatus, draftPillar, draftFormat, draftBody]);
+  }, [selectedIdea, draftTitle, draftStatus, draftPillar, draftFormat, draftBody, draftMediaPool]);
 
   const linkedProject = useMemo(
     () => (selectedIdea ? projects.find((p) => p.ideaId === selectedIdea.slug) ?? null : null),
@@ -131,6 +155,7 @@ export const PlannerView: React.FC = () => {
           status: draftStatus,
           pillar: draftPillar,
           format: draftFormat,
+          media_pool: draftMediaPool,
         },
         body: draftBody,
       });
@@ -139,6 +164,92 @@ export const PlannerView: React.FC = () => {
       setSaving(false);
     }
   };
+
+  const persistMediaUpdate = async (nextPool: IdeaMediaItem[], nextBody?: string) => {
+    setDraftMediaPool(nextPool);
+    if (nextBody !== undefined) setDraftBody(nextBody);
+    if (!selectedIdea) return;
+    await window.studio.updateIdea(selectedIdea.slug, {
+      frontmatter: {
+        title: draftTitle,
+        status: draftStatus,
+        pillar: draftPillar,
+        format: draftFormat,
+        media_pool: nextPool,
+      },
+      body: nextBody !== undefined ? nextBody : draftBody,
+    });
+    await refreshVaultData();
+  };
+
+  const mergeMediaItems = async (incoming: IdeaMediaItem[], alsoTagInBody = false) => {
+    if (incoming.length === 0) return;
+    const existingByPath = new Map(draftMediaPool.map((m) => [m.path, m]));
+    const added: IdeaMediaItem[] = [];
+    for (const item of incoming) {
+      if (!existingByPath.has(item.path)) {
+        existingByPath.set(item.path, item);
+        added.push(item);
+      }
+    }
+    const nextPool = Array.from(existingByPath.values());
+    let nextBody = draftBody;
+    if (alsoTagInBody) {
+      const toTag = added.length > 0 ? added : incoming;
+      const tagsText = toTag.map((m) => `- \`[MEDIA:${m.id} | ${m.role} | ${m.label}]\``).join('\n');
+      nextBody = `${draftBody.trimEnd()}\n${tagsText}\n`;
+    }
+    await persistMediaUpdate(nextPool, alsoTagInBody ? nextBody : undefined);
+  };
+
+  const handlePickPlannerMedia = async (mode: 'files' | 'folder') => {
+    setImportingMedia(true);
+    try {
+      const items = await window.studio.pickPlannerMedia(mode);
+      await mergeMediaItems(items, false);
+    } finally {
+      setImportingMedia(false);
+    }
+  };
+
+  const insertMediaTag = async (item: IdeaMediaItem) => {
+    const tag = `\`[MEDIA:${item.id} | ${item.role} | ${item.label}]\``;
+    const ta = textareaRef.current;
+    let nextBody = draftBody;
+    if (ta && (scriptMode === 'edit' || scriptMode === 'split')) {
+      const start = ta.selectionStart ?? draftBody.length;
+      const end = ta.selectionEnd ?? start;
+      nextBody = `${draftBody.slice(0, start)}${tag}${draftBody.slice(end)}`;
+    } else {
+      nextBody = `${draftBody.trimEnd()}\n- ${tag}\n`;
+    }
+    await persistMediaUpdate(draftMediaPool, nextBody);
+  };
+
+  const handleBuildWithAgent = async () => {
+    if (!selectedIdea) return;
+    if (isDirty) {
+      await handleSave();
+    }
+    pinContextChip({
+      kind: 'project',
+      label: `Plan: ${draftTitle} (${draftMediaPool.length} media)`,
+      payload: {
+        ideaSlug: selectedIdea.slug,
+        title: draftTitle,
+        filePath: selectedIdea.filePath,
+        mediaPoolCount: draftMediaPool.length,
+      },
+    });
+    setAgentDrawerOpen(true);
+  };
+
+  const buildLocalMediaUrl = (absPath: string) =>
+    assetServerUrl
+      ? `${assetServerUrl}/local-media?path=${encodeURIComponent(absPath)}${
+          assetServerToken ? `&token=${assetServerToken}` : ''
+        }`
+      : '';
 
   const handleToggleChecklist = async (index: number) => {
     if (!selectedIdea) return;
@@ -385,79 +496,278 @@ export const PlannerView: React.FC = () => {
         </div>
       ) : (
         <div className="flex-1 flex min-h-0">
-          {/* Left Idea List */}
+          {/* Left Sidebar: Ideas | Media Bin */}
           <div
-            className="w-80 shrink-0 border-r overflow-y-auto p-3 space-y-2"
+            className="w-80 shrink-0 border-r flex flex-col min-h-0"
             style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
           >
-            {filtered.map((idea) => {
-              const active = selectedIdea?.slug === idea.slug;
-              const confirmingRow = confirmDeleteIdeaSlug === idea.slug;
-              return (
-                <div
-                  key={idea.slug}
-                  onClick={() => setSelectedIdeaSlug(idea.slug)}
-                  className="group w-full text-left p-3.5 rounded-2xl border cursor-pointer transition"
-                  style={{
-                    backgroundColor: active ? 'var(--bg-surface-alt)' : 'transparent',
-                    borderColor: confirmingRow
-                      ? '#EF4444'
-                      : active
-                        ? 'var(--accent-primary)'
-                        : 'var(--border-subtle)',
-                  }}
-                >
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span
-                      className="caption-label px-2 py-0.5 rounded-full"
+            <div
+              className="p-2.5 border-b grid grid-cols-2 gap-1.5 shrink-0"
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
+              <button
+                onClick={() => setLeftPaneTab('ideas')}
+                className={`py-1.5 px-2 text-xs font-medium ${
+                  leftPaneTab === 'ideas' ? 'pill-tab-active' : 'pill-tab'
+                }`}
+              >
+                Ideas ({filtered.length})
+              </button>
+              <button
+                onClick={() => setLeftPaneTab('media')}
+                className={`py-1.5 px-2 text-xs font-medium ${
+                  leftPaneTab === 'media' ? 'pill-tab-active' : 'pill-tab'
+                }`}
+              >
+                Media Bin ({draftMediaPool.length})
+              </button>
+            </div>
+
+            {leftPaneTab === 'ideas' ? (
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {filtered.map((idea) => {
+                  const active = selectedIdea?.slug === idea.slug;
+                  const confirmingRow = confirmDeleteIdeaSlug === idea.slug;
+                  return (
+                    <div
+                      key={idea.slug}
+                      onClick={() => setSelectedIdeaSlug(idea.slug)}
+                      className="group w-full text-left p-3.5 rounded-2xl border cursor-pointer transition"
                       style={{
-                        backgroundColor: active ? 'var(--accent-primary)' : 'var(--bg-surface-alt)',
-                        color: active ? 'var(--accent-primary-ink)' : 'var(--text-secondary)',
+                        backgroundColor: active ? 'var(--bg-surface-alt)' : 'transparent',
+                        borderColor: confirmingRow
+                          ? '#EF4444'
+                          : active
+                            ? 'var(--accent-primary)'
+                            : 'var(--border-subtle)',
                       }}
                     >
-                      {idea.frontmatter.status}
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="caption-label">{idea.frontmatter.pillar}</span>
-                      {confirmingRow ? (
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await window.studio.deleteIdea(idea.slug);
-                            setConfirmDeleteIdeaSlug(null);
-                            await refreshVaultData();
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span
+                          className="caption-label px-2 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: active ? 'var(--accent-primary)' : 'var(--bg-surface-alt)',
+                            color: active ? 'var(--accent-primary-ink)' : 'var(--text-secondary)',
                           }}
-                          className="px-1.5 py-0.5 rounded text-[10px] font-semibold cursor-pointer"
-                          style={{ backgroundColor: '#EF4444', color: '#FFFFFF' }}
                         >
-                          Trash?
-                        </button>
-                      ) : (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirmDeleteIdeaSlug(idea.slug);
-                          }}
-                          className="opacity-0 group-hover:opacity-75 hover:!opacity-100 p-0.5 rounded cursor-pointer"
-                          title="Move idea to Trash"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      )}
+                          {idea.frontmatter.status}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="caption-label">{idea.frontmatter.pillar}</span>
+                          {confirmingRow ? (
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await window.studio.deleteIdea(idea.slug);
+                                setConfirmDeleteIdeaSlug(null);
+                                await refreshVaultData();
+                              }}
+                              className="px-1.5 py-0.5 rounded text-[10px] font-semibold cursor-pointer"
+                              style={{ backgroundColor: '#EF4444', color: '#FFFFFF' }}
+                            >
+                              Trash?
+                            </button>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirmDeleteIdeaSlug(idea.slug);
+                              }}
+                              className="opacity-0 group-hover:opacity-75 hover:!opacity-100 p-0.5 rounded cursor-pointer"
+                              title="Move idea to Trash"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-xs font-semibold leading-snug">{idea.frontmatter.title}</div>
+                      <div className="caption-label mt-2 flex items-center gap-2">
+                        <span>{idea.frontmatter.format}</span>
+                        {(idea.frontmatter.media_pool?.length ?? 0) > 0 && (
+                          <span className="t-num">· {idea.frontmatter.media_pool?.length} MEDIA</span>
+                        )}
+                        {idea.checklistItems.length > 0 && (
+                          <span className="t-num">
+                            · {idea.checklistItems.filter((c) => c.checked).length}/{idea.checklistItems.length} SHOTS
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-xs font-semibold leading-snug">{idea.frontmatter.title}</div>
-                  <div className="caption-label mt-2 flex items-center gap-2">
-                    <span>{idea.frontmatter.format}</span>
-                    {idea.checklistItems.length > 0 && (
-                      <span className="t-num">
-                        · {idea.checklistItems.filter((c) => c.checked).length}/{idea.checklistItems.length} SHOTS
-                      </span>
-                    )}
-                  </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'copy';
+                }}
+                onDrop={async (e) => {
+                  e.preventDefault();
+                  const files = Array.from(e.dataTransfer.files ?? []);
+                  if (files.length === 0) return;
+                  const paths = files.map((f) => window.studio.getPathForFile(f)).filter(Boolean);
+                  if (paths.length === 0) return;
+                  setImportingMedia(true);
+                  try {
+                    const items = await window.studio.inspectPlannerMediaPaths(paths);
+                    await mergeMediaItems(items, false);
+                  } finally {
+                    setImportingMedia(false);
+                  }
+                }}
+                className="flex-1 overflow-y-auto p-3 space-y-2.5"
+              >
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    onClick={() => void handlePickPlannerMedia('files')}
+                    disabled={!selectedIdea || importingMedia}
+                    className="btn-secondary flex items-center justify-center gap-1 py-1.5 px-2 text-xs disabled:opacity-40"
+                  >
+                    <Upload size={12} /> + Files
+                  </button>
+                  <button
+                    onClick={() => void handlePickPlannerMedia('folder')}
+                    disabled={!selectedIdea || importingMedia}
+                    className="btn-secondary flex items-center justify-center gap-1 py-1.5 px-2 text-xs disabled:opacity-40"
+                  >
+                    <FolderPlus size={12} /> + Folder
+                  </button>
                 </div>
-              );
-            })}
+
+                <div
+                  className="p-2.5 rounded-xl border border-dashed text-[11px] text-center"
+                  style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}
+                >
+                  {importingMedia
+                    ? 'Probing media...'
+                    : 'Drop footage, music, or folders from Finder — or drag cards onto your plan'}
+                </div>
+
+                {draftMediaPool.length === 0 ? (
+                  <div className="text-xs text-center py-6" style={{ color: 'var(--text-secondary)' }}>
+                    No media attached to this plan yet.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {draftMediaPool.map((item) => (
+                      <div
+                        key={item.id}
+                        draggable
+                        onDragStart={(e) =>
+                          e.dataTransfer.setData('application/x-planner-media', JSON.stringify(item))
+                        }
+                        className="p-2.5 rounded-xl border space-y-2 cursor-grab active:cursor-grabbing"
+                        style={{
+                          backgroundColor: 'var(--bg-canvas)',
+                          borderColor: 'var(--border-subtle)',
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-1.5">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            {item.kind === 'audio' ? (
+                              <Music size={12} className="shrink-0" style={{ color: 'var(--accent-mint)' }} />
+                            ) : item.kind === 'image' ? (
+                              <ImageIcon size={12} className="shrink-0" style={{ color: '#DDD6FE' }} />
+                            ) : (
+                              <Film size={12} className="shrink-0" style={{ color: 'var(--accent-primary)' }} />
+                            )}
+                            <span className="text-xs font-medium truncate" title={item.path}>
+                              {item.label}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            <button
+                              onClick={() => setLightboxMedia(item)}
+                              className="btn-icon w-6 h-6"
+                              title="Preview media"
+                            >
+                              <Play size={11} />
+                            </button>
+                            <button
+                              onClick={() => void window.studio.openInFinder(item.path)}
+                              className="btn-icon w-6 h-6"
+                              title="Reveal in Finder"
+                            >
+                              <ExternalLink size={11} />
+                            </button>
+                            <button
+                              onClick={() =>
+                                void persistMediaUpdate(draftMediaPool.filter((m) => m.id !== item.id))
+                              }
+                              className="btn-icon w-6 h-6"
+                              title="Remove from plan"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-1.5">
+                          <select
+                            value={item.role}
+                            onChange={(e) => {
+                              const role = e.target.value as IdeaMediaRole;
+                              void persistMediaUpdate(
+                                draftMediaPool.map((m) => (m.id === item.id ? { ...m, role } : m))
+                              );
+                            }}
+                            className="px-2 py-1 rounded-lg border text-[11px] outline-none"
+                            style={{
+                              backgroundColor: 'var(--bg-surface-alt)',
+                              borderColor: 'var(--border-subtle)',
+                              color: 'var(--text-primary)',
+                            }}
+                          >
+                            {MEDIA_ROLES.map((r) => (
+                              <option key={r} value={r}>
+                                {r}
+                              </option>
+                            ))}
+                          </select>
+
+                          <div className="flex items-center gap-1.5">
+                            {item.durationSec !== undefined && (
+                              <span className="text-[10px] t-num" style={{ color: 'var(--text-secondary)' }}>
+                                {item.durationSec.toFixed(1)}s
+                              </span>
+                            )}
+                            <button
+                              onClick={() => void insertMediaTag(item)}
+                              className="btn-secondary px-2 py-1 text-[10px]"
+                              title="Tag this clip in your script"
+                            >
+                              + Tag
+                            </button>
+                          </div>
+                        </div>
+
+                        <input
+                          defaultValue={item.notes ?? ''}
+                          placeholder="Add beat note (e.g. pick best 3s walk shot)..."
+                          onBlur={(e) => {
+                            const val = e.target.value.trim();
+                            if ((item.notes ?? '') === val) return;
+                            void persistMediaUpdate(
+                              draftMediaPool.map((m) =>
+                                m.id === item.id ? { ...m, notes: val || undefined } : m
+                              )
+                            );
+                          }}
+                          className="w-full px-2 py-1 rounded-lg border text-[11px] outline-none"
+                          style={{
+                            backgroundColor: 'var(--bg-surface-alt)',
+                            borderColor: 'var(--border-subtle)',
+                            color: 'var(--text-primary)',
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Center Script Preview / Editor & Right Shot/Cue Inspector */}
@@ -543,6 +853,14 @@ export const PlannerView: React.FC = () => {
                       )}
 
                       <button
+                        onClick={() => void handleBuildWithAgent()}
+                        className="btn-secondary flex items-center gap-1.5 px-3.5 py-1.5 text-xs"
+                        title="Save plan, pin to Terminal, and ask the agent to build the video"
+                      >
+                        <Wand2 size={13} /> Build with Agent
+                      </button>
+
+                      <button
                         onClick={handleSave}
                         disabled={saving}
                         className="btn-secondary flex items-center gap-1.5 px-3.5 py-1.5 text-xs"
@@ -614,10 +932,47 @@ export const PlannerView: React.FC = () => {
                   <span className="caption-label">{selectedIdea.slug}.md</span>
                 </div>
 
-                {/* Script Content Area */}
-                <div className="flex-1 flex gap-4 min-h-0">
+                {/* Script Content Area (supports dragging from Media Bin or Finder) */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'copy';
+                    if (!planDropActive) setPlanDropActive(true);
+                  }}
+                  onDragLeave={() => setPlanDropActive(false)}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    setPlanDropActive(false);
+                    const rawMedia = e.dataTransfer.getData('application/x-planner-media');
+                    if (rawMedia) {
+                      try {
+                        const item = JSON.parse(rawMedia) as IdeaMediaItem;
+                        await insertMediaTag(item);
+                      } catch {
+                        // Ignore malformed drag data
+                      }
+                      return;
+                    }
+                    const files = Array.from(e.dataTransfer.files ?? []);
+                    if (files.length > 0) {
+                      const paths = files.map((f) => window.studio.getPathForFile(f)).filter(Boolean);
+                      if (paths.length === 0) return;
+                      setImportingMedia(true);
+                      try {
+                        const items = await window.studio.inspectPlannerMediaPaths(paths);
+                        await mergeMediaItems(items, true);
+                      } finally {
+                        setImportingMedia(false);
+                      }
+                    }
+                  }}
+                  className={`flex-1 flex gap-4 min-h-0 rounded-2xl transition ${
+                    planDropActive ? 'ring-2 ring-[#C4FF2E]' : ''
+                  }`}
+                >
                   {(scriptMode === 'edit' || scriptMode === 'split') && (
                     <textarea
+                      ref={textareaRef}
                       value={draftBody}
                       onChange={(e) => setDraftBody(e.target.value)}
                       className="flex-1 h-full p-5 rounded-2xl border text-sm leading-relaxed resize-none outline-none"
@@ -639,6 +994,8 @@ export const PlannerView: React.FC = () => {
                       <MarkdownRenderer
                         content={draftBody}
                         onToggleChecklist={handleToggleChecklist}
+                        mediaPool={draftMediaPool}
+                        onPreviewMedia={setLightboxMedia}
                       />
                     </div>
                   )}
@@ -683,7 +1040,11 @@ export const PlannerView: React.FC = () => {
                             <Square size={15} className="shrink-0 mt-0.5" style={{ color: 'var(--text-secondary)' }} />
                           )}
                           <span className={item.checked ? 'line-through' : ''}>
-                            <InlineMarkdown text={item.text} />
+                            <InlineMarkdown
+                              text={item.text}
+                              mediaPool={draftMediaPool}
+                              onPreviewMedia={setLightboxMedia}
+                            />
                           </span>
                         </button>
                       ))}
@@ -717,7 +1078,11 @@ export const PlannerView: React.FC = () => {
                           {cue.type}
                         </span>
                         <div style={{ color: 'var(--text-secondary)' }}>
-                          <InlineMarkdown text={cue.text} />
+                          <InlineMarkdown
+                            text={cue.text}
+                            mediaPool={draftMediaPool}
+                            onPreviewMedia={setLightboxMedia}
+                          />
                         </div>
                       </div>
                     ))}
@@ -731,6 +1096,89 @@ export const PlannerView: React.FC = () => {
               Select or create a video idea to start scripting.
             </div>
           )}
+        </div>
+      )}
+      {/* Quick Media Preview Lightbox */}
+      {lightboxMedia && (
+        <div
+          onClick={() => setLightboxMedia(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-6"
+          style={{ backgroundColor: 'var(--overlay-scrim)' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-3xl rounded-3xl border overflow-hidden"
+            style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+          >
+            <div
+              className="px-5 py-3.5 border-b flex items-center justify-between gap-3"
+              style={{ borderColor: 'var(--border-subtle)' }}
+            >
+              <div className="min-w-0">
+                <div className="text-sm font-semibold truncate">{lightboxMedia.label}</div>
+                <div className="caption-label truncate" title={lightboxMedia.path}>
+                  {lightboxMedia.role}
+                  {lightboxMedia.durationSec !== undefined
+                    ? ` · ${lightboxMedia.durationSec.toFixed(1)}s`
+                    : ''}
+                  {lightboxMedia.width && lightboxMedia.height
+                    ? ` · ${lightboxMedia.width}×${lightboxMedia.height}`
+                    : ''}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    void insertMediaTag(lightboxMedia);
+                    setLightboxMedia(null);
+                  }}
+                  className="btn-primary px-3 py-1.5 text-xs"
+                >
+                  + Tag in Plan
+                </button>
+                <button
+                  onClick={() => void window.studio.openInFinder(lightboxMedia.path)}
+                  className="btn-secondary flex items-center gap-1 px-3 py-1.5 text-xs"
+                >
+                  <ExternalLink size={12} /> Finder
+                </button>
+                <button onClick={() => setLightboxMedia(null)} className="btn-icon w-8 h-8">
+                  <X size={15} />
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-black flex items-center justify-center p-4 max-h-[65vh]">
+              {lightboxMedia.kind === 'audio' ? (
+                <audio
+                  src={buildLocalMediaUrl(lightboxMedia.path)}
+                  controls
+                  autoPlay
+                  className="w-full max-w-md my-8"
+                />
+              ) : lightboxMedia.kind === 'image' ? (
+                <img
+                  src={buildLocalMediaUrl(lightboxMedia.path)}
+                  alt={lightboxMedia.label}
+                  className="max-h-[58vh] object-contain rounded-xl"
+                />
+              ) : (
+                <video
+                  src={buildLocalMediaUrl(lightboxMedia.path)}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="max-h-[58vh] w-full object-contain rounded-xl"
+                />
+              )}
+            </div>
+
+            {lightboxMedia.notes && (
+              <div className="px-5 py-3 text-xs border-t" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                {lightboxMedia.notes}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

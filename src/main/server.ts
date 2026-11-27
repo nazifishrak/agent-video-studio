@@ -249,6 +249,30 @@ export async function startAssetServer(
         return;
       }
 
+      // Route 4: /local-media?path=<absPath> -> authenticated preview for Planner Media Bin items
+      if (pathname === '/local-media') {
+        const rawPath = reqUrl.searchParams.get('path') ?? '';
+        if (!rawPath || !path.isAbsolute(rawPath)) {
+          res.writeHead(400);
+          res.end('Invalid path');
+          return;
+        }
+        const ext = path.extname(rawPath).toLowerCase();
+        if (!ALLOWED_MEDIA_EXTS.has(ext)) {
+          res.writeHead(403);
+          res.end('Unsupported media type');
+          return;
+        }
+        const stat = await fsPromises.stat(rawPath);
+        if (!stat.isFile()) {
+          res.writeHead(404);
+          res.end('Not found');
+          return;
+        }
+        streamFileWithRange(req, res, rawPath, stat.size, MIME_TYPES[ext] ?? 'application/octet-stream');
+        return;
+      }
+
       res.writeHead(404);
       res.end('Not found');
     } catch {

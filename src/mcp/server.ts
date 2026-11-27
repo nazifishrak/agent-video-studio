@@ -127,7 +127,23 @@ async function main() {
             activeProject = null;
           }
         }
-        return ok({ context: ctx, activeProject });
+        let activeIdea: Record<string, unknown> | null = null;
+        if (ctx?.selectedIdeaSlug) {
+          try {
+            const idea = await readIdea(vaultRoot, ctx.selectedIdeaSlug);
+            activeIdea = {
+              slug: idea.slug,
+              title: idea.frontmatter.title,
+              status: idea.frontmatter.status,
+              filePath: idea.filePath,
+              mediaPoolCount: idea.frontmatter.media_pool?.length ?? 0,
+              mediaPool: idea.frontmatter.media_pool ?? [],
+            };
+          } catch {
+            activeIdea = null;
+          }
+        }
+        return ok({ context: ctx, activeProject, activeIdea });
       } catch (err) {
         return fail(err);
       }

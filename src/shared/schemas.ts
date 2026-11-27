@@ -1,5 +1,31 @@
 import { z } from 'zod';
 
+export const IdeaMediaRoleSchema = z.enum([
+  'A-Roll',
+  'B-Roll',
+  'Music',
+  'SFX',
+  'Reference',
+  'Asset',
+]);
+
+export type IdeaMediaRole = z.infer<typeof IdeaMediaRoleSchema>;
+
+export const IdeaMediaItemSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  path: z.string(),
+  kind: z.enum(['video', 'audio', 'image']),
+  role: IdeaMediaRoleSchema.default('B-Roll'),
+  durationSec: z.number().nonnegative().optional(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  fps: z.number().positive().optional(),
+  notes: z.string().optional(),
+});
+
+export type IdeaMediaItem = z.infer<typeof IdeaMediaItemSchema>;
+
 export const IdeaFrontmatterSchema = z
   .object({
     title: z.string().default('Untitled Idea'),
@@ -10,6 +36,7 @@ export const IdeaFrontmatterSchema = z
     intro_formula: z.string().optional(),
     repurpose_short: z.boolean().optional(),
     tags: z.array(z.string()).optional(),
+    media_pool: z.array(IdeaMediaItemSchema).optional(),
   })
   .passthrough();
 

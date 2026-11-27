@@ -19,9 +19,11 @@ import {
   listMotionScenes,
   listProjects,
   probeMediaPaths,
+  readIdea,
   resolveVaultPaths,
   saveProjectBrandKit,
   undoLastTransaction,
+  updateIdea,
 } from '../src/main/vault.js';
 import { exportProjectVideo, inspectTimelineContactSheet } from '../src/main/exporter.js';
 import {
@@ -327,6 +329,7 @@ async function testStarterVaultAndHarness() {
     assert.ok(claudeMd.includes('APPROVED_LOOKS.md'), 'CLAUDE.md should reference APPROVED_LOOKS.md');
     assert.ok(claudeMd.includes('Look vs. Moves'), 'CLAUDE.md should include Look vs. Moves contract');
     assert.ok(claudeMd.includes('MOTION_LANGUAGE.md'), 'CLAUDE.md should reference MOTION_LANGUAGE.md');
+    assert.ok(claudeMd.includes('media_pool'), 'CLAUDE.md should document Planner media_pool');
     await fs.access(path.join(RESOURCES_DIR, 'skills', 'nazif-motion-scene-library', 'references', 'MOTION_LANGUAGE.md'));
     const taggedScenes = await listMotionScenes(tmpVault, RESOURCES_DIR);
     assert.ok(
@@ -486,8 +489,28 @@ async function testStarterVaultAndHarness() {
     });
     assert.ok(exportRes.sizeBytes > 1000, 'Exported MP4 should be non-empty');
 
-    // Verify safe deleteIdea & deleteProject
+    // Verify safe deleteIdea & deleteProject + Planner media_pool roundtrip
     const tempIdea = await createIdea(tmpVault, { title: 'Disposable Idea' });
+    const updatedIdea = await updateIdea(tmpVault, tempIdea.slug, {
+      frontmatter: {
+        media_pool: [
+          {
+            id: 'm_clip_1',
+            label: 'broll.png',
+            path: path.join(brollMediaDir, 'broll-test.png'),
+            kind: 'image',
+            role: 'B-Roll',
+            durationSec: undefined,
+            notes: undefined,
+          },
+        ],
+      },
+      body: '# Disposable Idea\n- `[MEDIA:m_clip_1 | B-Roll | broll.png]`\n',
+    });
+    assert.equal(updatedIdea.frontmatter.media_pool?.[0]?.id, 'm_clip_1');
+    const rereadIdea = await readIdea(tmpVault, tempIdea.slug);
+    assert.equal(rereadIdea.frontmatter.media_pool?.[0]?.role, 'B-Roll');
+
     const tempProj = await createProjectFromIdea(tmpVault, { title: 'Disposable Project' });
     await deleteIdea(tmpVault, tempIdea.slug);
     await deleteProject(tmpVault, tempProj.manifest.slug);

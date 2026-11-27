@@ -44,7 +44,14 @@ import {
   readUiCommand,
   writeLiveContext,
 } from './liveContextStore.js';
-import type { EditPlanV2, IdeaFrontmatter, ProjectManifest, TimelineOp, TranscriptDoc } from '../shared/schemas.js';
+import type {
+  EditPlanV2,
+  IdeaFrontmatter,
+  IdeaMediaItem,
+  ProjectManifest,
+  TimelineOp,
+  TranscriptDoc,
+} from '../shared/schemas.js';
 
 interface AppConfig {
   activeVault: string | null;
@@ -216,6 +223,83 @@ async function createWindow(): Promise<void> {
   });
 }
 
+const PLANNER_MEDIA_EXTS = new Set([
+  '.mp4',
+  '.mov',
+  '.webm',
+  '.mkv',
+  '.mp3',
+  '.wav',
+  '.m4a',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.webp',
+]);
+
+async function expandAndProbePlannerMedia(rawPaths: string[]): Promise<IdeaMediaItem[]> {
+  const collected: string[] = [];
+  const seen = new Set<string>();
+
+  const walk = async (target: string, depth: number) => {
+    if (collected.length >= 60) return;
+    const abs = path.resolve(target);
+    let st: fsSync.Stats;
+    try {
+      st = await fs.stat(abs);
+    } catch {
+      return;
+    }
+    if (st.isFile()) {
+      const ext = path.extname(abs).toLowerCase();
+      if (PLANNER_MEDIA_EXTS.has(ext) && !seen.has(abs)) {
+        seen.add(abs);
+        collected.push(abs);
+      }
+      return;
+    }
+    if (st.isDirectory() && depth < 2) {
+      const entries = await fs.readdir(abs, { withFileTypes: true });
+      for (const ent of entries) {
+        if (ent.name.startsWith('.')) continue;
+        await walk(path.join(abs, ent.name), depth + 1);
+        if (collected.length >= 60) break;
+      }
+    }
+  };
+
+  for (const p of rawPaths) {
+    if (p) await walk(p, 0);
+  }
+  if (collected.length === 0) return [];
+
+  const probed = await probeMediaPaths(collected);
+  return collected.map((abs) => {
+    const ext = path.extname(abs).toLowerCase();
+    const base = path.basename(abs, ext);
+    const kind: IdeaMediaItem['kind'] = ['.mp3', '.wav', '.m4a'].includes(ext)
+      ? 'audio'
+      : ['.png', '.jpg', '.jpeg', '.webp'].includes(ext)
+        ? 'image'
+        : 'video';
+    const role: IdeaMediaItem['role'] =
+      kind === 'audio' ? 'Music' : kind === 'image' ? 'Asset' : 'B-Roll';
+    const clip = probed.clips.find((c) => c.path === abs);
+    const safeSlug = base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24) || 'media';
+    return {
+      id: `m_${safeSlug}_${Math.random().toString(36).slice(2, 6)}`,
+      label: path.basename(abs),
+      path: abs,
+      kind,
+      role,
+      durationSec: clip?.durationSec,
+      width: clip?.width,
+      height: clip?.height,
+      fps: clip?.fps,
+    };
+  });
+}
+
 function registerIpcHandlers(): void {
   const resourcesDir = getAppResourcesDir();
 
@@ -283,6 +367,26 @@ function registerIpcHandlers(): void {
   );
   ipcMain.handle('ideas:delete', async (_, slug: string) =>
     deleteIdea(requireVault(), slug, (p) => shell.trashItem(p))
+  );
+  ipcMain.handle('planner:pickMedia', async (_, mode: 'files' | 'folder' = 'files') => {
+    const res = await dialog.showOpenDialog({
+      title: mode === 'folder' ? 'Select Media Folder for Plan' : 'Select Footage, Music, or Images for Plan',
+      properties: mode === 'folder' ? ['openDirectory', 'multiSelections'] : ['openFile', 'multiSelections'],
+      filters:
+        mode === 'folder'
+          ? undefined
+          : [
+              {
+                name: 'Media',
+                extensions: ['mp4', 'mov', 'webm', 'mkv', 'mp3', 'wav', 'm4a', 'png', 'jpg', 'jpeg', 'webp'],
+              },
+            ],
+    });
+    if (res.canceled || res.filePaths.length === 0) return [];
+    return expandAndProbePlannerMedia(res.filePaths);
+  });
+  ipcMain.handle('planner:inspectMediaPaths', async (_, rawPaths: string[]) =>
+    expandAndProbePlannerMedia(rawPaths)
   );
   ipcMain.handle('projects:delete', async (_, slug: string) =>
     deleteProject(requireVault(), slug, (p) => shell.trashItem(p))

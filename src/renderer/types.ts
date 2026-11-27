@@ -3,6 +3,7 @@ import type { StudioUiCommand } from '../shared/liveContext';
 import type {
   EditPlanV2,
   IdeaFrontmatter,
+  IdeaMediaItem,
   IdeaRecord,
   MotionSceneMeta,
   ProjectManifest,
@@ -70,6 +71,8 @@ export interface StudioApi {
     patch: { frontmatter?: Partial<IdeaFrontmatter>; body?: string; toggleChecklistIndex?: number }
   ) => Promise<IdeaRecord>;
   deleteIdea: (slug: string) => Promise<{ deletedSlug: string; filePath: string }>;
+  pickPlannerMedia: (mode?: 'files' | 'folder') => Promise<IdeaMediaItem[]>;
+  inspectPlannerMediaPaths: (paths: string[]) => Promise<IdeaMediaItem[]>;
 
   listProjects: () => Promise<ProjectManifest[]>;
   createProjectFromIdea: (options: {

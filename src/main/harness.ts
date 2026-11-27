@@ -88,6 +88,10 @@ You are operating inside the **Agent Video Studio** runtime workspace.
   - \`node ./studio-cli.mjs update-brand '<json-patch>' [--project <slug>]\`
 - **Focus & Seek the Viewer:** When creating a new project or editing a specific moment, call \`focus_studio_view\` (or \`node ./studio-cli.mjs focus --tab editor --playhead <sec>\`) so the user's preview jumps straight to your update.
 
+## Building Directly From a Tagged Plan (Planner Media Bin)
+- Ideas in \`./vault/ideas/\` (or \`./vault/03-video-ideas/\`) may contain a frontmatter \`media_pool\` array (absolute file paths, roles \`A-Roll\` / \`B-Roll\` / \`Music\` / \`SFX\` / \`Reference\` / \`Asset\`, durations, and user notes) plus inline \`[MEDIA:<id> | <role> | <label>]\` tags placed at specific beats in the Markdown script (sometimes with multiple candidate clips per beat).
+- When the user asks you to build the currently open plan, call \`get_active_studio_context\` (which returns \`activeIdea\` + \`mediaPool\`) and \`read_idea\`. Inspect the tagged clips with \`probe_media\`, choose the strongest cuts/options per beat, \`create_project_from_idea\` (if not yet promoted), \`register_media\`, build the full timeline (\`set_shots\`, \`add_broll\`, \`add_motion_plate\`, \`add_caption\`, \`update_audio\`), and call \`focus_studio_view\` so the Editor opens with the finished cut.
+
 ## Look vs. Moves Design Contract (Mandatory for Every Motion Build)
 1. **User's \`brand/DESIGN.md\` owns the LOOK:** colors, typography, radii, shadows, and caption variant. If a project has no \`DESIGN.md\`, fall back to an approved Brand Kit preset (\`cinema-daily-vlog\`, \`apple-keynote-clean\`, \`figma-lime\`, \`editorial-warm\`, \`linear-dark\`) or ask.
 2. **\`./skills/nazif-motion-scene-library/\` owns the MOVES:** easing curves, durations, staggers, staging, and reusable scenes. Always adapt them to the user's \`DESIGN.md\` tokens — **never** copy a scene's hardcoded colors over the user's brand.
