@@ -30,7 +30,24 @@ export const PreviewCanvas: React.FC<{
   const [safeZones, setSafeZones] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [stageHeight, setStageHeight] = useState(360);
+  const stageRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.height > 0) {
+          setStageHeight(entry.contentRect.height);
+        }
+      }
+    });
+    ro.observe(el);
+    if (el.clientHeight > 0) setStageHeight(el.clientHeight);
+    return () => ro.disconnect();
+  }, []);
   const brollVideoRef = useRef<HTMLVideoElement>(null);
   const musicAudioRef = useRef<HTMLAudioElement>(null);
   const plateIframeRef = useRef<HTMLIFrameElement>(null);
@@ -396,7 +413,10 @@ export const PreviewCanvas: React.FC<{
           activePlate.transparent ? '&transparent=1' : ''
         }${tokenParam ? `&${tokenParam}` : ''}&v=${mediaRevision}`
       : '';
-  const captionSpec = getCaptionVisualSpec(tokens, { isVertical });
+  const captionSpec = getCaptionVisualSpec(tokens, {
+    isVertical,
+    renderHeight: Math.max(140, stageHeight),
+  });
   const activeLayerLabels = [
     trackVisibility.video && (activeShot?.label || (plan.sourceVideo ? 'A-Roll' : null)),
     trackVisibility.broll && activeBroll ? `B-Roll: ${activeBroll.label}` : null,
@@ -454,11 +474,12 @@ export const PreviewCanvas: React.FC<{
 
   return (
     <div
-      className="flex-1 flex flex-col items-center justify-center p-4 min-h-0 gap-3"
+      className="flex-1 flex flex-col items-center justify-center p-3 sm:p-4 min-h-0 min-w-0 gap-2.5 overflow-hidden"
       style={{ backgroundColor: 'var(--bg-canvas)' }}
     >
       {/* Video Stage */}
       <div
+        ref={stageRef}
         className="relative rounded-2xl border overflow-hidden flex items-center justify-center"
         style={{
           aspectRatio: isVertical ? '9 / 16' : '16 / 9',
@@ -530,7 +551,7 @@ export const PreviewCanvas: React.FC<{
             }}
             playsInline
           />
-        ) : (
+        ) : !brollUrl && !plateSrc && !activeCaption ? (
           <div className="text-center px-6 space-y-2 text-[#F4F7F5]">
             <div className="caption-label" style={{ color: '#C4FF2E' }}>
               STAGE READY
@@ -540,7 +561,7 @@ export const PreviewCanvas: React.FC<{
               Import a video on the left, or preview Motion Plates & Captions directly on this stage.
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Active B-Roll Cutaway Overlay */}
         {trackVisibility.broll && brollUrl && activeBroll && (
@@ -599,20 +620,20 @@ export const PreviewCanvas: React.FC<{
         {/* Active Caption Overlay */}
         {trackVisibility.captions && activeCaption && (
           <div
-            className={`absolute inset-x-0 flex justify-center pointer-events-none px-6 ${
+            className={`absolute inset-x-0 flex justify-center pointer-events-none px-[5%] ${
               tokens.caption_position === 'center'
                 ? 'top-1/2 -translate-y-1/2'
                 : tokens.caption_position === 'lower-third'
-                  ? 'bottom-16'
-                  : 'bottom-6'
+                  ? 'bottom-[11%]'
+                  : 'bottom-[5%]'
             }`}
           >
             <div
-              className="text-center max-w-[88%]"
+              className="text-center max-w-[90%]"
               style={{
                 fontFamily: captionSpec.fontFamily,
                 fontWeight: captionSpec.fontWeight,
-                fontSize: `${captionSpec.fontSizePx}px`,
+                fontSize: `${Math.max(11, captionSpec.fontSizePx)}px`,
                 letterSpacing: captionSpec.letterSpacing,
                 lineHeight: captionSpec.lineHeight,
                 color: captionSpec.color,
@@ -621,7 +642,7 @@ export const PreviewCanvas: React.FC<{
                 borderRadius: captionSpec.borderRadius,
                 backdropFilter: captionSpec.backdropFilter,
                 textShadow: captionSpec.textShadow,
-                padding: captionSpec.padding,
+                padding: captionSpec.backgroundColor === 'transparent' ? '2px 8px' : '4px 10px',
               }}
             >
               {activeCaption.highlightWord
@@ -687,16 +708,16 @@ export const PreviewCanvas: React.FC<{
 
       {/* Transport Bar */}
       <div
-        className="w-full max-w-2xl px-3.5 py-2 rounded-full border flex flex-wrap items-center justify-between gap-2"
+        className="w-full max-w-2xl px-3 py-1.5 rounded-2xl border flex flex-wrap items-center justify-between gap-2 shrink-0"
         style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => {
               setIsPlaying(false);
               setCurrentTimeSec(0);
             }}
-            className="btn-icon w-8 h-8"
+            className="btn-icon w-7 h-7 shrink-0"
             title="Jump to start"
           >
             <SkipBack size={13} />
@@ -706,35 +727,35 @@ export const PreviewCanvas: React.FC<{
               setAuditionMotionScene(null);
               setIsPlaying(!isPlaying);
             }}
-            className="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition hover:opacity-90"
+            className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition hover:opacity-90 shrink-0"
             style={{ backgroundColor: 'var(--accent-primary)', color: 'var(--accent-primary-ink)' }}
             title="Play / Pause (Space)"
           >
-            {isPlaying ? <Pause size={15} /> : <Play size={15} />}
+            {isPlaying ? <Pause size={14} /> : <Play size={14} />}
           </button>
-          <span className="text-xs font-semibold t-num ml-1">
+          <span className="text-xs font-semibold t-num ml-1 whitespace-nowrap">
             {currentTimeSec.toFixed(2)}s / {totalDuration.toFixed(1)}s
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <button
             onClick={() => setNoteOpen(!noteOpen)}
-            className="btn-secondary flex items-center gap-1 px-2.5 py-1 text-xs"
+            className="btn-secondary flex items-center gap-1 px-2.5 py-1 text-xs whitespace-nowrap shrink-0"
             title="Add Timestamped Review Note"
           >
             <MessageSquarePlus size={12} /> Note
           </button>
           <button
             onClick={handlePinTimestamp}
-            className="btn-secondary flex items-center gap-1 px-2.5 py-1 text-xs"
+            className="btn-secondary flex items-center gap-1 px-2.5 py-1 text-xs whitespace-nowrap shrink-0"
             title="Pin current timestamp to Terminal"
           >
             <Sparkles size={12} /> Pin {currentTimeSec.toFixed(1)}s
           </button>
           <button
             onClick={() => setSafeZones(!safeZones)}
-            className={`flex items-center gap-1 px-2.5 py-1 text-xs ${
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs whitespace-nowrap shrink-0 ${
               safeZones ? 'pill-tab-active' : 'btn-secondary'
             }`}
           >
@@ -742,7 +763,7 @@ export const PreviewCanvas: React.FC<{
           </button>
           <button
             onClick={toggleAspect}
-            className="btn-secondary flex items-center gap-1 px-2.5 py-1 text-xs"
+            className="btn-secondary flex items-center gap-1 px-2.5 py-1 text-xs whitespace-nowrap shrink-0"
           >
             <Maximize2 size={12} /> {manifest.aspectRatio}
           </button>

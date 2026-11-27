@@ -92,7 +92,7 @@ export const TopBar: React.FC = () => {
         </nav>
       </div>
 
-      <div className="no-drag flex items-center gap-1.5 shrink-0">
+      <div className="no-drag flex items-center gap-1.5 min-w-0 shrink">
         {projects.length > 0 && (
           <select
             value={activeProjectSlug ?? ''}
@@ -102,7 +102,7 @@ export const TopBar: React.FC = () => {
                 setActiveTab('editor');
               }
             }}
-            className="btn-secondary px-3 py-1.5 text-xs outline-none max-w-[200px] truncate"
+            className="btn-secondary px-2.5 py-1.5 text-xs outline-none min-w-[90px] max-w-[180px] truncate"
             title="Switch Active Project"
           >
             {projects.map((p) => (
@@ -120,13 +120,13 @@ export const TopBar: React.FC = () => {
             title="Live context synced to terminal agents — click to copy active project reference"
           >
             {copiedCtx ? <Check size={12} style={{ color: 'var(--accent-mint)' }} /> : <Copy size={12} />}
-            <span>{copiedCtx ? 'Copied' : 'Live Sync'}</span>
+            <span className="hidden xl:inline">{copiedCtx ? 'Copied' : 'Live Sync'}</span>
           </button>
         )}
 
         {liveSyncNotice && (
           <div
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border max-w-[260px] shrink-0"
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] border max-w-[240px] shrink-0"
             style={{
               backgroundColor: 'var(--bg-surface-alt)',
               borderColor: 'var(--accent-mint)',
@@ -156,26 +156,26 @@ export const TopBar: React.FC = () => {
         {activeProjectSlug && (
           <button
             onClick={() => setExportModalOpen(true)}
-            className="btn-primary flex items-center gap-1.5 px-3.5 py-1.5 text-xs shrink-0"
+            className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs shrink-0"
             title="Render & Export Video"
           >
             <Download size={13} />
-            <span>Export</span>
+            <span className="hidden md:inline">Export</span>
           </button>
         )}
 
         <button
           onClick={() => setMcpModalOpen(true)}
-          className="btn-secondary flex items-center gap-1.5 px-3 py-1.5 text-xs shrink-0"
+          className="btn-secondary flex items-center gap-1.5 px-2.5 py-1.5 text-xs shrink-0"
           title="Connect MCP Clients"
         >
           <Plug size={13} />
-          <span>MCP</span>
+          <span className="hidden lg:inline">MCP</span>
         </button>
 
         <button
           onClick={() => setAgentDrawerOpen(!agentDrawerOpen)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs shrink-0 ${
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs shrink-0 ${
             agentDrawerOpen ? 'pill-tab-active' : 'btn-secondary'
           }`}
           title={
@@ -185,7 +185,7 @@ export const TopBar: React.FC = () => {
           }
         >
           <Terminal size={13} />
-          <span>Terminal</span>
+          <span className="hidden md:inline">Terminal</span>
           {terminalSessionActive && !agentDrawerOpen && (
             <span
               className="w-2 h-2 rounded-full"

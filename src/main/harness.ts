@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import fsSync from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 export interface HarnessOptions {
   harnessDir: string;
@@ -77,9 +78,15 @@ You are operating inside the **Agent Video Studio** runtime workspace.
      - User/Agent Custom Motion Scenes: \`./vault/custom-scenes/\`
 
 ## Live Viewer Context Sync (In-App & External Terminals)
-- **Always inspect what the user is currently viewing first:** Call \`get_active_studio_context\` via MCP (or read \`./studio-context.json\` / \`./vault/.studio-live-context.json\`) to get the active project slug, open tab (\`planner\`/\`editor\`), live playhead timestamp (\`playheadSec\`), selected timeline item, and pinned context chips.
+- **Always inspect what the user is currently viewing first:** Call \`get_active_studio_context\` via MCP (or run \`node ./studio-cli.mjs context\` / read \`./studio-context.json\`) to get the active project slug, open tab (\`planner\`/\`editor\`), live playhead timestamp (\`playheadSec\`), selected timeline item, and pinned context chips.
 - **Automatic Live Preview Sync:** Every \`commit_project_edit\`, \`update_brand_tokens\`, \`register_media\`, and \`set_transcript\` automatically notifies the open desktop Studio UI so the stage preview, timeline tracks, and brand tokens hot-reload immediately.
-- **Focus & Seek the Viewer:** When creating a new project or editing a specific moment, call \`focus_studio_view\` (\`projectSlug\`, \`tab: 'editor'\`, \`playheadSec\`) so the user's preview jumps straight to your update.
+- **Zero-Config Fallback when MCP Tools Are Disconnected:** If the \`agent-video-studio\` MCP tools are not connected in your current agent session, **NEVER edit \`edit-plan.json\` raw or tell the user you couldn't register a clip**. Immediately use \`./studio-cli.mjs\` in this workspace — it uses the exact same transactional engine and live UI sync:
+  - \`node ./studio-cli.mjs context\`
+  - \`node ./studio-cli.mjs register-media <file1> [file2...] [--project <slug>] [--set-source]\`
+  - \`node ./studio-cli.mjs apply-ops '<json-array-or-file>' [--project <slug>] [--summary "..."]\`
+  - \`node ./studio-cli.mjs focus [--project <slug>] [--tab editor|planner] [--playhead <sec>]\`
+  - \`node ./studio-cli.mjs update-brand '<json-patch>' [--project <slug>]\`
+- **Focus & Seek the Viewer:** When creating a new project or editing a specific moment, call \`focus_studio_view\` (or \`node ./studio-cli.mjs focus --tab editor --playhead <sec>\`) so the user's preview jumps straight to your update.
 
 ## Mandatory Video Craft & Approved Looks Guardrails (Read Before Editing/Rendering)
 - **Read \`./skills/ai-video-editor/SKILL.md\`, \`./skills/ai-video-editor/EDIT_STYLE.md\`, and \`./skills/ai-video-editor/references/APPROVED_LOOKS.md\` BEFORE writing any video build or render script.**
@@ -102,6 +109,172 @@ You are operating inside the **Agent Video Studio** runtime workspace.
   3. \`begin_project_edit\` -> \`apply_timeline_ops\` -> \`commit_project_edit\` (or \`abort_project_edit\`)
   4. \`create_custom_motion_scene\` (automatically writes to \`./vault/custom-scenes/\` without touching app resources)
   5. \`update_brand_tokens\` (updates \`DESIGN.md\` for both motion scenes and captions)
+`;
+}
+
+function buildStudioCliSource(opts: HarnessOptions): string {
+  const mainDir = path.resolve(path.dirname(opts.mcpServerScript), '..', 'main');
+  const vaultUrl = pathToFileURL(path.join(mainDir, 'vault.js')).href;
+  const liveCtxUrl = pathToFileURL(path.join(mainDir, 'liveContextStore.js')).href;
+  const tokensUrl = pathToFileURL(path.resolve(path.dirname(opts.mcpServerScript), '..', 'shared', 'designTokens.js')).href;
+
+  return `#!/usr/bin/env node
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import * as vault from ${JSON.stringify(vaultUrl)};
+import * as live from ${JSON.stringify(liveCtxUrl)};
+import { DEFAULT_BRAND_TOKENS } from ${JSON.stringify(tokensUrl)};
+
+const VAULT_ROOT = ${JSON.stringify(path.resolve(opts.vaultRoot))};
+
+function parseFlags(argv) {
+  const pos = [];
+  const flags = {};
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith('--')) {
+      const k = a.slice(2);
+      const next = argv[i + 1];
+      if (next !== undefined && !next.startsWith('--')) {
+        flags[k] = next;
+        i++;
+      } else {
+        flags[k] = true;
+      }
+    } else {
+      pos.push(a);
+    }
+  }
+  return { pos, flags };
+}
+
+function resolveSlug(explicit) {
+  if (explicit && typeof explicit === 'string') return explicit.trim();
+  const ctx = live.readLiveContext(VAULT_ROOT);
+  if (ctx?.activeProjectSlug) return ctx.activeProjectSlug;
+  throw new Error('No --project specified and no active project open in Studio.');
+}
+
+async function main() {
+  const [cmd, ...rest] = process.argv.slice(2);
+  const { pos, flags } = parseFlags(rest);
+
+  if (!cmd || cmd === 'help' || cmd === '--help') {
+    console.log('Usage: node ./studio-cli.mjs <context|register-media|apply-ops|focus|update-brand> [args]');
+    return;
+  }
+
+  if (cmd === 'context') {
+    const ctx = live.readLiveContext(VAULT_ROOT);
+    let project = null;
+    if (ctx?.activeProjectSlug) {
+      try {
+        const st = await vault.getProjectState(VAULT_ROOT, ctx.activeProjectSlug);
+        project = {
+          manifest: st.manifest,
+          sourceVideo: st.editPlan.sourceVideo,
+          counts: {
+            assets: st.editPlan.assets.length,
+            shots: st.editPlan.shots.length,
+            broll: st.editPlan.broll.length,
+            motionPlates: st.editPlan.motionPlates.length,
+            captions: st.editPlan.captions.length,
+          },
+        };
+      } catch {}
+    }
+    console.log(JSON.stringify({ vaultRoot: VAULT_ROOT, context: ctx, project }, null, 2));
+    return;
+  }
+
+  if (cmd === 'register-media') {
+    if (pos.length === 0) throw new Error('Pass one or more media file paths.');
+    const slug = resolveSlug(flags.project);
+    const mode = flags.mode === 'copy' ? 'copy' : 'link';
+    const res = await vault.registerMediaInProject(VAULT_ROOT, slug, pos, mode);
+    if (flags['set-source'] && res.registered.length > 0) {
+      const { txId } = await vault.beginProjectEdit(VAULT_ROOT, slug, {
+        actor: 'agent',
+        agentName: 'studio-cli',
+        reason: 'Set sourceVideo from studio-cli',
+      });
+      await vault.applyTimelineOps(VAULT_ROOT, txId, [{ op: 'set_source_video', sourceVideo: res.registered[0].id }], slug);
+      await vault.commitProjectEdit(VAULT_ROOT, txId, 'Loaded ' + (res.registered[0].label || res.registered[0].id), slug);
+    }
+    await live.writeUiCommand(VAULT_ROOT, {
+      kind: 'project_updated',
+      projectSlug: slug,
+      summary: 'Registered ' + res.registered.length + ' media file(s)',
+      reloadMedia: true,
+    });
+    console.log(JSON.stringify({ projectSlug: slug, registered: res.registered }, null, 2));
+    return;
+  }
+
+  if (cmd === 'apply-ops') {
+    const slug = resolveSlug(flags.project);
+    const rawArg = pos[0];
+    if (!rawArg) throw new Error('Pass ops JSON string or path to JSON file.');
+    let rawJson = rawArg;
+    if (!rawArg.trim().startsWith('[') && !rawArg.trim().startsWith('{')) {
+      rawJson = await fs.readFile(path.resolve(rawArg), 'utf8');
+    }
+    const parsed = JSON.parse(rawJson);
+    const ops = Array.isArray(parsed) ? parsed : [parsed];
+    const summary = typeof flags.summary === 'string' ? flags.summary : 'Applied timeline ops via studio-cli';
+    const { txId } = await vault.beginProjectEdit(VAULT_ROOT, slug, {
+      actor: 'agent',
+      agentName: 'studio-cli',
+      reason: summary,
+    });
+    await vault.applyTimelineOps(VAULT_ROOT, txId, ops, slug);
+    const commit = await vault.commitProjectEdit(VAULT_ROOT, txId, summary, slug);
+    await live.writeUiCommand(VAULT_ROOT, {
+      kind: 'project_updated',
+      projectSlug: slug,
+      summary: commit.summary,
+      reloadMedia: true,
+    });
+    console.log(JSON.stringify(commit, null, 2));
+    return;
+  }
+
+  if (cmd === 'focus') {
+    const slug = flags.project ? String(flags.project) : live.readLiveContext(VAULT_ROOT)?.activeProjectSlug || undefined;
+    const playheadSec = flags.playhead !== undefined ? Number(flags.playhead) : undefined;
+    const command = await live.writeUiCommand(VAULT_ROOT, {
+      kind: 'focus_view',
+      projectSlug: slug,
+      tab: flags.tab === 'planner' ? 'planner' : 'editor',
+      playheadSec: Number.isFinite(playheadSec) ? playheadSec : undefined,
+      summary: typeof flags.summary === 'string' ? flags.summary : 'Focused Studio view from studio-cli',
+    });
+    console.log(JSON.stringify({ sent: true, command }, null, 2));
+    return;
+  }
+
+  if (cmd === 'update-brand') {
+    const slug = resolveSlug(flags.project);
+    const patch = JSON.parse(pos[0] || '{}');
+    const st = await vault.getProjectState(VAULT_ROOT, slug);
+    const next = { ...DEFAULT_BRAND_TOKENS, ...st.brandTokens, ...patch };
+    const saved = await vault.saveProjectBrandKit(VAULT_ROOT, slug, next);
+    await live.writeUiCommand(VAULT_ROOT, {
+      kind: 'brand_updated',
+      projectSlug: slug,
+      summary: 'Updated brand & caption styling',
+    });
+    console.log(JSON.stringify({ projectSlug: slug, tokens: saved }, null, 2));
+    return;
+  }
+
+  throw new Error('Unknown command: ' + cmd);
+}
+
+main().catch((err) => {
+  console.error(err?.message || err);
+  process.exit(1);
+});
 `;
 }
 
@@ -141,10 +314,20 @@ export async function prepareAgentHarness(opts: HarnessOptions): Promise<Harness
   };
   await fs.writeFile(mcpConfigPath, JSON.stringify(mcpConfig, null, 2), 'utf8');
 
+  // Auto-discoverable Antigravity (agy) workspace plugin with MCP config
+  const agyPluginDir = path.join(harnessDir, '.agents', 'plugins', 'agent-video-studio');
+  await fs.mkdir(agyPluginDir, { recursive: true });
+  await Promise.all([
+    fs.writeFile(path.join(agyPluginDir, 'plugin.json'), JSON.stringify({ name: 'agent-video-studio' }, null, 2), 'utf8'),
+    fs.writeFile(path.join(agyPluginDir, 'mcp_config.json'), JSON.stringify(mcpConfig, null, 2), 'utf8'),
+  ]);
+
   const instructions = buildAgentInstructions(opts);
   await Promise.all([
     fs.writeFile(path.join(harnessDir, 'CLAUDE.md'), instructions, 'utf8'),
     fs.writeFile(path.join(harnessDir, 'AGENTS.md'), instructions, 'utf8'),
+    fs.writeFile(path.join(harnessDir, 'GEMINI.md'), instructions, 'utf8'),
+    fs.writeFile(path.join(harnessDir, 'studio-cli.mjs'), buildStudioCliSource(opts), 'utf8'),
   ]);
 
   return {

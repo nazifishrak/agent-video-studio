@@ -115,11 +115,16 @@ export const EditorView: React.FC = () => {
     }
   }, [previewScene?.id]);
 
-  // Auto-collapse right inspector when Terminal drawer opens so stage stays usable
+  // Auto-collapse right inspector on narrow viewports or when Terminal drawer opens
   useEffect(() => {
-    if (agentDrawerOpen && window.innerWidth < 1440) {
-      setRightCollapsed(true);
-    }
+    const syncPanels = () => {
+      if (window.innerWidth < 1180 || (agentDrawerOpen && window.innerWidth < 1440)) {
+        setRightCollapsed(true);
+      }
+    };
+    syncPanels();
+    window.addEventListener('resize', syncPanels);
+    return () => window.removeEventListener('resize', syncPanels);
   }, [agentDrawerOpen]);
 
   const totalDuration = useMemo(() => {
@@ -303,7 +308,7 @@ export const EditorView: React.FC = () => {
       )}
 
       {/* Main Split Workspace */}
-      <div className="flex-1 flex min-h-0">
+      <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden">
         {/* Left Pane (Collapsible) */}
         {leftCollapsed ? (
           <div
@@ -320,7 +325,7 @@ export const EditorView: React.FC = () => {
           </div>
         ) : (
           <div
-            className="w-80 shrink-0 border-r flex flex-col min-h-0"
+            className="w-64 lg:w-72 xl:w-80 shrink-0 border-r flex flex-col min-h-0"
             style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
           >
             <div
@@ -328,7 +333,7 @@ export const EditorView: React.FC = () => {
               style={{ borderColor: 'var(--border-subtle)' }}
             >
               <div className="flex items-center justify-between gap-1">
-                <div className="flex flex-wrap items-center gap-1">
+                <div className="flex items-center gap-0.5 overflow-x-auto min-w-0">
                   {(
                     [
                       ['transcript', 'Transcript'],
@@ -341,7 +346,7 @@ export const EditorView: React.FC = () => {
                     <button
                       key={id}
                       onClick={() => setEditorLeftTab(id)}
-                      className={`px-2 py-1 text-[11px] ${
+                      className={`px-2 py-1 text-[11px] whitespace-nowrap shrink-0 ${
                         editorLeftTab === id ? 'pill-tab-active' : 'pill-tab'
                       }`}
                     >
@@ -1172,7 +1177,7 @@ export const EditorView: React.FC = () => {
           </div>
         ) : (
           <div
-            className="w-76 shrink-0 border-l p-4 overflow-y-auto space-y-4"
+            className="w-60 xl:w-72 shrink-0 border-l p-4 overflow-y-auto space-y-4"
             style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
           >
             <div className="flex items-center justify-between gap-2">

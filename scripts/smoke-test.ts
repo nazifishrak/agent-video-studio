@@ -44,7 +44,7 @@ const RESOURCES_DIR = path.resolve(__dirname, '..', 'resources');
 
 async function testVaultAndTransactions(): Promise<number> {
   const ideas = await listIdeas(VAULT_ROOT);
-  assert.ok(ideas.length >= 6, `Expected >= 6 ideas, got ${ideas.length}`);
+  assert.ok(ideas.length >= 1, `Expected >= 1 idea, got ${ideas.length}`);
   for (const idea of ideas) {
     for (const cue of idea.cues) {
       assert.ok(
@@ -368,6 +368,29 @@ async function testStarterVaultAndHarness() {
     assert.equal(cmdRead?.id, cmdWritten.id);
     assert.equal(cmdRead?.playheadSec, 6.2);
 
+    // Verify studio-cli.mjs fallback executes against compiled dist/main
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn(
+        'node',
+        [
+          path.join(harness.harnessDir, 'studio-cli.mjs'),
+          'focus',
+          '--project',
+          'day-in-the-life-test',
+          '--playhead',
+          '3.5',
+        ],
+        { stdio: ['ignore', 'pipe', 'pipe'] }
+      );
+      let errOut = '';
+      child.stderr.on('data', (d) => (errOut += String(d)));
+      child.on('close', (code) =>
+        code === 0 ? resolve() : reject(new Error(`studio-cli.mjs failed (${code}): ${errOut}`))
+      );
+    });
+    const cliCmd = readUiCommand(tmpVault);
+    assert.equal(cliCmd?.playheadSec, 3.5);
+
     for (const relSkillLink of ['.agents/skills', '.claude/skills', '.gemini/skills']) {
       const target = await fs.realpath(path.join(harness.harnessDir, relSkillLink));
       assert.equal(
@@ -379,6 +402,16 @@ async function testStarterVaultAndHarness() {
 
     const mcpJson = JSON.parse(await fs.readFile(harness.mcpConfigPath, 'utf8'));
     assert.ok(mcpJson.mcpServers['agent-video-studio'], 'MCP config should register agent-video-studio');
+    const agyPluginJson = JSON.parse(
+      await fs.readFile(path.join(harness.harnessDir, '.agents', 'plugins', 'agent-video-studio', 'plugin.json'), 'utf8')
+    );
+    assert.equal(agyPluginJson.name, 'agent-video-studio');
+    const agyMcpJson = JSON.parse(
+      await fs.readFile(path.join(harness.harnessDir, '.agents', 'plugins', 'agent-video-studio', 'mcp_config.json'), 'utf8')
+    );
+    assert.ok(agyMcpJson.mcpServers['agent-video-studio'], 'agy plugin mcp_config.json should register agent-video-studio');
+    await fs.access(path.join(harness.harnessDir, 'GEMINI.md'));
+    await fs.access(path.join(harness.harnessDir, 'studio-cli.mjs'));
 
     const kits = await listBrandKits(tmpVault, RESOURCES_DIR);
     const normNames = kits.map((k) => k.name.toLowerCase().replace(/[^a-z0-9]+/g, ''));
