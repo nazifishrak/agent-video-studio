@@ -30,22 +30,26 @@ export const PreviewCanvas: React.FC<{
   const [safeZones, setSafeZones] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
-  const [stageHeight, setStageHeight] = useState(360);
+  const [stageBounds, setStageBounds] = useState({ width: 640, height: 360 });
+  const stageBoundsRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const el = stageRef.current;
+    const el = stageBoundsRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        if (entry.contentRect.height > 0) {
-          setStageHeight(entry.contentRect.height);
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setStageBounds({ width, height });
         }
       }
     });
     ro.observe(el);
-    if (el.clientHeight > 0) setStageHeight(el.clientHeight);
+    if (el.clientWidth > 0 && el.clientHeight > 0) {
+      setStageBounds({ width: el.clientWidth, height: el.clientHeight });
+    }
     return () => ro.disconnect();
   }, []);
   const brollVideoRef = useRef<HTMLVideoElement>(null);
@@ -413,9 +417,12 @@ export const PreviewCanvas: React.FC<{
           activePlate.transparent ? '&transparent=1' : ''
         }${tokenParam ? `&${tokenParam}` : ''}&v=${mediaRevision}`
       : '';
+  const targetRatio = isVertical ? 9 / 16 : 16 / 9;
+  const fitW = Math.max(160, Math.floor(Math.min(stageBounds.width, stageBounds.height * targetRatio)));
+  const fitH = Math.max(90, Math.floor(fitW / targetRatio));
   const captionSpec = getCaptionVisualSpec(tokens, {
     isVertical,
-    renderHeight: Math.max(140, stageHeight),
+    renderHeight: Math.max(140, fitH),
   });
   const activeLayerLabels = [
     trackVisibility.video && (activeShot?.label || (plan.sourceVideo ? 'A-Roll' : null)),
@@ -477,20 +484,21 @@ export const PreviewCanvas: React.FC<{
       className="flex-1 flex flex-col items-center justify-center p-3 sm:p-4 min-h-0 min-w-0 gap-2.5 overflow-hidden"
       style={{ backgroundColor: 'var(--bg-canvas)' }}
     >
-      {/* Video Stage */}
+      {/* Video Stage Bounds */}
       <div
-        ref={stageRef}
-        className="relative rounded-2xl border overflow-hidden flex items-center justify-center"
-        style={{
-          aspectRatio: isVertical ? '9 / 16' : '16 / 9',
-          height: isVertical ? '100%' : 'auto',
-          width: isVertical ? 'auto' : '100%',
-          maxHeight: '100%',
-          maxWidth: '100%',
-          borderColor: 'var(--border-subtle)',
-          backgroundColor: tokens.stage_bg || '#090B0A',
-        }}
+        ref={stageBoundsRef}
+        className="flex-1 min-h-0 min-w-0 w-full flex items-center justify-center overflow-hidden"
       >
+        <div
+          ref={stageRef}
+          className="group relative rounded-2xl border overflow-hidden flex items-center justify-center shrink-0"
+          style={{
+            width: `${fitW}px`,
+            height: `${fitH}px`,
+            borderColor: 'var(--border-subtle)',
+            backgroundColor: tokens.stage_bg || '#090B0A',
+          }}
+        >
         {auditionMotionScene && auditionSrc ? (
           <>
             <iframe
@@ -544,7 +552,7 @@ export const PreviewCanvas: React.FC<{
             onEnded={() => {
               if (plan.shots.length === 0) setIsPlaying(false);
             }}
-            className="w-full h-full object-cover transition-transform duration-75"
+            className="w-full h-full object-contain transition-transform duration-75"
             style={{
               transform: trackVisibility.camera ? cameraTransform : 'scale(1)',
               filter: colorGradeFilter,
@@ -603,10 +611,10 @@ export const PreviewCanvas: React.FC<{
           </div>
         )}
 
-        {/* Active Layer HUD Pill */}
+        {/* Active Layer HUD Pill (visible on stage hover) */}
         {activeLayerLabels.length > 0 && (
           <div
-            className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-medium pointer-events-none backdrop-blur-md border"
+            className="opacity-0 group-hover:opacity-100 transition-opacity absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-medium pointer-events-none backdrop-blur-md border"
             style={{
               backgroundColor: 'rgba(9, 11, 10, 0.56)',
               borderColor: 'rgba(255, 255, 255, 0.12)',
@@ -672,6 +680,7 @@ export const PreviewCanvas: React.FC<{
             <div className="w-full h-full border border-dashed border-[#C4FF2E]/60" />
           </div>
         )}
+        </div>
       </div>
 
       {/* Inline Review Note Popover */}
