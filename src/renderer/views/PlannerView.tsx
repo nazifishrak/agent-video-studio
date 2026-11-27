@@ -69,6 +69,7 @@ export const PlannerView: React.FC = () => {
   const [promoting, setPromoting] = useState(false);
   const [importingMedia, setImportingMedia] = useState(false);
   const [planDropActive, setPlanDropActive] = useState(false);
+  const [textareaDropLine, setTextareaDropLine] = useState<number | null>(null);
   const [lightboxMedia, setLightboxMedia] = useState<IdeaMediaItem | null>(null);
   const [confirmDeleteIdeaSlug, setConfirmDeleteIdeaSlug] = useState<string | null>(null);
   const [confirmDeleteProjectSlug, setConfirmDeleteProjectSlug] = useState<string | null>(null);
@@ -212,18 +213,93 @@ export const PlannerView: React.FC = () => {
     }
   };
 
-  const insertMediaTag = async (item: IdeaMediaItem) => {
-    const tag = `\`[MEDIA:${item.id} | ${item.role} | ${item.label}]\``;
-    const ta = textareaRef.current;
-    let nextBody = draftBody;
-    if (ta && (scriptMode === 'edit' || scriptMode === 'split')) {
-      const start = ta.selectionStart ?? draftBody.length;
-      const end = ta.selectionEnd ?? start;
-      nextBody = `${draftBody.slice(0, start)}${tag}${draftBody.slice(end)}`;
-    } else {
-      nextBody = `${draftBody.trimEnd()}\n- ${tag}\n`;
+  const resolveDroppedMediaItems = async (dt: DataTransfer): Promise<IdeaMediaItem[]> => {
+    const rawMedia = dt.getData('application/x-planner-media');
+    if (rawMedia) {
+      try {
+        return [JSON.parse(rawMedia) as IdeaMediaItem];
+      } catch {
+        return [];
+      }
     }
+    const files = Array.from(dt.files ?? []);
+    if (files.length === 0) return [];
+    const paths = files.map((f) => window.studio.getPathForFile(f)).filter(Boolean);
+    if (paths.length === 0) return [];
+    setImportingMedia(true);
+    try {
+      return await window.studio.inspectPlannerMediaPaths(paths);
+    } finally {
+      setImportingMedia(false);
+    }
+  };
+
+  type InsertionTarget =
+    | { mode: 'block'; startLine: number; endLine: number; placement: 'before' | 'inline' | 'after' }
+    | { mode: 'line'; lineIndex: number }
+    | { mode: 'cursor' };
+
+  const applyMediaInsertion = async (items: IdeaMediaItem[], target: InsertionTarget) => {
+    if (items.length === 0) return;
+    const existingByPath = new Map(draftMediaPool.map((m) => [m.path, m]));
+    const resolvedItems: IdeaMediaItem[] = [];
+    for (const item of items) {
+      const existing = existingByPath.get(item.path);
+      if (existing) {
+        resolvedItems.push(existing);
+      } else {
+        existingByPath.set(item.path, item);
+        resolvedItems.push(item);
+      }
+    }
+    const nextPool = Array.from(existingByPath.values());
+    const formattedTags = resolvedItems.map((m) => `\`[MEDIA:${m.id} | ${m.role} | ${m.label}]\``);
+
+    let nextBody = draftBody;
+    if (target.mode === 'block') {
+      const lines = draftBody.split(/\r?\n/);
+      if (target.placement === 'inline' && lines[target.endLine] !== undefined) {
+        lines[target.endLine] = `${lines[target.endLine].trimEnd()} ${formattedTags.join(' ')}`;
+      } else if (target.placement === 'before') {
+        lines.splice(target.startLine, 0, ...formattedTags.map((t) => `- ${t}`));
+      } else {
+        lines.splice(target.endLine + 1, 0, ...formattedTags.map((t) => `- ${t}`));
+      }
+      nextBody = lines.join('\n').trimEnd() + '\n';
+    } else if (target.mode === 'line') {
+      const lines = draftBody.split(/\r?\n/);
+      const idx = Math.max(0, Math.min(lines.length, target.lineIndex));
+      if (idx < lines.length && lines[idx].trim() !== '' && !/^\s*#{1,6}\s+/.test(lines[idx])) {
+        lines[idx] = `${lines[idx].trimEnd()} ${formattedTags.join(' ')}`;
+      } else {
+        lines.splice(idx, 0, ...formattedTags.map((t) => `- ${t}`));
+      }
+      nextBody = lines.join('\n').trimEnd() + '\n';
+    } else {
+      const ta = textareaRef.current;
+      if (ta && (scriptMode === 'edit' || scriptMode === 'split')) {
+        const start = ta.selectionStart ?? draftBody.length;
+        const end = ta.selectionEnd ?? start;
+        nextBody = `${draftBody.slice(0, start)}${formattedTags.join(' ')}${draftBody.slice(end)}`;
+      } else {
+        nextBody = `${draftBody.trimEnd()}\n${formattedTags.map((t) => `- ${t}`).join('\n')}\n`;
+      }
+    }
+
+    await persistMediaUpdate(nextPool, nextBody);
+  };
+
+  const handleRemoveMediaTag = async (rawTag: string) => {
+    const escaped = rawTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const nextBody = draftBody
+      .replace(new RegExp(`\\s*-\\s*\`${escaped}\`\\s*`, 'm'), '\n')
+      .replace(new RegExp(`\\s*\`${escaped}\``, 'm'), '')
+      .replace(new RegExp(`\\s*${escaped}`, 'm'), '');
     await persistMediaUpdate(draftMediaPool, nextBody);
+  };
+
+  const insertMediaTag = async (item: IdeaMediaItem) => {
+    await applyMediaInsertion([item], { mode: 'cursor' });
   };
 
   const handleBuildWithAgent = async () => {
@@ -642,7 +718,7 @@ export const PlannerView: React.FC = () => {
                 >
                   {importingMedia
                     ? 'Probing media...'
-                    : 'Drop footage, music, or folders from Finder — or drag cards onto your plan'}
+                    : 'Drop clips or folders from Finder (links local paths only — files are never copied)'}
                 </div>
 
                 {draftMediaPool.length === 0 ? (
@@ -971,17 +1047,55 @@ export const PlannerView: React.FC = () => {
                   }`}
                 >
                   {(scriptMode === 'edit' || scriptMode === 'split') && (
-                    <textarea
-                      ref={textareaRef}
-                      value={draftBody}
-                      onChange={(e) => setDraftBody(e.target.value)}
-                      className="flex-1 h-full p-5 rounded-2xl border text-sm leading-relaxed resize-none outline-none"
-                      style={{
-                        backgroundColor: 'var(--bg-surface)',
-                        borderColor: 'var(--border-subtle)',
-                        color: 'var(--text-primary)',
-                      }}
-                    />
+                    <div className="flex-1 h-full relative">
+                      {textareaDropLine !== null && (
+                        <div
+                          className="absolute top-2 right-3 px-2 py-0.5 rounded-full text-[10px] font-semibold z-10 pointer-events-none"
+                          style={{ backgroundColor: '#C4FF2E', color: '#090B0A' }}
+                        >
+                          Drop at line {textareaDropLine + 1}
+                        </div>
+                      )}
+                      <textarea
+                        ref={textareaRef}
+                        value={draftBody}
+                        onChange={(e) => setDraftBody(e.target.value)}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          e.dataTransfer.dropEffect = 'copy';
+                          const ta = e.currentTarget;
+                          const style = window.getComputedStyle(ta);
+                          const lh = parseFloat(style.lineHeight) || 22;
+                          const padTop = parseFloat(style.paddingTop) || 20;
+                          const relY = e.clientY - ta.getBoundingClientRect().top + ta.scrollTop - padTop;
+                          const lineCount = draftBody.split(/\r?\n/).length;
+                          setTextareaDropLine(Math.max(0, Math.min(lineCount, Math.floor(relY / lh))));
+                        }}
+                        onDragLeave={() => setTextareaDropLine(null)}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const ta = e.currentTarget;
+                          const style = window.getComputedStyle(ta);
+                          const lh = parseFloat(style.lineHeight) || 22;
+                          const padTop = parseFloat(style.paddingTop) || 20;
+                          const relY = e.clientY - ta.getBoundingClientRect().top + ta.scrollTop - padTop;
+                          const lineCount = draftBody.split(/\r?\n/).length;
+                          const targetLine = Math.max(0, Math.min(lineCount, Math.floor(relY / lh)));
+                          setTextareaDropLine(null);
+                          setPlanDropActive(false);
+                          const items = await resolveDroppedMediaItems(e.dataTransfer);
+                          await applyMediaInsertion(items, { mode: 'line', lineIndex: targetLine });
+                        }}
+                        className="w-full h-full p-5 rounded-2xl border text-sm leading-relaxed resize-none outline-none"
+                        style={{
+                          backgroundColor: 'var(--bg-surface)',
+                          borderColor: textareaDropLine !== null ? '#C4FF2E' : 'var(--border-subtle)',
+                          color: 'var(--text-primary)',
+                        }}
+                      />
+                    </div>
                   )}
                   {(scriptMode === 'preview' || scriptMode === 'split') && (
                     <div
@@ -996,6 +1110,17 @@ export const PlannerView: React.FC = () => {
                         onToggleChecklist={handleToggleChecklist}
                         mediaPool={draftMediaPool}
                         onPreviewMedia={setLightboxMedia}
+                        onRemoveMediaTag={(rawTag) => void handleRemoveMediaTag(rawTag)}
+                        onDropMediaAtBlock={async (info) => {
+                          setPlanDropActive(false);
+                          const items = await resolveDroppedMediaItems(info.dataTransfer);
+                          await applyMediaInsertion(items, {
+                            mode: 'block',
+                            startLine: info.startLine,
+                            endLine: info.endLine,
+                            placement: info.placement,
+                          });
+                        }}
                       />
                     </div>
                   )}
