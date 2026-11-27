@@ -11,6 +11,8 @@ import {
   createIdea,
   createProjectFromIdea,
   createStarterVault,
+  deleteIdea,
+  deleteProject,
   getProjectState,
   importMediaToProject,
   listBrandKits,
@@ -20,6 +22,7 @@ import {
   probeMediaPaths,
   readIdea,
   registerMediaInProject,
+  resolveProjectDirPath,
   resolveVaultPaths,
   saveGlobalBrandKit,
   saveProjectBrandKit,
@@ -234,6 +237,16 @@ function registerIpcHandlers(): void {
     return false;
   });
 
+  ipcMain.handle('studio:openInFinder', async (_, targetPath: string) => {
+    if (!targetPath || !fsSync.existsSync(targetPath)) return false;
+    if (fsSync.statSync(targetPath).isDirectory()) {
+      const err = await shell.openPath(targetPath);
+      return err === '';
+    }
+    shell.showItemInFolder(targetPath);
+    return true;
+  });
+
   ipcMain.handle('vault:pickFolder', async () => {
     const res = await dialog.showOpenDialog({
       title: 'Open Video Studio Vault Folder',
@@ -268,6 +281,17 @@ function registerIpcHandlers(): void {
     async (_, input: { title: string; pillar?: string; format?: string; status?: string; body?: string }) =>
       createIdea(requireVault(), input)
   );
+  ipcMain.handle('ideas:delete', async (_, slug: string) =>
+    deleteIdea(requireVault(), slug, (p) => shell.trashItem(p))
+  );
+  ipcMain.handle('projects:delete', async (_, slug: string) =>
+    deleteProject(requireVault(), slug, (p) => shell.trashItem(p))
+  );
+  ipcMain.handle('projects:openInFinder', async (_, slug: string) => {
+    const dir = resolveProjectDirPath(requireVault(), slug);
+    const err = await shell.openPath(dir);
+    return err === '';
+  });
   ipcMain.handle(
     'ideas:update',
     async (

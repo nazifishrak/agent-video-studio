@@ -69,6 +69,7 @@ export interface StudioApi {
     slug: string,
     patch: { frontmatter?: Partial<IdeaFrontmatter>; body?: string; toggleChecklistIndex?: number }
   ) => Promise<IdeaRecord>;
+  deleteIdea: (slug: string) => Promise<{ deletedSlug: string; filePath: string }>;
 
   listProjects: () => Promise<ProjectManifest[]>;
   createProjectFromIdea: (options: {
@@ -78,6 +79,8 @@ export interface StudioApi {
     aspectRatio?: '16:9' | '9:16';
     brandKitId?: string;
   }) => Promise<ProjectState>;
+  deleteProject: (slug: string) => Promise<{ deletedSlug: string; dirPath: string }>;
+  openProjectInFinder: (slug: string) => Promise<boolean>;
   getProjectState: (slug: string) => Promise<ProjectState>;
   updateProjectManifest: (slug: string, patch: Partial<ProjectManifest>) => Promise<ProjectManifest>;
   saveProjectEditPlan: (slug: string, editPlan: EditPlanV2, summary?: string) => Promise<ProjectState>;
@@ -122,6 +125,7 @@ export interface StudioApi {
     sourcePath: string;
   }>;
   revealPath: (targetPath: string) => Promise<boolean>;
+  openInFinder: (targetPath: string) => Promise<boolean>;
 
   listMotionScenes: () => Promise<MotionSceneMeta[]>;
   listBrandKits: () => Promise<BrandKitEntry[]>;

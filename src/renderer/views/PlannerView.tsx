@@ -5,6 +5,7 @@ import {
   Clapperboard,
   Columns,
   Edit3,
+  ExternalLink,
   Eye,
   Film,
   List,
@@ -13,6 +14,8 @@ import {
   Search,
   Sparkles,
   Square,
+  Trash2,
+  X,
 } from 'lucide-react';
 import { useStudioStore } from '../store/studioStore';
 import { InlineMarkdown, MarkdownRenderer } from '../components/MarkdownRenderer';
@@ -51,6 +54,8 @@ export const PlannerView: React.FC = () => {
   const [draftBody, setDraftBody] = useState('');
   const [saving, setSaving] = useState(false);
   const [promoting, setPromoting] = useState(false);
+  const [confirmDeleteIdeaSlug, setConfirmDeleteIdeaSlug] = useState<string | null>(null);
+  const [confirmDeleteProjectSlug, setConfirmDeleteProjectSlug] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedIdea) return;
@@ -265,20 +270,68 @@ export const PlannerView: React.FC = () => {
           style={{ backgroundColor: 'var(--bg-canvas)', borderColor: 'var(--border-subtle)' }}
         >
           <span className="caption-label shrink-0 mr-1">PROJECTS</span>
-          {projects.map((p) => (
-            <button
-              key={p.slug}
-              onClick={() => {
-                void selectProject(p.slug);
-                setActiveTab('editor');
-              }}
-              className="btn-secondary flex items-center gap-1.5 px-3 py-1 text-xs shrink-0"
-            >
-              <Film size={12} />
-              <span className="max-w-[180px] truncate">{p.title}</span>
-              <span className="caption-label opacity-70">{p.status}</span>
-            </button>
-          ))}
+          {projects.map((p) => {
+            const confirming = confirmDeleteProjectSlug === p.slug;
+            return (
+              <div
+                key={p.slug}
+                className="flex items-center gap-1 rounded-full border pl-3 pr-1.5 py-1 text-xs shrink-0"
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  borderColor: confirming ? '#EF4444' : 'var(--border-subtle)',
+                }}
+              >
+                <button
+                  onClick={() => {
+                    void selectProject(p.slug);
+                    setActiveTab('editor');
+                  }}
+                  className="flex items-center gap-1.5 cursor-pointer hover:opacity-80"
+                >
+                  <Film size={12} />
+                  <span className="max-w-[160px] truncate font-medium">{p.title}</span>
+                  <span className="caption-label opacity-70">{p.status}</span>
+                </button>
+                <button
+                  onClick={() => void window.studio.openProjectInFinder(p.slug)}
+                  className="p-1 rounded-full opacity-65 hover:opacity-100 cursor-pointer"
+                  title="Open project folder in Finder"
+                >
+                  <ExternalLink size={11} />
+                </button>
+                {confirming ? (
+                  <>
+                    <button
+                      onClick={async () => {
+                        await window.studio.deleteProject(p.slug);
+                        setConfirmDeleteProjectSlug(null);
+                        await refreshVaultData();
+                      }}
+                      className="px-2 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer"
+                      style={{ backgroundColor: '#EF4444', color: '#FFFFFF' }}
+                    >
+                      Trash?
+                    </button>
+                    <button
+                      onClick={() => setConfirmDeleteProjectSlug(null)}
+                      className="p-0.5 rounded-full opacity-75 hover:opacity-100 cursor-pointer"
+                      title="Cancel"
+                    >
+                      <X size={11} />
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDeleteProjectSlug(p.slug)}
+                    className="p-1 rounded-full opacity-65 hover:opacity-100 cursor-pointer"
+                    title="Move project to Trash"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -339,14 +392,19 @@ export const PlannerView: React.FC = () => {
           >
             {filtered.map((idea) => {
               const active = selectedIdea?.slug === idea.slug;
+              const confirmingRow = confirmDeleteIdeaSlug === idea.slug;
               return (
-                <button
+                <div
                   key={idea.slug}
                   onClick={() => setSelectedIdeaSlug(idea.slug)}
-                  className="w-full text-left p-3.5 rounded-2xl border cursor-pointer transition"
+                  className="group w-full text-left p-3.5 rounded-2xl border cursor-pointer transition"
                   style={{
                     backgroundColor: active ? 'var(--bg-surface-alt)' : 'transparent',
-                    borderColor: active ? 'var(--accent-primary)' : 'var(--border-subtle)',
+                    borderColor: confirmingRow
+                      ? '#EF4444'
+                      : active
+                        ? 'var(--accent-primary)'
+                        : 'var(--border-subtle)',
                   }}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -359,7 +417,34 @@ export const PlannerView: React.FC = () => {
                     >
                       {idea.frontmatter.status}
                     </span>
-                    <span className="caption-label">{idea.frontmatter.pillar}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="caption-label">{idea.frontmatter.pillar}</span>
+                      {confirmingRow ? (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await window.studio.deleteIdea(idea.slug);
+                            setConfirmDeleteIdeaSlug(null);
+                            await refreshVaultData();
+                          }}
+                          className="px-1.5 py-0.5 rounded text-[10px] font-semibold cursor-pointer"
+                          style={{ backgroundColor: '#EF4444', color: '#FFFFFF' }}
+                        >
+                          Trash?
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmDeleteIdeaSlug(idea.slug);
+                          }}
+                          className="opacity-0 group-hover:opacity-75 hover:!opacity-100 p-0.5 rounded cursor-pointer"
+                          title="Move idea to Trash"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="text-xs font-semibold leading-snug">{idea.frontmatter.title}</div>
                   <div className="caption-label mt-2 flex items-center gap-2">
@@ -370,7 +455,7 @@ export const PlannerView: React.FC = () => {
                       </span>
                     )}
                   </div>
-                </button>
+                </div>
               );
             })}
           </div>
@@ -418,6 +503,44 @@ export const PlannerView: React.FC = () => {
                       >
                         <Sparkles size={13} /> Pin
                       </button>
+
+                      <button
+                        onClick={() => void window.studio.openInFinder(selectedIdea.filePath)}
+                        className="btn-secondary flex items-center gap-1.5 px-3 py-1.5 text-xs"
+                        title="Reveal markdown file in Finder"
+                      >
+                        <ExternalLink size={13} /> Finder
+                      </button>
+
+                      {confirmDeleteIdeaSlug === selectedIdea.slug ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={async () => {
+                              await window.studio.deleteIdea(selectedIdea.slug);
+                              setConfirmDeleteIdeaSlug(null);
+                              await refreshVaultData();
+                            }}
+                            className="px-3 py-1.5 rounded-full text-xs font-semibold cursor-pointer"
+                            style={{ backgroundColor: '#EF4444', color: '#FFFFFF' }}
+                          >
+                            Move to Trash
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteIdeaSlug(null)}
+                            className="btn-secondary px-2.5 py-1.5 text-xs"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteIdeaSlug(selectedIdea.slug)}
+                          className="btn-secondary flex items-center gap-1 px-2.5 py-1.5 text-xs"
+                          title="Move idea to Trash"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      )}
 
                       <button
                         onClick={handleSave}

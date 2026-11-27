@@ -1,5 +1,5 @@
 import React from 'react';
-import { FolderOpen, FolderPlus, X } from 'lucide-react';
+import { ExternalLink, FolderOpen, FolderPlus, X } from 'lucide-react';
 import { useStudioStore } from '../store/studioStore';
 
 export const OnboardingModal: React.FC = () => {
@@ -115,16 +115,38 @@ export const OnboardingModal: React.FC = () => {
                 {recentVaults.map((rv) => {
                   const isCurrent = rv === activeVault;
                   return (
-                    <button
+                    <div
                       key={rv}
-                      onClick={() => handleOpenRecent(rv)}
-                      className={`w-full flex items-center justify-between px-4 py-2.5 text-xs text-left ${
+                      className={`w-full flex items-center justify-between gap-2 px-4 py-2 text-xs ${
                         isCurrent ? 'btn-primary' : 'btn-secondary'
                       }`}
                     >
-                      <span className="truncate">{rv}</span>
-                      {isCurrent && <span className="caption-label ml-2" style={{ color: 'inherit' }}>ACTIVE</span>}
-                    </button>
+                      <button
+                        onClick={() => handleOpenRecent(rv)}
+                        className="flex-1 flex items-center justify-between gap-2 text-left min-w-0 cursor-pointer"
+                      >
+                        <span className="truncate">{rv}</span>
+                        {isCurrent && (
+                          <span className="caption-label shrink-0" style={{ color: 'inherit' }}>
+                            ACTIVE
+                          </span>
+                        )}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void window.studio.openInFinder(rv);
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-semibold shrink-0 cursor-pointer transition hover:opacity-80"
+                        style={{
+                          backgroundColor: isCurrent ? 'rgba(9, 11, 10, 0.14)' : 'var(--bg-surface)',
+                          color: 'inherit',
+                        }}
+                        title={`Open ${rv} in Finder`}
+                      >
+                        <ExternalLink size={11} /> Finder
+                      </button>
+                    </div>
                   );
                 })}
               </div>

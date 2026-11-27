@@ -8,8 +8,11 @@ import {
   beginProjectEdit,
   commitProjectEdit,
   createCustomMotionScene,
+  createIdea,
   createProjectFromIdea,
   createStarterVault,
+  deleteIdea,
+  deleteProject,
   getProjectState,
   listBrandKits,
   listIdeas,
@@ -441,6 +444,14 @@ async function testStarterVaultAndHarness() {
       fps: 24,
     });
     assert.ok(exportRes.sizeBytes > 1000, 'Exported MP4 should be non-empty');
+
+    // Verify safe deleteIdea & deleteProject
+    const tempIdea = await createIdea(tmpVault, { title: 'Disposable Idea' });
+    const tempProj = await createProjectFromIdea(tmpVault, { title: 'Disposable Project' });
+    await deleteIdea(tmpVault, tempIdea.slug);
+    await deleteProject(tmpVault, tempProj.manifest.slug);
+    assert.equal((await listIdeas(tmpVault)).some((i) => i.slug === tempIdea.slug), false);
+    assert.equal((await listProjects(tmpVault)).some((p) => p.slug === tempProj.manifest.slug), false);
 
     // Verify bundled HyperFrames & fixed motion-library scripts
     const renderSceneSrc = await fs.readFile(

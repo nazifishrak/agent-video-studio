@@ -1705,3 +1705,55 @@ export async function registerMediaInProject(
 
   return { registered, state: await getProjectState(vaultRoot, projectSlug) };
 }
+
+export function resolveIdeaFilePath(vaultRoot: string, slug: string): string {
+  const paths = resolveVaultPaths(vaultRoot);
+  const direct = assertSafeChild(paths.ideasDir, path.join(paths.ideasDir, `${slug}.md`));
+  if (existsSync(direct)) return direct;
+  if (existsSync(paths.ideasDir)) {
+    const entries = fsSync.readdirSync(paths.ideasDir, { withFileTypes: true });
+    for (const ent of entries) {
+      if (ent.isFile() && ent.name.endsWith('.md') && slugify(ent.name.replace(/\.md$/, '')) === slug) {
+        return assertSafeChild(paths.ideasDir, path.join(paths.ideasDir, ent.name));
+      }
+    }
+  }
+  throw new Error(`Idea "${slug}" not found`);
+}
+
+export function resolveProjectDirPath(vaultRoot: string, slug: string): string {
+  const paths = resolveVaultPaths(vaultRoot);
+  const dir = assertSafeChild(paths.projectsDir, path.join(paths.projectsDir, slug));
+  if (!existsSync(dir)) {
+    throw new Error(`Project "${slug}" not found`);
+  }
+  return dir;
+}
+
+export async function deleteIdea(
+  vaultRoot: string,
+  slug: string,
+  trashFn?: (targetPath: string) => Promise<void>
+): Promise<{ deletedSlug: string; filePath: string }> {
+  const filePath = resolveIdeaFilePath(vaultRoot, slug);
+  if (trashFn) {
+    await trashFn(filePath);
+  } else {
+    await fs.unlink(filePath);
+  }
+  return { deletedSlug: slug, filePath };
+}
+
+export async function deleteProject(
+  vaultRoot: string,
+  slug: string,
+  trashFn?: (targetPath: string) => Promise<void>
+): Promise<{ deletedSlug: string; dirPath: string }> {
+  const dirPath = resolveProjectDirPath(vaultRoot, slug);
+  if (trashFn) {
+    await trashFn(dirPath);
+  } else {
+    await fs.rm(dirPath, { recursive: true, force: true });
+  }
+  return { deletedSlug: slug, dirPath };
+}

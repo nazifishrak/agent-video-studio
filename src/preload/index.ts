@@ -23,6 +23,7 @@ export const studioApi = {
     slug: string,
     patch: { frontmatter?: Partial<IdeaFrontmatter>; body?: string; toggleChecklistIndex?: number }
   ) => ipcRenderer.invoke('ideas:update', slug, patch),
+  deleteIdea: (slug: string) => ipcRenderer.invoke('ideas:delete', slug),
 
   listProjects: () => ipcRenderer.invoke('projects:list'),
   createProjectFromIdea: (options: {
@@ -32,6 +33,8 @@ export const studioApi = {
     aspectRatio?: '16:9' | '9:16';
     brandKitId?: string;
   }) => ipcRenderer.invoke('projects:createFromIdea', options),
+  deleteProject: (slug: string) => ipcRenderer.invoke('projects:delete', slug),
+  openProjectInFinder: (slug: string) => ipcRenderer.invoke('projects:openInFinder', slug),
   getProjectState: (slug: string) => ipcRenderer.invoke('projects:getState', slug),
   updateProjectManifest: (slug: string, patch: Partial<ProjectManifest>) =>
     ipcRenderer.invoke('projects:updateManifest', slug, patch),
@@ -65,6 +68,7 @@ export const studioApi = {
   inspectTimeline: (slug: string, frameCount?: number) =>
     ipcRenderer.invoke('projects:inspectTimeline', slug, frameCount),
   revealPath: (targetPath: string) => ipcRenderer.invoke('studio:revealPath', targetPath),
+  openInFinder: (targetPath: string) => ipcRenderer.invoke('studio:openInFinder', targetPath),
 
   listMotionScenes: () => ipcRenderer.invoke('motion:list'),
   listBrandKits: () => ipcRenderer.invoke('brand:list'),
