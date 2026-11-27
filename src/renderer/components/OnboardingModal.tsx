@@ -96,7 +96,7 @@ export const OnboardingModal: React.FC = () => {
                 <div className="caption-label">FRESH SETUP</div>
                 <div className="text-lg font-semibold tracking-tight">Create Starter Vault</div>
                 <div className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  Generate a clean vault with starter ideas, brand kits, and 60 motion scenes.
+                  Generate a clean vault with starter ideas, brand kits, and 59 motion scenes.
                 </div>
               </div>
               <button

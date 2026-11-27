@@ -116,7 +116,7 @@ You are operating inside the **Agent Video Studio** runtime workspace.
 - The **\`agent-video-studio\` MCP server** is pre-configured in \`.mcp.json\` targeting \`${opts.vaultRoot}\`.
 - Whenever editing a project timeline, prefer transactional MCP tools so the desktop app hot-reloads and preserves 1-click Undo:
   1. \`get_vault_overview\` / \`list_ideas\` / \`list_projects\`
-  2. \`search_motion_scenes\` (browse the 60 bundled + custom scenes)
+  2. \`search_motion_scenes\` (browse the 59 bundled + custom scenes)
   3. \`begin_project_edit\` -> \`apply_timeline_ops\` -> \`commit_project_edit\` (or \`abort_project_edit\`)
   4. \`create_custom_motion_scene\` (automatically writes to \`./vault/custom-scenes/\` without touching app resources)
   5. \`update_brand_tokens\` (updates \`DESIGN.md\` for both motion scenes and captions)

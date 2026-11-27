@@ -1,5 +1,5 @@
 {
-  "count": 60,
+  "count": 59,
   "scenes": [
     {
       "id": "01-kinetic-hook-mask",
@@ -123,28 +123,6 @@
         "scale-zoom",
         "hero-title",
         "announcement"
-      ]
-    },
-    {
-      "id": "06-lower-third-clean",
-      "number": "06",
-      "name": "Clean Lower Third",
-      "category": "Kinetic Typography",
-      "inspiration": "Broadcast / YouTube",
-      "duration": 4.5,
-      "fps": 30,
-      "transparent_ready": true,
-      "file": "scenes/06-lower-third-clean.html",
-      "description": "Transparent-ready speaker nameplate and role bar sliding from bottom-left",
-      "default_props": {
-        "name": "Nazif Ishrak",
-        "role": "Solutions Engineer / Product Demo"
-      },
-      "use_cases": [
-        "lower-third",
-        "speaker-name",
-        "location-tag",
-        "transparent-overlay"
       ]
     },
     {

@@ -6,7 +6,7 @@
  * Usage:
  *   node scripts/render_scene.mjs --scene scenes/01-kinetic-hook-mask.html --out out/hook.mp4
  *   node scripts/render_scene.mjs --scene scenes/01-kinetic-hook-mask.html --design themes/linear-dark.design.md --props '{"line1":"Ship faster","line2":"without the chaos"}' --fps 30 --out out/hook.mp4
- *   node scripts/render_scene.mjs --scene scenes/06-lower-third-clean.html --transparent --width 3840 --height 2160 --out out/lower-third.mov
+ *   node scripts/render_scene.mjs --scene scenes/28-triple-chevron-pointer.html --transparent --width 3840 --height 2160 --out out/pointer.mov
  */
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';

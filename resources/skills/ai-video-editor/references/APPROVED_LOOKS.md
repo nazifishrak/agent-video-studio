@@ -36,7 +36,6 @@ All video captions MUST use one of these 4 approved `caption_style` tokens in `D
 Pair scenes with matching Brand Kits (`cinema-daily-vlog`, `apple-keynote-clean`, `figma-lime`, `editorial-warm`, `electric-lime-dark`).
 
 ### Cinematography & Daily Vlogs (`cinema-daily-vlog` / `editorial-warm`)
-- `06-lower-third-clean` *(transparent alpha)* — Clean location/time/speaker lower-third.
 - `03-editorial-pullquote` — Calm typographic pull-quote for narrative transitions.
 - `28-triple-chevron-pointer` *(transparent alpha)* — Minimal directional pointer when highlighting a detail.
 - `46-optical-blur-unveil` — Subtle chapter/title unveil.

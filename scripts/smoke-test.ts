@@ -54,8 +54,8 @@ async function testVaultAndTransactions(): Promise<number> {
     }
   }
 
-  const scenes = await listMotionScenes(VAULT_ROOT);
-  assert.equal(scenes.length, 60, `Expected 60 motion scenes, got ${scenes.length}`);
+  const scenes = await listMotionScenes(VAULT_ROOT, RESOURCES_DIR);
+  assert.equal(scenes.length, 59, `Expected 59 motion scenes, got ${scenes.length}`);
 
   const kits = await listBrandKits(VAULT_ROOT);
   assert.ok(kits.length >= 5, `Expected >= 5 brand kits, got ${kits.length}`);
@@ -233,7 +233,7 @@ async function testMcpServer(expectedIdeaCount: number) {
     const overviewRes = await waitForId(3);
     const overviewJson = JSON.parse(overviewRes.result.content[0].text);
     assert.equal(overviewJson.counts.ideas, expectedIdeaCount);
-    assert.equal(overviewJson.counts.motionScenes, 60);
+    assert.equal(overviewJson.counts.motionScenes, 59);
 
     send({
       jsonrpc: '2.0',
@@ -269,7 +269,7 @@ async function testStarterVaultAndHarness() {
     await createStarterVault(tmpVault);
 
     const bundledScenes = await listMotionScenes(tmpVault, RESOURCES_DIR);
-    assert.equal(bundledScenes.length, 60, `Expected 60 bundled scenes, got ${bundledScenes.length}`);
+    assert.equal(bundledScenes.length, 59, `Expected 59 bundled scenes, got ${bundledScenes.length}`);
 
     const custom = await createCustomMotionScene(
       tmpVault,
@@ -283,7 +283,7 @@ async function testStarterVaultAndHarness() {
     assert.equal(custom.file, 'custom/smoke-custom-plate.html');
 
     const mergedScenes = await listMotionScenes(tmpVault, RESOURCES_DIR);
-    assert.equal(mergedScenes.length, 61, `Expected 61 merged scenes, got ${mergedScenes.length}`);
+    assert.equal(mergedScenes.length, 60, `Expected 60 merged scenes, got ${mergedScenes.length}`);
 
     // Verify auto-discovery of agent-rendered video folders without project.json
     const autoProjDir = path.join(tmpVault, 'projects', 'day-in-the-life-test');
@@ -330,8 +330,8 @@ async function testStarterVaultAndHarness() {
     await fs.access(path.join(RESOURCES_DIR, 'skills', 'nazif-motion-scene-library', 'references', 'MOTION_LANGUAGE.md'));
     const taggedScenes = await listMotionScenes(tmpVault, RESOURCES_DIR);
     assert.ok(
-      taggedScenes.filter((s) => Array.isArray(s.use_cases) && s.use_cases.length > 0).length >= 60,
-      'All 60 bundled motion scenes should have use_cases tags'
+      taggedScenes.filter((s) => Array.isArray(s.use_cases) && s.use_cases.length > 0).length >= 59,
+      'All 59 bundled motion scenes should have use_cases tags'
     );
 
     // Verify sleek caption defaults, legacy mapping, and live context bridge

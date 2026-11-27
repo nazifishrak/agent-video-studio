@@ -50,7 +50,7 @@ node scripts/render_scene.mjs \
   --fps 30 \
   --out out/01-hook.mp4
 ```
-For transparent overlays (e.g. `06-lower-third-clean.html`, `28-triple-chevron-pointer.html`), pass `--transparent --out out/overlay.mov` to render ProRes 4444 with alpha channel.
+For transparent overlays (e.g. `28-triple-chevron-pointer.html`), pass `--transparent --out out/overlay.mov` to render ProRes 4444 with alpha channel.
 
 ### Step 4 — Composite Plates onto A-Cut Footage
 Create a `manifest.json` mapping rendered plates to A-cut timestamps and run:
