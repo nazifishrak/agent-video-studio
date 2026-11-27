@@ -53,7 +53,7 @@ You are operating inside the **Agent Video Studio** runtime workspace.
 1. **App-Shipped Skills & Playbooks (READ-ONLY — NEVER MODIFY OR COPY INTO PROJECTS):**
    - \`./skills/\` (\`${path.join(opts.resourcesDir, 'skills')}\`, also linked at \`.agents/skills/\`, \`.claude/skills/\`, \`.gemini/skills/\`):
      - \`ai-video-editor/\` — declarative \`edit-plan.json\` craft rules, zero-shake montage workflow, \`probe_clips.py\`, \`bootstrap_env.mjs\`
-     - \`nazif-motion-scene-library/\` — 60 built-in HTML/CSS/JS motion scenes + \`motion-engine.js\`
+     - \`nazif-motion-scene-library/\` — 59 built-in HTML/CSS/JS motion scenes + \`motion-engine.js\`
      - \`b-roll-finder/\` — free B-roll sourcing, rights tagging (\`CLEARED\` vs \`UNCLEARED_REFERENCE\`), contact sheets
      - \`hyperframes/\`, \`hyperframes-core/\`, \`hyperframes-animation/\`, \`hyperframes-cli/\`, \`faceless-explainer/\`, \`product-launch-video/\`, \`motion-graphics/\` — HTML-to-video motion engine
    - \`./playbooks/\` (\`${path.join(opts.resourcesDir, 'playbooks')}\`) — anti-slop scriptwriting, voice/engagement, filming guides
@@ -82,15 +82,16 @@ You are operating inside the **Agent Video Studio** runtime workspace.
 - **Automatic Live Preview Sync:** Every \`commit_project_edit\`, \`update_brand_tokens\`, \`register_media\`, and \`set_transcript\` automatically notifies the open desktop Studio UI so the stage preview, timeline tracks, and brand tokens hot-reload immediately.
 - **Zero-Config Fallback when MCP Tools Are Disconnected:** If the \`agent-video-studio\` MCP tools are not connected in your current agent session, **NEVER edit \`edit-plan.json\` raw or tell the user you couldn't register a clip**. Immediately use \`./studio-cli.mjs\` in this workspace — it uses the exact same transactional engine and live UI sync:
   - \`node ./studio-cli.mjs context\`
+  - \`node ./studio-cli.mjs plan [--project <slug>] [--idea <slug>]\`
   - \`node ./studio-cli.mjs register-media <file1> [file2...] [--project <slug>] [--set-source]\`
   - \`node ./studio-cli.mjs apply-ops '<json-array-or-file>' [--project <slug>] [--summary "..."]\`
-  - \`node ./studio-cli.mjs focus [--project <slug>] [--tab editor|planner] [--playhead <sec>]\`
+  - \`node ./studio-cli.mjs focus [--project <slug>] [--idea <slug>] [--tab edit|plan] [--playhead <sec>]\`
   - \`node ./studio-cli.mjs update-brand '<json-patch>' [--project <slug>]\`
-- **Focus & Seek the Viewer:** When creating a new project or editing a specific moment, call \`focus_studio_view\` (or \`node ./studio-cli.mjs focus --tab editor --playhead <sec>\`) so the user's preview jumps straight to your update.
+- **Focus & Seek the Viewer:** When creating a new project or editing a specific moment, call \`focus_studio_view\` (or \`node ./studio-cli.mjs focus --tab edit --playhead <sec>\`) so the user's preview jumps straight to your update.
 
-## Building Directly From a Tagged Plan (Planner Media Bin)
-- Ideas in \`./vault/ideas/\` (or \`./vault/03-video-ideas/\`) may contain a frontmatter \`media_pool\` array (absolute file paths, roles \`A-Roll\` / \`B-Roll\` / \`Music\` / \`SFX\` / \`Reference\` / \`Asset\`, durations, and user notes) plus inline \`[MEDIA:<id> | <role> | <label>]\` tags placed at specific beats in the Markdown script (sometimes with multiple candidate clips per beat).
-- When the user asks you to build the currently open plan, call \`get_active_studio_context\` (which returns \`activeIdea\` + \`mediaPool\`) and \`read_idea\`. Inspect the tagged clips with \`probe_media\`, choose the strongest cuts/options per beat, \`create_project_from_idea\` (if not yet promoted), \`register_media\`, build the full timeline (\`set_shots\`, \`add_broll\`, \`add_motion_plate\`, \`add_caption\`, \`update_audio\`), and call \`focus_studio_view\` so the Editor opens with the finished cut.
+## Building Directly From a Tagged Plan (Unified Plan ↔ Edit Media Bin)
+- Every video in Studio has a Markdown plan (either \`./vault/ideas/<slug>.md\` / \`./vault/03-video-ideas/<slug>.md\` or \`./vault/projects/<slug>/plan.md\`) that can hold a frontmatter \`media_pool\` array (link-only local paths, roles \`A-Roll\` / \`B-Roll\` / \`Music\` / \`SFX\` / \`Reference\` / \`Asset\`, durations, and user notes) plus inline \`[MEDIA:<id> | <role> | <label>]\` tags placed at specific beats in the Markdown script (sometimes with multiple candidate clips per beat).
+- When the user asks you to build the currently open plan, call \`get_active_studio_context\` (which returns \`activeIdea\` + \`mediaPool\`) and \`read_video_plan\` (or \`list_videos\` / \`update_video_plan\`). Inspect the tagged clips with \`probe_media\`, choose the strongest cuts/options per beat, \`create_project_from_idea\` (if idea-only), \`register_media\` (always \`mode: "link"\`, never copy), build the full timeline (\`set_shots\`, \`add_broll\`, \`add_motion_plate\`, \`add_caption\`, \`update_audio\`), and call \`focus_studio_view\` so \`Edit\` opens with the finished cut.
 
 ## Look vs. Moves Design Contract (Mandatory for Every Motion Build)
 1. **User's \`brand/DESIGN.md\` owns the LOOK:** colors, typography, radii, shadows, and caption variant. If a project has no \`DESIGN.md\`, fall back to an approved Brand Kit preset (\`cinema-daily-vlog\`, \`apple-keynote-clean\`, \`figma-lime\`, \`editorial-warm\`, \`linear-dark\`) or ask.
@@ -175,13 +176,27 @@ async function main() {
   const { pos, flags } = parseFlags(rest);
 
   if (!cmd || cmd === 'help' || cmd === '--help') {
-    console.log('Usage: node ./studio-cli.mjs <context|register-media|apply-ops|focus|update-brand> [args]');
+    console.log('Usage: node ./studio-cli.mjs <context|plan|register-media|apply-ops|focus|update-brand> [args]');
     return;
   }
 
   if (cmd === 'context') {
     const ctx = live.readLiveContext(VAULT_ROOT);
     let project = null;
+    let activeIdea = null;
+    if (ctx?.selectedIdeaSlug) {
+      try {
+        const idea = await vault.readIdea(VAULT_ROOT, ctx.selectedIdeaSlug);
+        activeIdea = {
+          slug: idea.slug,
+          title: idea.frontmatter.title,
+          status: idea.frontmatter.status,
+          filePath: idea.filePath,
+          mediaPoolCount: idea.frontmatter.media_pool?.length ?? 0,
+          mediaPool: idea.frontmatter.media_pool ?? [],
+        };
+      } catch {}
+    }
     if (ctx?.activeProjectSlug) {
       try {
         const st = await vault.getProjectState(VAULT_ROOT, ctx.activeProjectSlug);
@@ -196,10 +211,35 @@ async function main() {
             captions: st.editPlan.captions.length,
           },
         };
+        if (!activeIdea && st.linkedIdea) {
+          activeIdea = {
+            slug: st.linkedIdea.slug,
+            title: st.linkedIdea.frontmatter.title,
+            status: st.linkedIdea.frontmatter.status,
+            filePath: st.linkedIdea.filePath,
+            mediaPoolCount: st.linkedIdea.frontmatter.media_pool?.length ?? 0,
+            mediaPool: st.linkedIdea.frontmatter.media_pool ?? [],
+          };
+        }
       } catch {}
     }
-    console.log(JSON.stringify({ vaultRoot: VAULT_ROOT, context: ctx, project }, null, 2));
+    console.log(JSON.stringify({ vaultRoot: VAULT_ROOT, context: ctx, project, activeIdea }, null, 2));
     return;
+  }
+
+  if (cmd === 'plan') {
+    const ctx = live.readLiveContext(VAULT_ROOT);
+    const projSlug = flags.project ? String(flags.project).trim() : (!flags.idea ? ctx?.activeProjectSlug || '' : '');
+    const ideaSlug = flags.idea ? String(flags.idea).trim() : (!projSlug ? ctx?.selectedIdeaSlug || '' : '');
+    if (projSlug) {
+      console.log(JSON.stringify(await vault.readProjectPlan(VAULT_ROOT, projSlug), null, 2));
+      return;
+    }
+    if (ideaSlug) {
+      console.log(JSON.stringify(await vault.readIdea(VAULT_ROOT, ideaSlug), null, 2));
+      return;
+    }
+    throw new Error('No --project or --idea specified and no active video open in Studio.');
   }
 
   if (cmd === 'register-media') {
@@ -255,12 +295,16 @@ async function main() {
   }
 
   if (cmd === 'focus') {
-    const slug = flags.project ? String(flags.project) : live.readLiveContext(VAULT_ROOT)?.activeProjectSlug || undefined;
+    const slug = flags.project ? String(flags.project) : (!flags.idea ? live.readLiveContext(VAULT_ROOT)?.activeProjectSlug || undefined : undefined);
+    const ideaSlug = flags.idea ? String(flags.idea) : undefined;
     const playheadSec = flags.playhead !== undefined ? Number(flags.playhead) : undefined;
+    const rawTab = typeof flags.tab === 'string' ? flags.tab.toLowerCase() : '';
+    const tab = rawTab === 'planner' || rawTab === 'plan' ? 'planner' : 'editor';
     const command = await live.writeUiCommand(VAULT_ROOT, {
       kind: 'focus_view',
       projectSlug: slug,
-      tab: flags.tab === 'planner' ? 'planner' : 'editor',
+      ideaSlug,
+      tab,
       playheadSec: Number.isFinite(playheadSec) ? playheadSec : undefined,
       summary: typeof flags.summary === 'string' ? flags.summary : 'Focused Studio view from studio-cli',
     });

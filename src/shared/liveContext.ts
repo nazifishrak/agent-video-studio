@@ -26,6 +26,7 @@ export interface StudioUiCommand {
   timestamp: string;
   kind: 'project_updated' | 'focus_view' | 'brand_updated' | 'project_created';
   projectSlug?: string;
+  ideaSlug?: string;
   tab?: 'planner' | 'editor';
   playheadSec?: number;
   summary?: string;

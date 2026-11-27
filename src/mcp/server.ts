@@ -17,9 +17,11 @@ import {
   listProjects,
   probeMediaPaths,
   readIdea,
+  readProjectPlan,
   registerMediaInProject,
   resolveVaultPaths,
   saveProjectBrandKit,
+  saveProjectPlan,
   saveProjectTranscriptDirect,
   undoLastTransaction,
   updateIdea,
@@ -27,7 +29,7 @@ import {
 import { exportProjectVideo, inspectTimelineContactSheet } from '../main/exporter.js';
 import { DEFAULT_BRAND_TOKENS, BrandTokens } from '../shared/designTokens.js';
 import { readLiveContext, writeUiCommand } from '../main/liveContextStore.js';
-import { TimelineOpSchema, TranscriptDocSchema } from '../shared/schemas.js';
+import { IdeaMediaItemSchema, TimelineOpSchema, TranscriptDocSchema } from '../shared/schemas.js';
 import { getAppResourcesDir } from '../main/harness.js';
 
 function resolveProjectSlug(vaultRoot: string, explicitSlug?: string): string {
@@ -169,23 +171,96 @@ async function main() {
 
   server.tool(
     'focus_studio_view',
-    'Switch the open desktop Studio UI to a specific project, tab (planner/editor), or playhead timestamp',
+    'Switch the open desktop Studio UI to a specific video (projectSlug or ideaSlug), tab (plan/edit/planner/editor), or playhead timestamp',
     {
       projectSlug: z.string().optional(),
-      tab: z.enum(['planner', 'editor']).optional(),
+      ideaSlug: z.string().optional(),
+      tab: z.enum(['plan', 'edit', 'planner', 'editor']).optional(),
       playheadSec: z.number().nonnegative().optional(),
       summary: z.string().optional(),
     },
-    async ({ projectSlug, tab, playheadSec, summary }) => {
+    async ({ projectSlug, ideaSlug, tab, playheadSec, summary }) => {
       try {
+        const cleanProj = projectSlug?.trim() || undefined;
+        const cleanIdea = ideaSlug?.trim() || undefined;
+        const normalizedTab: 'planner' | 'editor' =
+          tab === 'plan' || tab === 'planner'
+            ? 'planner'
+            : tab === 'edit' || tab === 'editor'
+              ? 'editor'
+              : cleanIdea && !cleanProj
+                ? 'planner'
+                : 'editor';
         const cmd = await writeUiCommand(vaultRoot, {
           kind: 'focus_view',
-          projectSlug: projectSlug?.trim() || readLiveContext(vaultRoot)?.activeProjectSlug || undefined,
-          tab: tab ?? 'editor',
+          projectSlug: cleanProj || (!cleanIdea ? readLiveContext(vaultRoot)?.activeProjectSlug || undefined : undefined),
+          ideaSlug: cleanIdea,
+          tab: normalizedTab,
           playheadSec,
           summary: summary ?? 'Focused Studio view from agent',
         });
         return ok({ sent: true, command: cmd });
+      } catch (err) {
+        return fail(err);
+      }
+    }
+  );
+
+  server.tool(
+    'list_videos',
+    'List all videos in the unified Studio workspace (merged production projects + standalone ideas with mediaPool and shot counts)',
+    {},
+    async () => {
+      try {
+        const [ideas, projects] = await Promise.all([listIdeas(vaultRoot), listProjects(vaultRoot)]);
+        const ideaBySlug = new Map(ideas.map((i) => [i.slug, i]));
+        const claimedIdeas = new Set<string>();
+        const videos: Array<Record<string, unknown>> = [];
+
+        for (const p of projects) {
+          let linked = p.ideaId ? ideaBySlug.get(p.ideaId) : undefined;
+          if (linked) claimedIdeas.add(linked.slug);
+          if (!linked) {
+            try {
+              const st = await getProjectState(vaultRoot, p.slug);
+              linked = st.linkedIdea;
+            } catch {
+              // Ignore missing state
+            }
+          }
+          videos.push({
+            key: `proj:${p.slug}`,
+            title: linked?.frontmatter.title || p.title,
+            status: linked?.frontmatter.status || p.status,
+            pillar: linked?.frontmatter.pillar || 'Video Project',
+            format: linked?.frontmatter.format || (p.aspectRatio === '9:16' ? 'Short (9:16)' : 'Long-Form (16:9)'),
+            projectSlug: p.slug,
+            ideaSlug: linked?.slug ?? p.ideaId ?? null,
+            aspectRatio: p.aspectRatio,
+            mediaPoolCount: linked?.frontmatter.media_pool?.length ?? 0,
+            checklistTotal: linked?.checklistItems.length ?? 0,
+            checklistDone: linked?.checklistItems.filter((c) => c.checked).length ?? 0,
+          });
+        }
+
+        for (const i of ideas) {
+          if (claimedIdeas.has(i.slug)) continue;
+          videos.push({
+            key: `idea:${i.slug}`,
+            title: i.frontmatter.title,
+            status: i.frontmatter.status,
+            pillar: i.frontmatter.pillar,
+            format: i.frontmatter.format,
+            projectSlug: null,
+            ideaSlug: i.slug,
+            aspectRatio: i.frontmatter.format.toLowerCase().includes('short') ? '9:16' : '16:9',
+            mediaPoolCount: i.frontmatter.media_pool?.length ?? 0,
+            checklistTotal: i.checklistItems.length,
+            checklistDone: i.checklistItems.filter((c) => c.checked).length,
+          });
+        }
+
+        return ok(videos);
       } catch (err) {
         return fail(err);
       }
@@ -202,6 +277,7 @@ async function main() {
           pillar: i.frontmatter.pillar,
           format: i.frontmatter.format,
           status: i.frontmatter.status,
+          mediaPoolCount: i.frontmatter.media_pool?.length ?? 0,
           checklistTotal: i.checklistItems.length,
           checklistDone: i.checklistItems.filter((c) => c.checked).length,
         }))
@@ -245,26 +321,115 @@ async function main() {
 
   server.tool(
     'update_idea',
-    'Update an existing video idea frontmatter, body, or toggle a checklist item',
+    'Update an existing video idea frontmatter (including mediaPool), body, or toggle a checklist item',
     {
       slug: z.string(),
       status: z.string().optional(),
       title: z.string().optional(),
+      pillar: z.string().optional(),
+      format: z.string().optional(),
+      mediaPool: z.array(IdeaMediaItemSchema).optional(),
       body: z.string().optional(),
       toggleChecklistIndex: z.number().int().optional(),
     },
-    async ({ slug, status, title, body, toggleChecklistIndex }) => {
+    async ({ slug, status, title, pillar, format, mediaPool, body, toggleChecklistIndex }) => {
       try {
-        const frontmatter: Record<string, string> = {};
-        if (status) frontmatter.status = status;
-        if (title) frontmatter.title = title;
+        const frontmatter: Record<string, unknown> = {};
+        if (status !== undefined) frontmatter.status = status;
+        if (title !== undefined) frontmatter.title = title;
+        if (pillar !== undefined) frontmatter.pillar = pillar;
+        if (format !== undefined) frontmatter.format = format;
+        if (mediaPool !== undefined) frontmatter.media_pool = mediaPool;
         return ok(
           await updateIdea(vaultRoot, slug, {
-            frontmatter: Object.keys(frontmatter).length ? frontmatter : undefined,
+            frontmatter: Object.keys(frontmatter).length ? (frontmatter as Record<string, any>) : undefined,
             body,
             toggleChecklistIndex,
           })
         );
+      } catch (err) {
+        return fail(err);
+      }
+    }
+  );
+
+  server.tool(
+    'read_video_plan',
+    'Read the Markdown plan, frontmatter, cues, checklist, and media_pool for any video (works for both standalone project plan.md and idea-backed plans; defaults to active Studio video)',
+    {
+      projectSlug: z.string().optional(),
+      ideaSlug: z.string().optional(),
+    },
+    async ({ projectSlug, ideaSlug }) => {
+      try {
+        const cleanProj = projectSlug?.trim();
+        const cleanIdea = ideaSlug?.trim();
+        if (cleanProj) {
+          return ok(await readProjectPlan(vaultRoot, cleanProj));
+        }
+        if (cleanIdea) {
+          return ok(await readIdea(vaultRoot, cleanIdea));
+        }
+        const ctx = readLiveContext(vaultRoot);
+        if (ctx?.activeProjectSlug) {
+          return ok(await readProjectPlan(vaultRoot, ctx.activeProjectSlug));
+        }
+        if (ctx?.selectedIdeaSlug) {
+          return ok(await readIdea(vaultRoot, ctx.selectedIdeaSlug));
+        }
+        throw new Error('No projectSlug or ideaSlug provided and no active video is open in Studio.');
+      } catch (err) {
+        return fail(err);
+      }
+    }
+  );
+
+  server.tool(
+    'update_video_plan',
+    'Update the Markdown plan, frontmatter, checklist, or link-only mediaPool for any video (project plan.md or idea .md; defaults to active Studio video)',
+    {
+      projectSlug: z.string().optional(),
+      ideaSlug: z.string().optional(),
+      title: z.string().optional(),
+      status: z.string().optional(),
+      pillar: z.string().optional(),
+      format: z.string().optional(),
+      mediaPool: z.array(IdeaMediaItemSchema).optional(),
+      body: z.string().optional(),
+      toggleChecklistIndex: z.number().int().optional(),
+    },
+    async ({ projectSlug, ideaSlug, title, status, pillar, format, mediaPool, body, toggleChecklistIndex }) => {
+      try {
+        const frontmatter: Record<string, unknown> = {};
+        if (title !== undefined) frontmatter.title = title;
+        if (status !== undefined) frontmatter.status = status;
+        if (pillar !== undefined) frontmatter.pillar = pillar;
+        if (format !== undefined) frontmatter.format = format;
+        if (mediaPool !== undefined) frontmatter.media_pool = mediaPool;
+        const patch = {
+          frontmatter: Object.keys(frontmatter).length ? (frontmatter as Record<string, any>) : undefined,
+          body,
+          toggleChecklistIndex,
+        };
+
+        const ctx = readLiveContext(vaultRoot);
+        const targetProj = projectSlug?.trim() || (!ideaSlug?.trim() ? ctx?.activeProjectSlug || undefined : undefined);
+        const targetIdea = ideaSlug?.trim() || (!targetProj ? ctx?.selectedIdeaSlug || undefined : undefined);
+
+        if (targetProj) {
+          const updated = await saveProjectPlan(vaultRoot, targetProj, patch);
+          await writeUiCommand(vaultRoot, {
+            kind: 'project_updated',
+            projectSlug: targetProj,
+            summary: `Updated plan for "${updated.frontmatter.title}"`,
+            reloadMedia: Boolean(mediaPool),
+          });
+          return ok(updated);
+        }
+        if (targetIdea) {
+          return ok(await updateIdea(vaultRoot, targetIdea, patch));
+        }
+        throw new Error('No projectSlug or ideaSlug provided and no active video is open in Studio.');
       } catch (err) {
         return fail(err);
       }

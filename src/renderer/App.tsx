@@ -24,6 +24,7 @@ export const App: React.FC = () => {
     refreshVaultData,
     bumpMediaRevision,
     selectProject,
+    selectVideo,
     setActiveTab,
     setCurrentTimeSec,
     setLiveSyncNotice,
@@ -48,6 +49,8 @@ export const App: React.FC = () => {
       if (cmd.kind === 'focus_view' || cmd.kind === 'project_created') {
         if (cmd.projectSlug && cmd.projectSlug !== st.activeProjectSlug) {
           await selectProject(cmd.projectSlug);
+        } else if (!cmd.projectSlug && cmd.ideaSlug) {
+          await selectVideo({ ideaSlug: cmd.ideaSlug });
         }
         if (cmd.tab) {
           setActiveTab(cmd.tab);
@@ -70,7 +73,7 @@ export const App: React.FC = () => {
       offVault();
       offUiCmd();
     };
-  }, [bootstrap, refreshVaultData, bumpMediaRevision, selectProject, setActiveTab, setCurrentTimeSec, setLiveSyncNotice]);
+  }, [bootstrap, refreshVaultData, bumpMediaRevision, selectProject, selectVideo, setActiveTab, setCurrentTimeSec, setLiveSyncNotice]);
 
   // Sync live Studio viewer state to .studio-live-context.json immediately on structural changes
   useEffect(() => {

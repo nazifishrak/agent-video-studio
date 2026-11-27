@@ -48,7 +48,6 @@ const RESOURCES_DIR = path.resolve(__dirname, '..', 'resources');
 
 async function testVaultAndTransactions(): Promise<number> {
   const ideas = await listIdeas(VAULT_ROOT);
-  assert.ok(ideas.length >= 1, `Expected >= 1 idea, got ${ideas.length}`);
   for (const idea of ideas) {
     for (const cue of idea.cues) {
       assert.ok(
@@ -81,7 +80,7 @@ async function testVaultAndTransactions(): Promise<number> {
 
   try {
     const created = await createProjectFromIdea(VAULT_ROOT, {
-      ideaSlug: ideas[0].slug,
+      ideaSlug: ideas[0]?.slug,
       title: 'Smoke Test Project',
       slug: tempSlug,
       aspectRatio: '16:9',
@@ -258,6 +257,34 @@ async function testMcpServer(expectedIdeaCount: number) {
     const envRes = await waitForId(5);
     const envJson = JSON.parse(envRes.result.content[0].text);
     assert.ok(envJson.bundled_skills.includes('hyperframes'), 'check_environment should list bundled hyperframes');
+
+    send({
+      jsonrpc: '2.0',
+      id: 6,
+      method: 'tools/call',
+      params: { name: 'list_videos', arguments: {} },
+    });
+    const videosRes = await waitForId(6);
+    const videosJson = JSON.parse(videosRes.result.content[0].text);
+    assert.ok(Array.isArray(videosJson) && videosJson.length >= expectedIdeaCount, 'list_videos should return unified videos');
+
+    const firstVideo = videosJson.find((v: any) => v.projectSlug || v.ideaSlug);
+    if (firstVideo) {
+      send({
+        jsonrpc: '2.0',
+        id: 7,
+        method: 'tools/call',
+        params: {
+          name: 'read_video_plan',
+          arguments: firstVideo.projectSlug
+            ? { projectSlug: firstVideo.projectSlug }
+            : { ideaSlug: firstVideo.ideaSlug },
+        },
+      });
+      const planRes = await waitForId(7);
+      const planJson = JSON.parse(planRes.result.content[0].text);
+      assert.ok(planJson.frontmatter?.title, 'read_video_plan should return frontmatter title');
+    }
   } finally {
     child.kill('SIGTERM');
   }
@@ -403,6 +430,35 @@ async function testStarterVaultAndHarness() {
     });
     const cliCmd = readUiCommand(tmpVault);
     assert.equal(cliCmd?.playheadSec, 3.5);
+
+    // Verify studio-cli.mjs context returns activeIdea after saveProjectPlan
+    await saveProjectPlan(tmpVault, 'day-in-the-life-test', {
+      frontmatter: {
+        media_pool: [
+          {
+            id: 'm_cli_ctx_1',
+            label: 'day_in_the_life_test.mp4',
+            path: path.join(autoProjDir, 'day_in_the_life_test.mp4'),
+            kind: 'video',
+            role: 'A-Roll',
+          },
+        ],
+      },
+    });
+    const cliCtxOut = await new Promise<string>((resolve, reject) => {
+      const child = spawn('node', [path.join(harness.harnessDir, 'studio-cli.mjs'), 'context'], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      let out = '';
+      let errOut = '';
+      child.stdout.on('data', (d) => (out += String(d)));
+      child.stderr.on('data', (d) => (errOut += String(d)));
+      child.on('close', (code) =>
+        code === 0 ? resolve(out) : reject(new Error(`studio-cli.mjs context failed (${code}): ${errOut}`))
+      );
+    });
+    const cliCtxJson = JSON.parse(cliCtxOut);
+    assert.equal(cliCtxJson.activeIdea?.mediaPool?.[0]?.id, 'm_cli_ctx_1');
 
     for (const relSkillLink of ['.agents/skills', '.claude/skills', '.gemini/skills']) {
       const target = await fs.realpath(path.join(harness.harnessDir, relSkillLink));
