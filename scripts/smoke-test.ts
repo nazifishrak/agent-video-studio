@@ -325,6 +325,14 @@ async function testStarterVaultAndHarness() {
     assert.ok(claudeMd.includes('get_active_studio_context'), 'CLAUDE.md should reference get_active_studio_context');
     assert.ok(claudeMd.includes('focus_studio_view'), 'CLAUDE.md should reference focus_studio_view');
     assert.ok(claudeMd.includes('APPROVED_LOOKS.md'), 'CLAUDE.md should reference APPROVED_LOOKS.md');
+    assert.ok(claudeMd.includes('Look vs. Moves'), 'CLAUDE.md should include Look vs. Moves contract');
+    assert.ok(claudeMd.includes('MOTION_LANGUAGE.md'), 'CLAUDE.md should reference MOTION_LANGUAGE.md');
+    await fs.access(path.join(RESOURCES_DIR, 'skills', 'nazif-motion-scene-library', 'references', 'MOTION_LANGUAGE.md'));
+    const taggedScenes = await listMotionScenes(tmpVault, RESOURCES_DIR);
+    assert.ok(
+      taggedScenes.filter((s) => Array.isArray(s.use_cases) && s.use_cases.length > 0).length >= 60,
+      'All 60 bundled motion scenes should have use_cases tags'
+    );
 
     // Verify sleek caption defaults, legacy mapping, and live context bridge
     assert.equal(DEFAULT_BRAND_TOKENS.caption_style, 'cinema-clean');

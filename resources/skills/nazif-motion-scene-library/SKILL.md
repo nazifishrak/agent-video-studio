@@ -17,6 +17,8 @@ A modular motion-graphics system for AI video agents (Claude Code, Hyperframes, 
 
 ## Workflow for Video Agents
 
+> **Look vs. Moves Contract:** The user's `brand/DESIGN.md` owns the **Look** (colors, fonts, radii, shadows). This library owns the **Moves** (easing, timing, staggers, staging). Before authoring or adapting any motion graphic, read **[`references/MOTION_LANGUAGE.md`](./references/MOTION_LANGUAGE.md)** for exact durations, easing curves, stagger spacing, and the Frame-0 non-blank rule.
+
 ### Step 1 — Apply Any Brand `DESIGN.md`
 When the user provides a `DESIGN.md` (or pick a preset in `themes/`):
 ```bash

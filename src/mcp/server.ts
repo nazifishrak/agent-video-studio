@@ -309,11 +309,26 @@ async function main() {
           if (transparentOnly && !s.transparent_ready) return false;
           if (category && s.category.toLowerCase() !== category.toLowerCase()) return false;
           if (!q) return true;
+          const useCaseMatch = (s.use_cases ?? []).some((u) => u.toLowerCase().includes(q));
+          const tokenMatch =
+            q.includes(' ') &&
+            q
+              .split(/\s+/)
+              .filter(Boolean)
+              .every(
+                (tok) =>
+                  s.name.toLowerCase().includes(tok) ||
+                  s.description.toLowerCase().includes(tok) ||
+                  s.category.toLowerCase().includes(tok) ||
+                  (s.use_cases ?? []).some((u) => u.toLowerCase().includes(tok))
+              );
           return (
             s.name.toLowerCase().includes(q) ||
             s.description.toLowerCase().includes(q) ||
             s.category.toLowerCase().includes(q) ||
-            s.id.toLowerCase().includes(q)
+            s.id.toLowerCase().includes(q) ||
+            useCaseMatch ||
+            tokenMatch
           );
         });
         return ok({ count: filtered.length, scenes: filtered });

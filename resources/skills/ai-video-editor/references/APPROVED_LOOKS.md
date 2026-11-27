@@ -55,3 +55,20 @@ Pair scenes with matching Brand Kits (`cinema-daily-vlog`, `apple-keynote-clean`
 - `60-figma-pastel-story-sequence` — Multi-block editorial story sequence.
 - `55-apsis-streaming-console`, `56-apsis-notched-testimonial`, `57-apsis-stacking-cards` — High-craft dark editorial UI cards.
 - `19-six-stage-laser-pipeline`, `20-hub-and-spoke-sync`, `24-multi-agent-parallel` — Technical agent/system architecture diagrams.
+
+---
+
+## 4. Pre-Delivery Visual Review Checklist (Pass vs. Fail)
+
+Run this check on every rendered contact sheet (`inspect_timeline`) or HyperFrames `snapshot` before delivering:
+
+### Pass Criteria
+- **Non-Blank Frame `0`:** Background/container or opening anchor element is visible (or visibly entering by `0.10s`) — never a blank solid screen at `t = 0`.
+- **Continuous Subtle Motion:** Held reading beats include gentle `sine.inOut` drift (`scale(1 -> 1.03)`) or staggered reveals so nothing stays frozen `> 1.5s`.
+- **Legible Typography:** Minimum `24px` body / `56px+` display at 1080p, high contrast against card/stage, and tabular numbers (`.t-num`) on counters.
+- **Token Fidelity:** Colors, radii, shadows, and caption variant match the project's `brand/DESIGN.md` (or approved Brand Kit preset).
+
+### Fail Criteria (Must Fix Before Returning)
+- Blank first frame (`t = 0`), frozen static holds, or clipped/overlapping text.
+- `#60A5FA` blue caption highlights, heavy dark-navy caption boxes, or `Google Sans Flex` / monospace on UI copy.
+- Unapproved neon/rainbow gradients or cartoon bounce (`back.out` overshoot `> 1.4`).

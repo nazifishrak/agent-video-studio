@@ -88,6 +88,17 @@ You are operating inside the **Agent Video Studio** runtime workspace.
   - \`node ./studio-cli.mjs update-brand '<json-patch>' [--project <slug>]\`
 - **Focus & Seek the Viewer:** When creating a new project or editing a specific moment, call \`focus_studio_view\` (or \`node ./studio-cli.mjs focus --tab editor --playhead <sec>\`) so the user's preview jumps straight to your update.
 
+## Look vs. Moves Design Contract (Mandatory for Every Motion Build)
+1. **User's \`brand/DESIGN.md\` owns the LOOK:** colors, typography, radii, shadows, and caption variant. If a project has no \`DESIGN.md\`, fall back to an approved Brand Kit preset (\`cinema-daily-vlog\`, \`apple-keynote-clean\`, \`figma-lime\`, \`editorial-warm\`, \`linear-dark\`) or ask.
+2. **\`./skills/nazif-motion-scene-library/\` owns the MOVES:** easing curves, durations, staggers, staging, and reusable scenes. Always adapt them to the user's \`DESIGN.md\` tokens — **never** copy a scene's hardcoded colors over the user's brand.
+
+### Mandatory 5-Step Motion Build Sequence (Studio Plates & HyperFrames)
+1. Read the project's \`brand/DESIGN.md\` and \`./skills/ai-video-editor/references/APPROVED_LOOKS.md\`.
+2. Call \`search_motion_scenes\` (or inspect \`./skills/nazif-motion-scene-library/catalog/scenes.json\`) for the 2–3 closest scenes by use case, and read \`./skills/nazif-motion-scene-library/references/MOTION_LANGUAGE.md\`.
+3. Inspect those matching scene HTMLs for easing, stagger, and staging (or reuse them directly via \`add_motion_plate\`).
+4. Build or customize using the user's \`DESIGN.md\` tokens (non-blank frame-0, continuous subtle drift during holds).
+5. Run \`check\` / \`snapshot\` (HyperFrames) or \`inspect_timeline\` (Studio) and verify against the \`APPROVED_LOOKS.md\` checklist before delivering.
+
 ## Mandatory Video Craft & Approved Looks Guardrails (Read Before Editing/Rendering)
 - **Read \`./skills/ai-video-editor/SKILL.md\`, \`./skills/ai-video-editor/EDIT_STYLE.md\`, and \`./skills/ai-video-editor/references/APPROVED_LOOKS.md\` BEFORE writing any video build or render script.**
 - **Approved Looks & Sleek Typography Only:** Use the 4 approved caption variants (\`cinema-clean\`, \`vlog-minimal\`, \`editorial-glass\`, \`editorial-serif\`) with Apple SF Pro / Inter / Instrument Serif typography and approved motion scenes matching the active Brand Kit. **NEVER** use \`#60A5FA\` blue caption highlights, heavy dark-navy caption boxes, or \`Google Sans Flex\`.

@@ -17,7 +17,13 @@
         "line1": "Creator marketing",
         "line2": "without the chaos",
         "sub": "End-to-end campaigns built for teams that only pay for real results."
-      }
+      },
+      "use_cases": [
+        "hook",
+        "title-card",
+        "kinetic-type",
+        "opening-statement"
+      ]
     },
     {
       "id": "02-word-beat-stomp",
@@ -37,7 +43,13 @@
           "Built for scale."
         ],
         "sub": "Engineered from the ground up for modern product teams."
-      }
+      },
+      "use_cases": [
+        "word-stomp",
+        "punchline",
+        "hook",
+        "short-form-emphasis"
+      ]
     },
     {
       "id": "03-editorial-pullquote",
@@ -45,7 +57,7 @@
       "name": "Editorial Pullquote",
       "category": "Kinetic Typography",
       "inspiration": "Stripe / Editorial",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/03-editorial-pullquote.html",
@@ -54,7 +66,13 @@
         "quote": "Good software removes the work you never wanted to do in the first place.",
         "author": "Maya Chen",
         "role": "VP of Product / Northstar"
-      }
+      },
+      "use_cases": [
+        "quote",
+        "pullquote",
+        "testimonial",
+        "editorial-transition"
+      ]
     },
     {
       "id": "04-kinetic-flip-verb",
@@ -62,7 +80,7 @@
       "name": "Kinetic Flip Verb",
       "category": "Kinetic Typography",
       "inspiration": "Linear / Vercel",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/04-kinetic-flip-verb.html",
@@ -76,7 +94,13 @@
           "ship"
         ],
         "suffix": "faster."
-      }
+      },
+      "use_cases": [
+        "verb-flip",
+        "value-prop",
+        "rotating-words",
+        "tagline"
+      ]
     },
     {
       "id": "05-type-scale-zoom",
@@ -93,7 +117,13 @@
         "eyebrow": "Introducing v2.0",
         "headline": "Zero busywork.",
         "detail": "Every repetitive step automated cleanly in the background."
-      }
+      },
+      "use_cases": [
+        "apple-keynote",
+        "scale-zoom",
+        "hero-title",
+        "announcement"
+      ]
     },
     {
       "id": "06-lower-third-clean",
@@ -109,7 +139,13 @@
       "default_props": {
         "name": "Nazif Ishrak",
         "role": "Solutions Engineer / Product Demo"
-      }
+      },
+      "use_cases": [
+        "lower-third",
+        "speaker-name",
+        "location-tag",
+        "transparent-overlay"
+      ]
     },
     {
       "id": "07-problem-split-dim",
@@ -138,7 +174,13 @@
           "Contracts and briefs",
           "Chasing invoices"
         ]
-      }
+      },
+      "use_cases": [
+        "before-after",
+        "slack-comparison",
+        "problem-contrast",
+        "split-screen"
+      ]
     },
     {
       "id": "08-before-after-wipe",
@@ -146,7 +188,7 @@
       "name": "Before / After Wipe",
       "category": "Problem & Comparison",
       "inspiration": "Linear / Framer",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/08-before-after-wipe.html",
@@ -159,7 +201,13 @@
         "afterTag": "After",
         "afterHeadline": "One unified timeline.",
         "afterSub": "Every approval, brief, and payout synced automatically."
-      }
+      },
+      "use_cases": [
+        "before-after",
+        "comparison",
+        "wipe",
+        "transformation"
+      ]
     },
     {
       "id": "09-pricing-strikethrough",
@@ -179,7 +227,13 @@
         "c2Sub": "No idle monthly seats.",
         "hero": "Pay for Results",
         "heroSub": "Only pay for approved assets or verified organic views."
-      }
+      },
+      "use_cases": [
+        "pricing",
+        "discount",
+        "objection-killer",
+        "value-anchor"
+      ]
     },
     {
       "id": "10-pros-cons-matrix",
@@ -204,7 +258,13 @@
           "Manual CSV exports",
           "Delayed weekly reports"
         ]
-      }
+      },
+      "use_cases": [
+        "2x2-matrix",
+        "pros-cons",
+        "comparison",
+        "decision-grid"
+      ]
     },
     {
       "id": "11-chaos-to-order",
@@ -212,7 +272,7 @@
       "name": "Chaos to Order Snap",
       "category": "Problem & Comparison",
       "inspiration": "Notion / Figma",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/11-chaos-to-order.html",
@@ -227,7 +287,13 @@
           "Contracts",
           "Assets"
         ]
-      }
+      },
+      "use_cases": [
+        "chaos-to-order",
+        "workflow-cleanup",
+        "before-after",
+        "organization"
+      ]
     },
     {
       "id": "12-legacy-vs-modern-bar",
@@ -246,7 +312,13 @@
         "oldVal": "42 days",
         "newLabel": "Automated platform workflow",
         "newVal": "48 hours"
-      }
+      },
+      "use_cases": [
+        "legacy-vs-modern",
+        "comparison",
+        "bar-contrast",
+        "benchmark"
+      ]
     },
     {
       "id": "13-cursor-approval-cards",
@@ -267,7 +339,13 @@
         "card1Meta": "Tech UGC / 184K avg views",
         "card2Name": "Maya Lin",
         "card2Meta": "Lifestyle / 310K avg views"
-      }
+      },
+      "use_cases": [
+        "ui-demo",
+        "approval-flow",
+        "cursor-click",
+        "product-interaction"
+      ]
     },
     {
       "id": "14-command-palette-search",
@@ -275,7 +353,7 @@
       "name": "Command Palette Cmd+K",
       "category": "Product UI & Micro-Demos",
       "inspiration": "Raycast / Linear",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/14-command-palette-search.html",
@@ -287,7 +365,13 @@
           "Invite 25 vetted creators",
           "Export CPM performance report"
         ]
-      }
+      },
+      "use_cases": [
+        "command-palette",
+        "search-ui",
+        "shortcut-demo",
+        "saas-ui"
+      ]
     },
     {
       "id": "15-sidebar-view-switch",
@@ -310,7 +394,13 @@
         ],
         "view1Title": "Active Campaigns",
         "view2Title": "Automated Payouts"
-      }
+      },
+      "use_cases": [
+        "sidebar-navigation",
+        "view-switch",
+        "dashboard-ui",
+        "product-tour"
+      ]
     },
     {
       "id": "16-toggle-feature-flip",
@@ -330,7 +420,13 @@
           "Instant brand-guideline QA",
           "Automated milestone payouts"
         ]
-      }
+      },
+      "use_cases": [
+        "feature-toggle",
+        "settings-switch",
+        "before-after",
+        "ui-demo"
+      ]
     },
     {
       "id": "17-kanban-card-drag",
@@ -349,7 +445,13 @@
         "col3": "Shipped",
         "cardTitle": "Launch Film Cut v3",
         "cardMeta": "4K Motion Plates"
-      }
+      },
+      "use_cases": [
+        "kanban",
+        "project-board",
+        "task-status",
+        "workflow-ui"
+      ]
     },
     {
       "id": "18-notification-toast-stack",
@@ -378,7 +480,13 @@
             "Campaign crossed 500,000 organic views"
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "notifications",
+        "toast-stack",
+        "alerts",
+        "slack-updates"
+      ]
     },
     {
       "id": "19-six-stage-laser-pipeline",
@@ -401,7 +509,13 @@
           "Invoicing & Payouts",
           "Live View Tracking"
         ]
-      }
+      },
+      "use_cases": [
+        "pipeline",
+        "architecture",
+        "six-stage",
+        "agent-workflow"
+      ]
     },
     {
       "id": "20-hub-and-spoke-sync",
@@ -422,7 +536,13 @@
           "Stripe",
           "Analytics"
         ]
-      }
+      },
+      "use_cases": [
+        "hub-and-spoke",
+        "sync",
+        "integrations",
+        "system-diagram"
+      ]
     },
     {
       "id": "21-prompt-to-output-flow",
@@ -443,7 +563,13 @@
           "Light and dark tokens synced",
           "Ready for 4K FFmpeg render"
         ]
-      }
+      },
+      "use_cases": [
+        "prompt-to-output",
+        "ai-flow",
+        "input-output",
+        "demo"
+      ]
     },
     {
       "id": "22-branching-router-tree",
@@ -463,7 +589,13 @@
           "Support Triage",
           "Auto-Enrich CRM"
         ]
-      }
+      },
+      "use_cases": [
+        "decision-tree",
+        "routing",
+        "branching-logic",
+        "2x2-matrix"
+      ]
     },
     {
       "id": "23-memory-file-append",
@@ -471,7 +603,7 @@
       "name": "Document Scan & Append",
       "category": "Workflows & Agents",
       "inspiration": "Jeff Su / Notion",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/23-memory-file-append.html",
@@ -480,7 +612,13 @@
         "filename": "DESIGN.md",
         "subtitle": "Live Brand Token Contract",
         "badge": "Synced"
-      }
+      },
+      "use_cases": [
+        "receipt",
+        "checklist",
+        "log-doc",
+        "markdown-append"
+      ]
     },
     {
       "id": "24-multi-agent-parallel",
@@ -509,7 +647,13 @@
             "Audio Mix & Polish"
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "multi-agent",
+        "parallel-execution",
+        "orchestration",
+        "agents"
+      ]
     },
     {
       "id": "25-loom-pip-dashboard-zoom",
@@ -525,10 +669,16 @@
       "default_props": {
         "winTitle": "Q4 Launch Campaign / Active Deliverables",
         "winMeta": "42 Creators / $0 Upfront",
-        "focusRow": "Organic CPM Reel \u2014 Morning Routine",
+        "focusRow": "Organic CPM Reel — Morning Routine",
         "callout": "Only billed once you click Approve",
         "speakerInitials": "NI"
-      }
+      },
+      "use_cases": [
+        "screen-zoom",
+        "pip",
+        "dashboard-callout",
+        "loom-style"
+      ]
     },
     {
       "id": "26-spotlight-callout-ring",
@@ -536,7 +686,7 @@
       "name": "Spotlight Callout Ring",
       "category": "Callouts & PiP",
       "inspiration": "Screen Studio / Jeff Su",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/26-spotlight-callout-ring.html",
@@ -545,7 +695,13 @@
         "focusTitle": "Automated Payout Trigger",
         "focusDetail": "$1,450 released upon 100K verified views",
         "note": "Zero manual invoice chasing"
-      }
+      },
+      "use_cases": [
+        "spotlight",
+        "focus-ring",
+        "ui-highlight",
+        "callout"
+      ]
     },
     {
       "id": "27-split-screen-speaker-ui",
@@ -553,7 +709,7 @@
       "name": "Split-Screen Speaker + UI",
       "category": "Callouts & PiP",
       "inspiration": "YouTube / Parth",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/27-split-screen-speaker-ui.html",
@@ -566,7 +722,13 @@
           "Instant DESIGN.md reskinning",
           "Reusable across every launch"
         ]
-      }
+      },
+      "use_cases": [
+        "split-screen",
+        "speaker-and-ui",
+        "demo-overlay",
+        "pip"
+      ]
     },
     {
       "id": "28-triple-chevron-pointer",
@@ -582,7 +744,13 @@
       "default_props": {
         "targetLabel": "Export 4K Motion Plate",
         "hint": "Click here to render"
-      }
+      },
+      "use_cases": [
+        "pointer",
+        "directional-arrow",
+        "transparent-overlay",
+        "callout"
+      ]
     },
     {
       "id": "29-browser-window-tilt-3d",
@@ -599,7 +767,13 @@
         "url": "app.creatorgrid.io/campaigns",
         "headline": "Campaign Control Center",
         "metric": "98.4% On-Time Delivery"
-      }
+      },
+      "use_cases": [
+        "browser-3d",
+        "web-mockup",
+        "product-reveal",
+        "hero-ui"
+      ]
     },
     {
       "id": "30-mobile-frame-showcase",
@@ -620,7 +794,13 @@
           "Payout Cleared $840",
           "124K Views Milestone"
         ]
-      }
+      },
+      "use_cases": [
+        "mobile-mockup",
+        "app-showcase",
+        "ios-frame",
+        "9-16-ui"
+      ]
     },
     {
       "id": "31-organic-spline-chart",
@@ -639,7 +819,13 @@
         "suffix": "M",
         "sub": "Verified organic views delivered in 30 days.",
         "cpm": 3.8
-      }
+      },
+      "use_cases": [
+        "line-chart",
+        "growth-metric",
+        "analytics",
+        "data-viz"
+      ]
     },
     {
       "id": "32-kpi-bento-trio",
@@ -673,7 +859,13 @@
             "+14%"
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "kpi-cards",
+        "bento-metrics",
+        "three-stats",
+        "proof"
+      ]
     },
     {
       "id": "33-bar-chart-race-rise",
@@ -681,7 +873,7 @@
       "name": "Vertical Bar Rise",
       "category": "Data Viz & Metrics",
       "inspiration": "ChartMogul / Vise",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/33-bar-chart-race-rise.html",
@@ -714,7 +906,13 @@
             96
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "bar-chart",
+        "comparison-bars",
+        "metrics-rise",
+        "data-viz"
+      ]
     },
     {
       "id": "34-donut-ring-progress",
@@ -731,7 +929,13 @@
         "title": "Workflow time automated",
         "pct": 94,
         "sub": "Hours reclaimed every month across sourcing, QA, and billing."
-      }
+      },
+      "use_cases": [
+        "percentage-ring",
+        "progress-donut",
+        "completion-stat",
+        "kpi"
+      ]
     },
     {
       "id": "35-roi-savings-ticker",
@@ -739,7 +943,7 @@
       "name": "ROI Savings Ticker",
       "category": "Data Viz & Metrics",
       "inspiration": "Ramp / Rippling",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/35-roi-savings-ticker.html",
@@ -752,7 +956,13 @@
           "6x Faster Turnaround",
           "100% View-Verified"
         ]
-      }
+      },
+      "use_cases": [
+        "roi-counter",
+        "cost-savings",
+        "number-ticker",
+        "proof"
+      ]
     },
     {
       "id": "36-funnel-conversion-bars",
@@ -760,7 +970,7 @@
       "name": "Conversion Funnel",
       "category": "Data Viz & Metrics",
       "inspiration": "Growth / Analytics",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/36-funnel-conversion-bars.html",
@@ -789,7 +999,13 @@
             "78"
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "funnel",
+        "conversion-rate",
+        "pipeline-metrics",
+        "data-viz"
+      ]
     },
     {
       "id": "37-logo-wall-stagger",
@@ -814,7 +1030,13 @@
           "Vercel",
           "Loom"
         ]
-      }
+      },
+      "use_cases": [
+        "logo-wall",
+        "social-proof",
+        "customers",
+        "trust"
+      ]
     },
     {
       "id": "38-testimonial-quote-card",
@@ -822,7 +1044,7 @@
       "name": "Testimonial Card",
       "category": "Social Proof & Trust",
       "inspiration": "Notion / YC",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/38-testimonial-quote-card.html",
@@ -832,7 +1054,13 @@
         "author": "Elena Rostova",
         "role": "Head of Growth / Relay",
         "metric": "2.1x Organic Reach"
-      }
+      },
+      "use_cases": [
+        "testimonial",
+        "customer-quote",
+        "social-proof",
+        "review"
+      ]
     },
     {
       "id": "39-milestone-counter-hero",
@@ -849,7 +1077,13 @@
         "target": 10000,
         "suffix": "+",
         "label": "Vetted creators ready to ship your next campaign"
-      }
+      },
+      "use_cases": [
+        "milestone",
+        "big-number",
+        "hero-stat",
+        "counter"
+      ]
     },
     {
       "id": "40-rating-stars-reveal",
@@ -865,7 +1099,13 @@
       "default_props": {
         "score": "4.9 / 5",
         "sub": "Average rating across 420+ verified brand campaigns"
-      }
+      },
+      "use_cases": [
+        "star-rating",
+        "reviews",
+        "social-proof",
+        "trust"
+      ]
     },
     {
       "id": "41-case-study-snapshot",
@@ -882,7 +1122,13 @@
         "company": "Wispr Flow",
         "challenge": "Needed 60 authentic UGC clips in 3 weeks",
         "result": "3.2M organic views at $3.40 CPM"
-      }
+      },
+      "use_cases": [
+        "case-study",
+        "results-card",
+        "before-after",
+        "proof"
+      ]
     },
     {
       "id": "42-press-mention-marquee",
@@ -890,7 +1136,7 @@
       "name": "Press & Brand Ticker",
       "category": "Social Proof & Trust",
       "inspiration": "Framer / Editorial",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/42-press-mention-marquee.html",
@@ -905,7 +1151,13 @@
           "Wired",
           "Stratechery"
         ]
-      }
+      },
+      "use_cases": [
+        "press-logos",
+        "media-mentions",
+        "marquee",
+        "trust"
+      ]
     },
     {
       "id": "43-chapter-blueprint-grid",
@@ -922,7 +1174,13 @@
         "num": "Chapter 02",
         "title": "THE MOTION SYSTEM",
         "sub": "Decoupled scenes driven by a single DESIGN.md contract"
-      }
+      },
+      "use_cases": [
+        "chapter-card",
+        "blueprint",
+        "section-intro",
+        "roadmap"
+      ]
     },
     {
       "id": "44-iris-split-line-reveal",
@@ -938,7 +1196,13 @@
       "default_props": {
         "top": "Part Three",
         "bottom": "Instant Brand Reskinning"
-      }
+      },
+      "use_cases": [
+        "scene-transition",
+        "iris-reveal",
+        "chapter-opener",
+        "clean-cut"
+      ]
     },
     {
       "id": "45-numbered-agenda-list",
@@ -946,7 +1210,7 @@
       "name": "Numbered Agenda Focus",
       "category": "Chapters & Pacing",
       "inspiration": "Keynote / Explainer",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/45-numbered-agenda-list.html",
@@ -960,7 +1224,13 @@
           "Composite and export in 4K"
         ],
         "activeIdx": 2
-      }
+      },
+      "use_cases": [
+        "checklist",
+        "agenda",
+        "receipt",
+        "step-list"
+      ]
     },
     {
       "id": "46-optical-blur-unveil",
@@ -968,7 +1238,7 @@
       "name": "Optical Blur Unveil",
       "category": "Chapters & Pacing",
       "inspiration": "Jeff Su / Mystery Hook",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/46-optical-blur-unveil.html",
@@ -989,7 +1259,13 @@
             "Sound Design"
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "blur-unveil",
+        "cinematic-title",
+        "chapter-card",
+        "soft-reveal"
+      ]
     },
     {
       "id": "47-audio-waveform-voice",
@@ -997,7 +1273,7 @@
       "name": "Voice Waveform Caption",
       "category": "Chapters & Pacing",
       "inspiration": "Lovo AI / Podcast",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/47-audio-waveform-voice.html",
@@ -1005,7 +1281,13 @@
       "default_props": {
         "caption": "When your video is code, changing your mind takes one prompt.",
         "speaker": "Voiceover Track / 48kHz"
-      }
+      },
+      "use_cases": [
+        "voiceover-waveform",
+        "podcast-visual",
+        "audio-reactive",
+        "speaking"
+      ]
     },
     {
       "id": "48-code-reskin-wipe",
@@ -1013,7 +1295,7 @@
       "name": "Code Reskin Wipe",
       "category": "Chapters & Pacing",
       "inspiration": "Ali Abdaal Learning #5",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/48-code-reskin-wipe.html",
@@ -1022,7 +1304,13 @@
         "title": "One DESIGN.md updates every scene",
         "oldBrand": "Legacy Style v1",
         "newBrand": "New Brand System"
-      }
+      },
+      "use_cases": [
+        "code-diff",
+        "before-after",
+        "reskin-wipe",
+        "developer-demo"
+      ]
     },
     {
       "id": "49-bento-feature-mosaic",
@@ -1054,7 +1342,13 @@
             "Transparent ProRes 4444 overlays"
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "bento-grid",
+        "feature-overview",
+        "2x2-matrix",
+        "launch"
+      ]
     },
     {
       "id": "50-three-step-how-it-works",
@@ -1086,7 +1380,13 @@
             "Export MP4 or alpha overlays"
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "how-it-works",
+        "three-steps",
+        "explainer",
+        "onboarding"
+      ]
     },
     {
       "id": "51-pricing-tier-spotlight",
@@ -1094,7 +1394,7 @@
       "name": "Pricing Tier Spotlight",
       "category": "Features & CTAs",
       "inspiration": "SaaS Launch",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/51-pricing-tier-spotlight.html",
@@ -1117,7 +1417,13 @@
             "Dedicated roster"
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "pricing-tiers",
+        "comparison",
+        "plan-spotlight",
+        "saas"
+      ]
     },
     {
       "id": "52-founder-signoff-card",
@@ -1135,7 +1441,13 @@
         "note": "Built to help you ship studio-grade videos in minutes, not weeks.",
         "name": "Nazif Ishrak",
         "url": "creatorgrid.io"
-      }
+      },
+      "use_cases": [
+        "signoff",
+        "outro",
+        "founder-card",
+        "end-card"
+      ]
     },
     {
       "id": "53-product-launch-outro",
@@ -1151,7 +1463,13 @@
       "default_props": {
         "brand": "Creator Grid",
         "tagline": "Creator marketing without the chaos."
-      }
+      },
+      "use_cases": [
+        "product-outro",
+        "launch-endcard",
+        "brand-lockup",
+        "cta"
+      ]
     },
     {
       "id": "54-cta-url-endcard",
@@ -1159,7 +1477,7 @@
       "name": "Closing CTA End-Card",
       "category": "Features & CTAs",
       "inspiration": "SaaS Launch Outro",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/54-cta-url-endcard.html",
@@ -1168,7 +1486,13 @@
         "headline": "Try it on your next launch.",
         "cta": "Get Started Free",
         "url": "creatorgrid.io"
-      }
+      },
+      "use_cases": [
+        "cta",
+        "url-endcard",
+        "call-to-action",
+        "outro"
+      ]
     },
     {
       "id": "55-apsis-streaming-console",
@@ -1188,7 +1512,13 @@
         "m1": "1,412 m/s",
         "m2": "< 1.0e-8",
         "m3": "14 ms"
-      }
+      },
+      "use_cases": [
+        "streaming-console",
+        "terminal-ui",
+        "apsis-dark",
+        "telemetry"
+      ]
     },
     {
       "id": "56-apsis-notched-testimonial",
@@ -1206,7 +1536,13 @@
         "quote": "Flat architectural telemetry and zero visual noise cut our mission review cycle in half.",
         "author": "Dr. Aris Thorne",
         "role": "Flight Systems Lead / Meridian"
-      }
+      },
+      "use_cases": [
+        "notched-card",
+        "testimonial",
+        "apsis-dark",
+        "quote"
+      ]
     },
     {
       "id": "57-apsis-stacking-cards",
@@ -1237,7 +1573,13 @@
             "Unified command layer across ground stations and live payloads."
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "stacking-cards",
+        "multi-point",
+        "apsis-dark",
+        "feature-deck"
+      ]
     },
     {
       "id": "58-apsis-segmented-pill",
@@ -1245,7 +1587,7 @@
       "name": "Apsis Segmented Filter Pill",
       "category": "Apsis Space Signature",
       "inspiration": "Apsis Space DESIGN.md",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/58-apsis-segmented-pill.html",
@@ -1275,7 +1617,13 @@
             "Open aerospace benchmarks published quarterly."
           ]
         ]
-      }
+      },
+      "use_cases": [
+        "segmented-filter",
+        "pill-switch",
+        "apsis-dark",
+        "ui-control"
+      ]
     },
     {
       "id": "59-figma-color-block-poster",
@@ -1283,7 +1631,7 @@
       "name": "Figma Color-Block Poster",
       "category": "Figma Editorial Signature",
       "inspiration": "Figma Editorial DESIGN.md",
-      "duration": 5.0,
+      "duration": 5,
       "fps": 30,
       "transparent_ready": false,
       "file": "scenes/59-figma-color-block-poster.html",
@@ -1291,10 +1639,16 @@
       "default_props": {
         "eyebrow": "DESIGN SYSTEMS / COLOR BLOCK",
         "headline": "Build once. Reskin every scene in one command.",
-        "body": "Monochrome chrome frames giant pastel story blocks\u2014zero drop shadows, zero gradients, pure typographic contrast.",
+        "body": "Monochrome chrome frames giant pastel story blocks—zero drop shadows, zero gradients, pure typographic contrast.",
         "ctaPrimary": "Start Building",
         "ctaSecondary": "View Specs"
-      }
+      },
+      "use_cases": [
+        "figma-poster",
+        "color-block",
+        "bold-statement",
+        "editorial"
+      ]
     },
     {
       "id": "60-figma-pastel-story-sequence",
@@ -1328,7 +1682,13 @@
             "title": "Every launch film stays on-brand automatically."
           }
         ]
-      }
+      },
+      "use_cases": [
+        "story-sequence",
+        "multi-block",
+        "figma-editorial",
+        "checklist"
+      ]
     }
   ]
 }

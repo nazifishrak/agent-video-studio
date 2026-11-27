@@ -305,6 +305,7 @@ export const MotionSceneMetaSchema = z.object({
   transparent_ready: z.boolean().default(false),
   file: z.string(),
   description: z.string().default(''),
+  use_cases: z.array(z.string()).optional(),
   default_props: z.record(z.unknown()).default({}),
   isCustom: z.boolean().optional(),
 });
